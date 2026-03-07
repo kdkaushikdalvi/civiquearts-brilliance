@@ -52,7 +52,7 @@ const LoginPage = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link to="/">
-            <img src={logo} alt="CiviqueArts" className="h-16 w-auto mx-auto mb-4" />
+            <img src={logo} alt="CiviqueArts" className="h-24 w-auto mx-auto mb-4" />
           </Link>
           <p className="text-primary-foreground/70 text-sm">
             Access your CiviqueArts account
