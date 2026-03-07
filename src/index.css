@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -50,8 +50,8 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    --font-heading: 'Playfair Display', serif;
-    --font-body: 'Poppins', sans-serif;
+    --font-heading: "Playfair Display", serif;
+    --font-body: "Poppins", sans-serif;
   }
 
   .dark {
@@ -93,7 +93,12 @@
     @apply bg-background text-foreground;
     font-family: var(--font-body);
   }
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-heading);
   }
 }
@@ -103,16 +108,29 @@
     background: linear-gradient(135deg, hsl(var(--saffron)), hsl(25 95% 60%));
   }
   .gradient-green {
-    background: linear-gradient(135deg, hsl(var(--green-accent)), hsl(145 63% 42%));
+    background: linear-gradient(
+      135deg,
+      hsl(var(--green-accent)),
+      hsl(145 63% 42%)
+    );
   }
   .gradient-hero {
     background: linear-gradient(135deg, hsl(215 60% 14%), hsl(215 60% 22%));
   }
   .gradient-tricolor {
-    background: linear-gradient(90deg, hsl(var(--saffron)) 0%, hsl(0 0% 100%) 50%, hsl(var(--green-accent)) 100%);
+    background: linear-gradient(
+      90deg,
+      hsl(var(--saffron)) 0%,
+      hsl(0 0% 100%) 50%,
+      hsl(var(--green-accent)) 100%
+    );
   }
   .text-gradient-tricolor {
-    background: linear-gradient(90deg, hsl(var(--saffron)), hsl(var(--green-accent)));
+    background: linear-gradient(
+      90deg,
+      hsl(var(--saffron)),
+      hsl(var(--green-accent))
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
@@ -126,4 +144,7 @@
 
 html {
   scroll-behavior: smooth;
+}
+#lovable-badge {
+  display: none !important;
 }
