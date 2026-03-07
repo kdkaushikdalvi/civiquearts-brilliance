@@ -85,7 +85,7 @@ const Header = () => {
               {item.isRoute ? (
                 <Link
                   to={item.href}
-                  className="flex items-center gap-1 px-4 py-2 text-sm font-medium tracking-wider text-foreground hover:text-saffron transition-colors"
+                  className="flex items-center gap-1 px-4 py-2 text-sm font-medium tracking-wider text-primary-foreground hover:text-saffron transition-colors"
                 >
                   {item.label}
                   {item.children && <ChevronDown className="h-3.5 w-3.5" />}
