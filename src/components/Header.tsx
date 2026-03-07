@@ -137,7 +137,7 @@ const Header = () => {
         {/* Mobile toggle */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="lg:hidden p-2 text-foreground"
+          className="lg:hidden p-2 text-primary-foreground"
           aria-label="Toggle menu"
         >
           {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
