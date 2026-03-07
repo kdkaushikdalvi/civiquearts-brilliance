@@ -82,13 +82,23 @@ const Header = () => {
               onMouseEnter={() => item.children && setOpenDropdown(item.label)}
               onMouseLeave={() => setOpenDropdown(null)}
             >
-              <a
-                href={item.href}
-                className="flex items-center gap-1 px-4 py-2 text-sm font-medium tracking-wider text-foreground hover:text-saffron transition-colors"
-              >
-                {item.label}
-                {item.children && <ChevronDown className="h-3.5 w-3.5" />}
-              </a>
+              {item.isRoute ? (
+                <Link
+                  to={item.href}
+                  className="flex items-center gap-1 px-4 py-2 text-sm font-medium tracking-wider text-foreground hover:text-saffron transition-colors"
+                >
+                  {item.label}
+                  {item.children && <ChevronDown className="h-3.5 w-3.5" />}
+                </Link>
+              ) : (
+                <a
+                  href={item.href}
+                  className="flex items-center gap-1 px-4 py-2 text-sm font-medium tracking-wider text-foreground hover:text-saffron transition-colors"
+                >
+                  {item.label}
+                  {item.children && <ChevronDown className="h-3.5 w-3.5" />}
+                </a>
+              )}
               <AnimatePresence>
                 {item.children && openDropdown === item.label && (
                   <motion.div
@@ -98,15 +108,25 @@ const Header = () => {
                     transition={{ duration: 0.2 }}
                     className="absolute top-full left-0 mt-1 min-w-[200px] rounded-lg bg-card shadow-card-hover border border-border overflow-hidden"
                   >
-                    {item.children.map((child) => (
-                      <a
-                        key={child.label}
-                        href={child.href}
-                        className="block px-4 py-2.5 text-sm text-foreground hover:bg-secondary hover:text-saffron transition-colors"
-                      >
-                        {child.label}
-                      </a>
-                    ))}
+                    {item.children.map((child) =>
+                      (child as any).isRoute ? (
+                        <Link
+                          key={child.label}
+                          to={child.href}
+                          className="block px-4 py-2.5 text-sm text-foreground hover:bg-secondary hover:text-saffron transition-colors"
+                        >
+                          {child.label}
+                        </Link>
+                      ) : (
+                        <a
+                          key={child.label}
+                          href={child.href}
+                          className="block px-4 py-2.5 text-sm text-foreground hover:bg-secondary hover:text-saffron transition-colors"
+                        >
+                          {child.label}
+                        </a>
+                      )
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
