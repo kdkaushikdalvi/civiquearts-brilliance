@@ -46,9 +46,6 @@ const menuItems = [
       { label: "Admin Login", href: "/login", isRoute: true },
     ],
   },
-      { label: "Admin Login", href: "#login" },
-    ],
-  },
 ];
 
 const Header = () => {
