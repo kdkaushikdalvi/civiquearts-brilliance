@@ -38,10 +38,14 @@ const menuItems = [
   { label: "CAREER", href: "#career" },
   {
     label: "LOGIN",
-    href: "#login",
+    href: "/login",
+    isRoute: true,
     children: [
-      { label: "User Login", href: "#login" },
-      { label: "Register", href: "#login" },
+      { label: "User Login", href: "/login", isRoute: true },
+      { label: "Register", href: "/login", isRoute: true },
+      { label: "Admin Login", href: "/login", isRoute: true },
+    ],
+  },
       { label: "Admin Login", href: "#login" },
     ],
   },
