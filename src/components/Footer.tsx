@@ -56,11 +56,14 @@ const Footer = () => {
 
           <div>
             <h4 className="font-bold text-lg mb-4">Contact Info</h4>
-            <p className="text-sm text-primary-foreground/70 mb-2">
-              123 Business Park, Mumbai, India
+            <p className="text-sm text-primary-foreground/70 mb-1 font-medium">
+              Vijay Chaudhari
             </p>
             <p className="text-sm text-primary-foreground/70 mb-2">
-              +91 98765 43210
+              Uruli Kanchan, Maharashtra, India
+            </p>
+            <p className="text-sm text-primary-foreground/70 mb-2">
+              +91 9011718351
             </p>
             <p className="text-sm text-primary-foreground/70">
               info@civiquearts.com
