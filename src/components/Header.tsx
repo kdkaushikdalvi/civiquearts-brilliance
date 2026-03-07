@@ -62,7 +62,7 @@ const Header = () => {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? "bg-background/95 backdrop-blur-md shadow-card" : "bg-background/80 backdrop-blur-sm"
+        scrolled ? "bg-primary/95 backdrop-blur-md shadow-card" : "bg-primary/90 backdrop-blur-sm"
       }`}
     >
       {/* Tricolor top bar */}
@@ -85,7 +85,7 @@ const Header = () => {
               {item.isRoute ? (
                 <Link
                   to={item.href}
-                  className="flex items-center gap-1 px-4 py-2 text-sm font-medium tracking-wider text-foreground hover:text-saffron transition-colors"
+                  className="flex items-center gap-1 px-4 py-2 text-sm font-medium tracking-wider text-primary-foreground hover:text-saffron transition-colors"
                 >
                   {item.label}
                   {item.children && <ChevronDown className="h-3.5 w-3.5" />}
@@ -93,7 +93,7 @@ const Header = () => {
               ) : (
                 <a
                   href={item.href}
-                  className="flex items-center gap-1 px-4 py-2 text-sm font-medium tracking-wider text-foreground hover:text-saffron transition-colors"
+                  className="flex items-center gap-1 px-4 py-2 text-sm font-medium tracking-wider text-primary-foreground hover:text-saffron transition-colors"
                 >
                   {item.label}
                   {item.children && <ChevronDown className="h-3.5 w-3.5" />}
@@ -137,7 +137,7 @@ const Header = () => {
         {/* Mobile toggle */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="lg:hidden p-2 text-foreground"
+          className="lg:hidden p-2 text-primary-foreground"
           aria-label="Toggle menu"
         >
           {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
