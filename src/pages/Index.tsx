@@ -8,12 +8,13 @@ import TestimonialsSection from "@/components/TestimonialsSection";
 import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 import ScrollToTop from "@/components/ScrollToTop";
-import SidebarActions from "@/components/SidebarActions";
+import AppSidebar from "@/components/AppSidebar";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      <AppSidebar />
       <main>
         <HeroSection />
         <AboutSection />
@@ -25,7 +26,6 @@ const Index = () => {
       </main>
       <Footer />
       <ScrollToTop />
-      <SidebarActions />
     </div>
   );
 };

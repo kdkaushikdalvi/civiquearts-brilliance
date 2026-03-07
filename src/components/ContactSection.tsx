@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { MapPin, Phone, Mail, Send } from "lucide-react";
+import { MapPin, Phone, Mail, Send, User } from "lucide-react";
 import { toast } from "sonner";
 
 const ContactSection = () => {
@@ -94,8 +94,9 @@ const ContactSection = () => {
               Contact Information
             </h3>
             {[
-              { icon: MapPin, label: "Address", value: "123 Business Park, Mumbai, India - 400001" },
-              { icon: Phone, label: "Phone", value: "+91 98765 43210" },
+              { icon: User, label: "Owner", value: "Vijay Chaudhari" },
+              { icon: MapPin, label: "Address", value: "Uruli Kanchan, Maharashtra, India" },
+              { icon: Phone, label: "Phone", value: "+91 9011718351" },
               { icon: Mail, label: "Email", value: "info@civiquearts.com" },
             ].map((item, i) => (
               <div key={i} className="flex items-start gap-4">
@@ -112,7 +113,7 @@ const ContactSection = () => {
             <div className="rounded-xl overflow-hidden shadow-card mt-6 h-64">
               <iframe
                 title="CiviqueArts Location"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d241317.11609823277!2d72.74109995709657!3d19.08219783949758!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7c6306644edc1%3A0x5da4ed8f8d648c69!2sMumbai%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1690000000000!5m2!1sen!2sin"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d30276.49444248118!2d74.1314!3d18.4858!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bc2e9e5e5e5e5e5%3A0x5e5e5e5e5e5e5e5e!2sUruli%20Kanchan%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1690000000000!5m2!1sen!2sin"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
