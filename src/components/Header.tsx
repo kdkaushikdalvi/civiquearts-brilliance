@@ -62,15 +62,27 @@ const Header = () => {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? "bg-primary/95 backdrop-blur-md shadow-card" : "bg-primary/90 backdrop-blur-sm"
+        scrolled
+          ? "bg-primary/95 backdrop-blur-md shadow-card"
+          : "bg-primary/90 backdrop-blur-sm"
       }`}
     >
       {/* Tricolor top bar */}
       <div className="h-1 gradient-tricolor" />
 
       <div className="container mx-auto flex items-center justify-between px-4 py-3">
-        <a href="#home" className="flex items-center gap-2">
-          <img src={logo} alt="CiviqueArts Logo" className="h-16 w-auto hover:scale-105 transition-transform" />
+        <a href="#home" className="flex items-center gap-2 group">
+          <div
+            className="rounded-full p-2 bg-white shadow-lg 
+                  transition-all duration-300 
+                  scale-140"
+          >
+            <img
+              src={logo}
+              alt="CiviqueArts Logo"
+              className="h-16  transition-transform duration-300 scale-125"
+            />
+          </div>
         </a>
 
         {/* Desktop nav */}
@@ -140,7 +152,11 @@ const Header = () => {
           className="lg:hidden p-2 text-primary-foreground"
           aria-label="Toggle menu"
         >
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          {mobileOpen ? (
+            <X className="h-6 w-6" />
+          ) : (
+            <Menu className="h-6 w-6" />
+          )}
         </button>
       </div>
 
@@ -166,7 +182,9 @@ const Header = () => {
                       className="h-4 w-4 cursor-pointer"
                       onClick={(e) => {
                         e.preventDefault();
-                        setOpenDropdown(openDropdown === item.label ? null : item.label);
+                        setOpenDropdown(
+                          openDropdown === item.label ? null : item.label
+                        );
                       }}
                     />
                   )}

@@ -102,7 +102,9 @@ const AppSidebar = () => {
       }
       setDeferredPrompt(null);
     } else {
-      toast.info("To install: use your browser's 'Add to Home Screen' or 'Install App' option.");
+      toast.info(
+        "To install: use your browser's 'Add to Home Screen' or 'Install App' option."
+      );
     }
   };
 
@@ -140,7 +142,10 @@ const AppSidebar = () => {
             {/* Header with Logo */}
             <div className="p-5 border-b border-border flex items-center justify-between">
               <img src={logo} alt="CiviqueArts" className="h-12 w-auto" />
-              <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
+              <button
+                onClick={() => setOpen(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -230,7 +235,6 @@ const AppSidebar = () => {
                 <RefreshCw className="h-4 w-4 text-saffron" />
                 RELOAD APP
               </button>
-              <p className="px-5 pb-2 text-xs text-muted-foreground">Clean all cache & refresh</p>
 
               {/* Install App */}
               <button
@@ -240,7 +244,6 @@ const AppSidebar = () => {
                 <Download className="h-4 w-4 text-saffron" />
                 INSTALL APP
               </button>
-              <p className="px-5 pb-2 text-xs text-muted-foreground">Install as PWA for faster access</p>
             </nav>
 
             {/* Footer */}
