@@ -7,7 +7,7 @@ const Footer = () => {
       <div className="container mx-auto px-4 py-16">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
           <div>
-            <img src={logo} alt="CiviqueArts" className="h-14 w-auto mb-4" />
+            <img src={logo} alt="CiviqueArts" className="h-20 w-auto mb-4" />
             <p className="text-sm text-primary-foreground/70 leading-relaxed">
               Delivering innovative engineering design, CAD drafting, and BIM
               solutions to clients worldwide.

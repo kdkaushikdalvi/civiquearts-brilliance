@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Home,
@@ -10,8 +10,12 @@ import {
   ChevronDown,
   Menu,
   X,
+  RefreshCw,
+  Download,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import logo from "@/assets/logo.png";
 
 const sidebarItems = [
   { label: "HOME", href: "#home", icon: Home },
@@ -64,14 +68,46 @@ const sidebarItems = [
 const AppSidebar = () => {
   const [open, setOpen] = useState(false);
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
 
   const toggleExpand = (label: string) => {
     setExpandedItem(expandedItem === label ? null : label);
   };
 
+  const handleReload = () => {
+    if ("caches" in window) {
+      caches.keys().then((names) => {
+        names.forEach((name) => caches.delete(name));
+      });
+    }
+    toast.success("Cache cleared! Reloading...");
+    setTimeout(() => window.location.reload(), 500);
+  };
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const result = await deferredPrompt.userChoice;
+      if (result.outcome === "accepted") {
+        toast.success("App installed successfully!");
+      }
+      setDeferredPrompt(null);
+    } else {
+      toast.info("To install: use your browser's 'Add to Home Screen' or 'Install App' option.");
+    }
+  };
+
   return (
     <>
-      {/* Toggle button - always visible on left edge */}
       <button
         onClick={() => setOpen(!open)}
         className="fixed left-0 top-1/2 -translate-y-1/2 z-50 w-10 h-10 rounded-r-xl gradient-saffron text-saffron-foreground flex items-center justify-center shadow-lg hover:w-12 transition-all duration-300"
@@ -80,7 +116,6 @@ const AppSidebar = () => {
         {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
-      {/* Overlay */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -93,7 +128,6 @@ const AppSidebar = () => {
         )}
       </AnimatePresence>
 
-      {/* Sidebar panel */}
       <AnimatePresence>
         {open && (
           <motion.aside
@@ -103,9 +137,9 @@ const AppSidebar = () => {
             transition={{ type: "spring", damping: 25, stiffness: 250 }}
             className="fixed left-0 top-0 bottom-0 z-50 w-72 bg-card shadow-card-hover border-r border-border flex flex-col"
           >
-            {/* Header */}
+            {/* Header with Logo */}
             <div className="p-5 border-b border-border flex items-center justify-between">
-              <span className="font-bold text-lg text-foreground font-heading">Menu</span>
+              <img src={logo} alt="CiviqueArts" className="h-12 w-auto" />
               <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
                 <X className="h-5 w-5" />
               </button>
@@ -184,6 +218,29 @@ const AppSidebar = () => {
                   </AnimatePresence>
                 </div>
               ))}
+
+              {/* Divider */}
+              <div className="my-3 mx-5 border-t border-border" />
+
+              {/* Reload App */}
+              <button
+                onClick={handleReload}
+                className="w-full flex items-center gap-3 px-5 py-3 text-sm font-medium tracking-wide text-foreground hover:bg-secondary hover:text-saffron transition-colors"
+              >
+                <RefreshCw className="h-4 w-4 text-saffron" />
+                RELOAD APP
+              </button>
+              <p className="px-5 pb-2 text-xs text-muted-foreground">Clean all cache & refresh</p>
+
+              {/* Install App */}
+              <button
+                onClick={handleInstall}
+                className="w-full flex items-center gap-3 px-5 py-3 text-sm font-medium tracking-wide text-foreground hover:bg-secondary hover:text-saffron transition-colors"
+              >
+                <Download className="h-4 w-4 text-saffron" />
+                INSTALL APP
+              </button>
+              <p className="px-5 pb-2 text-xs text-muted-foreground">Install as PWA for faster access</p>
             </nav>
 
             {/* Footer */}
