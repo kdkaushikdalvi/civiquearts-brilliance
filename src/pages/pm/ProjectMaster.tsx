@@ -55,7 +55,7 @@ const ProjectMaster = () => {
       <div className="p-6 max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Project Master</h1>
+            <h1 className="text-2xl font-bold text-foreground">Project List</h1>
             <p className="text-muted-foreground">Manage projects used in assignments</p>
           </div>
           {returnTo && (

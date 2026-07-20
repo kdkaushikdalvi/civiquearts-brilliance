@@ -57,7 +57,7 @@ const EmployeeMaster = () => {
       <div className="p-6 max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Employee Master</h1>
+            <h1 className="text-2xl font-bold text-foreground">Employee List</h1>
             <p className="text-muted-foreground">Manage team members used as assignees</p>
           </div>
           {returnTo && (
