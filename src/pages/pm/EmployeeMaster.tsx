@@ -127,7 +127,7 @@ const EmployeeMaster = () => {
                           <td className="px-4 py-3 text-muted-foreground">{e.email || "-"}</td>
                           <td className="px-4 py-3 text-muted-foreground">{e.mobile || "-"}</td>
                           <td className="px-4 py-3 text-right space-x-1">
-                            <Button size="icon" variant="ghost" onClick={() => startEdit(e.id, e)}><Pencil className="h-4 w-4" /></Button>
+                            <Button size="icon" variant="ghost" onClick={() => startEdit(e.id, { name: e.name, email: e.email || "", mobile: e.mobile || "" })}><Pencil className="h-4 w-4" /></Button>
                             <Button size="icon" variant="ghost" onClick={() => {
                               if (confirm(`Delete "${e.name}"?`)) { deleteEmployee(e.id); toast.success("Deleted"); }
                             }}>
