@@ -38,14 +38,8 @@ function useLocalState<T>(key: string, initial: T) {
 }
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
-  const [projects, setProjects] = useLocalState<Project[]>("pm_projects", [
-    { id: "seed-p1", name: "Insurance Mapping" },
-  ]);
-  const [employees, setEmployees] = useLocalState<Employee[]>("pm_employees", [
-    { id: "seed-e1", name: "John" },
-    { id: "seed-e2", name: "Alice" },
-    { id: "seed-e3", name: "David" },
-  ]);
+  const [projects, setProjects] = useLocalState<Project[]>("pm_projects", []);
+  const [employees, setEmployees] = useLocalState<Employee[]>("pm_employees", []);
   const [assignments, setAssignments] = useLocalState<Assignment[]>("pm_assignments", []);
   const [invoices, setInvoices] = useLocalState<InvoiceRecord[]>("pm_invoices", []);
 

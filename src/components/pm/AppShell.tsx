@@ -15,11 +15,11 @@ import logo from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/app/assignments", label: "Assignments", icon: ClipboardList },
-  { to: "/app/master/project", label: "Project Master", icon: FolderKanban },
-  { to: "/app/master/employee", label: "Employee Master", icon: UserCog },
+  { to: "/app/assignments", label: "All Projects", icon: ClipboardList },
+  { to: "/app/master/project", label: "Project List", icon: FolderKanban },
+  { to: "/app/master/employee", label: "Employee List", icon: UserCog },
   { to: "/app/download-invoices", label: "Download Invoices", icon: Download },
+  { to: "/app/dashboard", label: "Overview", icon: LayoutDashboard },
 ];
 
 const AppShell = ({ children }: { children: ReactNode }) => {

@@ -11,7 +11,7 @@ const Dashboard = () => {
   const totalBilled = completed.reduce((s, a) => s + (a.amount ?? 0), 0);
 
   const cards = [
-    { label: "Total Assignments", value: assignments.length, icon: ClipboardList, color: "gradient-saffron" },
+    { label: "Total Records", value: assignments.length, icon: ClipboardList, color: "gradient-saffron" },
     { label: "In Progress", value: inProgress.length, icon: Loader2, color: "bg-yellow-500" },
     { label: "Completed", value: completed.length, icon: CheckCircle2, color: "gradient-green" },
     { label: "Total Billed", value: formatINR(totalBilled), icon: Wallet, color: "gradient-hero" },
@@ -42,7 +42,7 @@ const Dashboard = () => {
             <h3 className="font-semibold mb-3">Quick Actions</h3>
             <div className="space-y-2">
               <Link to="/app/assignments" className="block px-3 py-2 rounded-md hover:bg-secondary text-sm">
-                → Create new assignments
+                → Create new Project
               </Link>
               <Link to="/app/download-invoices" className="block px-3 py-2 rounded-md hover:bg-secondary text-sm">
                 → Generate invoices
