@@ -8,6 +8,7 @@ import {
   Download,
   LogOut,
   Menu,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ const nav = [
   { to: "/app/master/project", label: "Project List", icon: FolderKanban },
   { to: "/app/master/employee", label: "Employee List", icon: UserCog },
   { to: "/app/download-invoices", label: "Download Invoices", icon: Download },
+  { to: "/app/upload-csv", label: "Upload CSV", icon: FileSpreadsheet },
   { to: "/app/dashboard", label: "Overview", icon: LayoutDashboard },
 ];
 
