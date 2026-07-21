@@ -8,7 +8,7 @@ export interface Assignment {
   month: number; // 0-11
   year: number;
   status: "In Progress" | "Completed";
-  unitType?: "Feet" | "Per Page" | "Per Address";
+  unitType?: string;
   quantity?: number;
   rate?: number;
   amount?: number;
