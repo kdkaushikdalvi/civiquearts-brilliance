@@ -21,7 +21,7 @@ const nav = [
   { to: "/app/master/project", label: "Project List", icon: FolderKanban },
   { to: "/app/master/employee", label: "Employee List", icon: UserCog },
   { to: "/app/download-invoices", label: "Payment Slips", icon: Download },
-  { to: "/app/cap-projects-list", label: "CAP Projects List", icon: FileDown },
+  { to: "/app/cap-projects-list", label: "Generate Excel", icon: FileDown },
   { to: "/app/upload-csv", label: "Upload CSV", icon: FileSpreadsheet },
   { to: "/app/dashboard", label: "Overview", icon: LayoutDashboard },
 ];

@@ -241,9 +241,6 @@ const UploadCsv = () => {
       <div className="p-6 max-w-3xl mx-auto space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Upload CSV</h1>
-          <p className="text-muted-foreground">
-            Auto-fill Accounting Code for all project rows. Original Excel formatting, fonts, and styles are preserved.
-          </p>
         </div>
 
         <Card className="p-6 space-y-5">

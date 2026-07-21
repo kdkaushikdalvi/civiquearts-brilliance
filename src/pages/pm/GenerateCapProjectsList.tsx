@@ -43,10 +43,7 @@ const GenerateCapProjectsList = () => {
       <div className="p-6 max-w-3xl mx-auto space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">CAP Projects List</h1>
-            <p className="text-muted-foreground">
-              Export project names with sites for CAP upload (Accounting Code left blank).
-            </p>
+            <h1 className="text-2xl font-bold text-foreground">Generate Excel</h1>
           </div>
           <MonthNavigator month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y); }} />
         </div>
@@ -62,11 +59,6 @@ const GenerateCapProjectsList = () => {
                 <span className="font-medium text-foreground">Records:</span>{" "}
                 {filtered.length} project{filtered.length === 1 ? "" : "s"} for {MONTH_NAMES[month]} {year}
               </p>
-              <ul className="list-disc pl-5 space-y-0.5 pt-1">
-                <li>Project names as bold section headers; sites listed underneath</li>
-                <li>Projects and sites sorted A–Z; Sr No. restarts per project</li>
-                <li>Accounting Code column empty on every row</li>
-              </ul>
             </div>
           </div>
 

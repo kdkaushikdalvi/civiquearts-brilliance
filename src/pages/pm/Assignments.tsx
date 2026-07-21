@@ -224,7 +224,7 @@ const Assignments = () => {
                 <div key={s.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 items-start">
                   <div>
                     <Input
-                      placeholder="Site Name"
+                      placeholder="Site Name *"
                       value={s.siteName}
                       onChange={(e) => updateSite(s.id, { siteName: e.target.value })}
                     />
@@ -237,7 +237,7 @@ const Assignments = () => {
                       value={s.assigneeId}
                       onChange={(id) => updateSite(s.id, { assigneeId: id })}
                       options={employees.map((e) => ({ id: e.id, label: e.name }))}
-                      placeholder="Select Assignee"
+                      placeholder="Select Assignee *"
                       emptyActionLabel="+ Add Assignee"
                       onEmptyAction={() => {
                         persistDraft({});
