@@ -135,12 +135,12 @@ const UploadCsv = () => {
           </div>
 
           <div className="space-y-2">
-            <Label>Upload CSV</Label>
+            <Label>Upload File (CSV or Excel)</Label>
             <div className="flex items-center gap-3">
               <input
                 ref={inputRef}
                 type="file"
-                accept=".csv,text/csv"
+                accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                 onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
                 className="hidden"
                 id="csv-file"
