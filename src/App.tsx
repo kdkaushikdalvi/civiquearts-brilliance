@@ -14,6 +14,7 @@ import Assignments from "@/pages/pm/Assignments";
 import ProjectMaster from "@/pages/pm/ProjectMaster";
 import EmployeeMaster from "@/pages/pm/EmployeeMaster";
 import DownloadInvoices from "@/pages/pm/DownloadInvoices";
+import UploadCsv from "@/pages/pm/UploadCsv";
 
 const queryClient = new QueryClient();
 
