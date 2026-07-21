@@ -6,19 +6,28 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Upload, FileSpreadsheet, Download, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
-type Row = (string | number)[];
+type ProcessedXlsx = {
+  kind: "xlsx";
+  workbook: ExcelJS.Workbook;
+  filledCount: number;
+  baseName: string;
+};
+
+type ProcessedCsv = {
+  kind: "csv";
+  rows: string[][];
+  filledCount: number;
+  baseName: string;
+};
+
+type Processed = ProcessedXlsx | ProcessedCsv;
 
 const UploadCsv = () => {
   const [file, setFile] = useState<File | null>(null);
   const [accountingCode, setAccountingCode] = useState("");
-  const [processed, setProcessed] = useState<{
-    rows: Row[];
-    headers: string[];
-    filledCount: number;
-    baseName: string;
-  } | null>(null);
+  const [processed, setProcessed] = useState<Processed | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const onPickFile = (f: File | null) => {
@@ -31,79 +40,193 @@ const UploadCsv = () => {
     setProcessed(null);
   };
 
+  // Simple CSV parser preserving quoted fields
+  const parseCsv = (text: string): string[][] => {
+    const rows: string[][] = [];
+    let cur: string[] = [];
+    let field = "";
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i++; } else { inQuotes = false; }
+        } else field += c;
+      } else {
+        if (c === '"') inQuotes = true;
+        else if (c === ",") { cur.push(field); field = ""; }
+        else if (c === "\n") { cur.push(field); rows.push(cur); cur = []; field = ""; }
+        else if (c === "\r") { /* skip */ }
+        else field += c;
+      }
+    }
+    if (field.length > 0 || cur.length > 0) { cur.push(field); rows.push(cur); }
+    return rows;
+  };
+
+  const toCsv = (rows: string[][]): string =>
+    rows.map((r) => r.map((v) => {
+      const s = v ?? "";
+      return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    }).join(",")).join("\r\n");
+
+  const findHeaderInfo = (getRow: (i: number) => string[], maxScan: number) => {
+    let headerIdx = 0;
+    for (let i = 0; i < maxScan; i++) {
+      const joined = getRow(i).map((c) => String(c).toLowerCase()).join("|");
+      if (joined.includes("accounting code") || joined.includes("projects")) {
+        headerIdx = i;
+        break;
+      }
+    }
+    const headerRow = getRow(headerIdx).map((c) => String(c));
+    const acCol = headerRow.findIndex((h) => h.toLowerCase().includes("accounting code"));
+    const srCol = headerRow.findIndex((h) => h.toLowerCase().includes("sr"));
+    const projectsCol = headerRow.findIndex((h) => h.toLowerCase().includes("projects"));
+    return { headerIdx, headerRow, acCol, srCol, projectsCol };
+  };
+
   const handleProcess = async () => {
     if (!accountingCode.trim()) return toast.error("Accounting Code is required");
     if (!file) return toast.error("Please upload a CSV or Excel file first");
 
+    const code = accountingCode.trim();
+    const baseName = file.name.replace(/\.(csv|xlsx|xls)$/i, "");
+    const isCsv = /\.csv$/i.test(file.name);
+
     try {
-      const isCsv = /\.csv$/i.test(file.name);
-      let wb: XLSX.WorkBook;
       if (isCsv) {
         const text = await file.text();
-        wb = XLSX.read(text, { type: "string", raw: true });
+        const rows = parseCsv(text);
+        if (rows.length === 0) return toast.error("File is empty");
+        const info = findHeaderInfo((i) => rows[i] ?? [], Math.min(rows.length, 10));
+        let acCol = info.acCol;
+        if (acCol === -1) {
+          acCol = info.headerRow.length;
+          info.headerRow.push("Accounting Code");
+          rows[info.headerIdx] = info.headerRow;
+        }
+        let filled = 0;
+        for (let i = info.headerIdx + 1; i < rows.length; i++) {
+          const row = rows[i] ?? [];
+          while (row.length <= acCol) row.push("");
+          const srVal = info.srCol >= 0 ? String(row[info.srCol] ?? "").trim() : String(row[0] ?? "").trim();
+          const projVal = info.projectsCol >= 0 ? String(row[info.projectsCol] ?? "").trim() : "";
+          if (/^\d+$/.test(srVal) && projVal !== "") {
+            row[acCol] = code;
+            filled++;
+          }
+          rows[i] = row;
+        }
+        setProcessed({ kind: "csv", rows, filledCount: filled, baseName });
+        toast.success(`Processed ${filled} project rows`);
       } else {
+        // XLSX — preserve original formatting/fonts using ExcelJS
         const buf = await file.arrayBuffer();
-        wb = XLSX.read(buf, { type: "array" });
-      }
-      const sheetName = wb.SheetNames[0];
-      const sheet = wb.Sheets[sheetName];
-      const data = XLSX.utils.sheet_to_json<Row>(sheet, { header: 1, defval: "", blankrows: true });
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(buf);
+        const sheet = workbook.worksheets[0];
+        if (!sheet) return toast.error("File has no sheets");
 
-      if (data.length === 0) return toast.error("File is empty");
-
-      // Detect header row (contains "Accounting Code" or "Projects")
-      let headerIdx = 0;
-      for (let i = 0; i < Math.min(data.length, 5); i++) {
-        const joined = data[i].map((c) => String(c).toLowerCase()).join("|");
-        if (joined.includes("accounting code") || joined.includes("projects")) {
-          headerIdx = i;
-          break;
+        const maxScan = Math.min(sheet.rowCount, 10);
+        const getRowValues = (i: number): string[] => {
+          const r = sheet.getRow(i + 1); // exceljs is 1-indexed
+          const out: string[] = [];
+          const vals = r.values as unknown[];
+          // vals[0] is undefined placeholder
+          for (let c = 1; c < vals.length; c++) {
+            const v = vals[c];
+            out.push(v == null ? "" : typeof v === "object" && "text" in (v as any) ? String((v as any).text) : String(v));
+          }
+          return out;
+        };
+        const info = findHeaderInfo(getRowValues, maxScan);
+        let acCol = info.acCol; // 0-based
+        if (acCol === -1) {
+          acCol = info.headerRow.length;
+          const headerRow = sheet.getRow(info.headerIdx + 1);
+          headerRow.getCell(acCol + 1).value = "Accounting Code";
+          headerRow.commit();
         }
-      }
-      const headerRow = data[headerIdx].map((c) => String(c));
-      let acCol = headerRow.findIndex((h) => h.toLowerCase().includes("accounting code"));
-      const srCol = headerRow.findIndex((h) => h.toLowerCase().includes("sr"));
 
-      // If no Accounting Code column, append it
-      if (acCol === -1) {
-        acCol = headerRow.length;
-        headerRow.push("Accounting Code");
-        data[headerIdx] = headerRow;
-      }
-
-      const code = accountingCode.trim();
-      let filled = 0;
-      for (let i = headerIdx + 1; i < data.length; i++) {
-        const row = [...data[i]];
-        // Ensure width
-        while (row.length <= acCol) row.push("");
-        const srVal = srCol >= 0 ? String(row[srCol] ?? "").trim() : String(row[0] ?? "").trim();
-        const projectsCol = headerRow.findIndex((h) => h.toLowerCase().includes("projects"));
-        const projVal = projectsCol >= 0 ? String(row[projectsCol] ?? "").trim() : "";
-        // A "project row" has a numeric Sr No. and a non-empty project name
-        if (/^\d+$/.test(srVal) && projVal !== "") {
-          row[acCol] = code;
-          filled++;
+        let filled = 0;
+        for (let i = info.headerIdx + 1; i < sheet.rowCount; i++) {
+          const rowValues = getRowValues(i);
+          const srVal = info.srCol >= 0 ? String(rowValues[info.srCol] ?? "").trim() : String(rowValues[0] ?? "").trim();
+          const projVal = info.projectsCol >= 0 ? String(rowValues[info.projectsCol] ?? "").trim() : "";
+          if (/^\d+$/.test(srVal) && projVal !== "") {
+            const row = sheet.getRow(i + 1);
+            row.getCell(acCol + 1).value = code;
+            filled++;
+          }
         }
-        data[i] = row;
-      }
 
-      const baseName = file.name.replace(/\.(csv|xlsx|xls)$/i, "");
-      setProcessed({ rows: data, headers: headerRow, filledCount: filled, baseName });
-      toast.success(`Processed ${filled} project rows`);
+        setProcessed({ kind: "xlsx", workbook, filledCount: filled, baseName });
+        toast.success(`Processed ${filled} project rows`);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Failed to process the file");
     }
   };
 
-  const downloadFile = (kind: "xlsx" | "csv") => {
+  const downloadFile = async (kind: "xlsx" | "csv") => {
     if (!processed) return;
-    const ws = XLSX.utils.aoa_to_sheet(processed.rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
     const filename = `${processed.baseName}-updated.${kind}`;
-    XLSX.writeFile(wb, filename, { bookType: kind });
+
+    if (kind === "xlsx" && processed.kind === "xlsx") {
+      const buf = await processed.workbook.xlsx.writeBuffer();
+      const blob = new Blob([buf], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      triggerDownload(blob, filename);
+      return;
+    }
+
+    if (kind === "csv") {
+      let csv: string;
+      if (processed.kind === "csv") csv = toCsv(processed.rows);
+      else {
+        const sheet = processed.workbook.worksheets[0];
+        const rows: string[][] = [];
+        for (let i = 1; i <= sheet.rowCount; i++) {
+          const r = sheet.getRow(i);
+          const vals = r.values as unknown[];
+          const out: string[] = [];
+          for (let c = 1; c < vals.length; c++) {
+            const v = vals[c];
+            out.push(v == null ? "" : typeof v === "object" && "text" in (v as any) ? String((v as any).text) : String(v));
+          }
+          rows.push(out);
+        }
+        csv = toCsv(rows);
+      }
+      triggerDownload(new Blob([csv], { type: "text/csv;charset=utf-8" }), filename);
+      return;
+    }
+
+    if (kind === "xlsx" && processed.kind === "csv") {
+      // Build a fresh xlsx from csv rows (no source styles to preserve)
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet("Sheet1");
+      processed.rows.forEach((r) => ws.addRow(r));
+      const buf = await wb.xlsx.writeBuffer();
+      triggerDownload(
+        new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+        filename,
+      );
+    }
+  };
+
+  const triggerDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const reset = () => {
@@ -119,7 +242,7 @@ const UploadCsv = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Upload CSV</h1>
           <p className="text-muted-foreground">
-            Auto-fill Accounting Code for all project rows and download the updated file.
+            Auto-fill Accounting Code for all project rows. Original Excel formatting, fonts, and styles are preserved.
           </p>
         </div>
 
@@ -173,7 +296,7 @@ const UploadCsv = () => {
               onClick={handleProcess}
               className="gradient-saffron text-saffron-foreground"
             >
-              Process CSV
+              Process File
             </Button>
           </div>
         </Card>
@@ -184,11 +307,11 @@ const UploadCsv = () => {
               <CheckCircle2 className="h-6 w-6 text-green-600 shrink-0 mt-0.5" />
               <div>
                 <div className="font-semibold text-foreground">
-                  CSV processed successfully.
+                  File processed successfully.
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Accounting Code added to {processed.filledCount} matching project row
-                  {processed.filledCount === 1 ? "" : "s"}.
+                  {processed.filledCount === 1 ? "" : "s"}. Original formatting preserved.
                 </div>
               </div>
             </div>
