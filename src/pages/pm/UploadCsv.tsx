@@ -88,12 +88,12 @@ const UploadCsv = () => {
         data[i] = row;
       }
 
-      const baseName = file.name.replace(/\.csv$/i, "");
+      const baseName = file.name.replace(/\.(csv|xlsx|xls)$/i, "");
       setProcessed({ rows: data, headers: headerRow, filledCount: filled, baseName });
       toast.success(`Processed ${filled} project rows`);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to process the CSV file");
+      toast.error("Failed to process the file");
     }
   };
 
