@@ -13,6 +13,34 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import logo from "@/assets/logo.png";
 
+const ONES = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+const TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+const belowThousandToWords = (value: number) => {
+  const parts: string[] = [];
+  if (value >= 100) parts.push(`${ONES[Math.floor(value / 100)]} Hundred`);
+  const remainder = value % 100;
+  if (remainder >= 20) parts.push(`${TENS[Math.floor(remainder / 10)]}${remainder % 10 ? ` ${ONES[remainder % 10]}` : ""}`);
+  else if (remainder) parts.push(ONES[remainder]);
+  return parts.join(" ");
+};
+
+const amountInWords = (amount: number) => {
+  const totalPaise = Math.round(amount * 100);
+  let rupees = Math.floor(totalPaise / 100);
+  const paise = totalPaise % 100;
+  const parts: string[] = [];
+  for (const [divisor, label] of [[10_000_000, "Crore"], [100_000, "Lakh"], [1_000, "Thousand"]] as const) {
+    const count = Math.floor(rupees / divisor);
+    if (count) {
+      parts.push(`${belowThousandToWords(count)} ${label}`);
+      rupees %= divisor;
+    }
+  }
+  if (rupees || parts.length === 0) parts.push(belowThousandToWords(rupees) || "Zero");
+  return `Rupees ${parts.join(" ")}${paise ? ` and Paise ${belowThousandToWords(paise)}` : ""} Only`;
+};
+
 const DownloadInvoices = () => {
   const { employees, assignments, addInvoice } = useData();
   const { user } = useAuth();
@@ -36,7 +64,7 @@ const DownloadInvoices = () => {
   );
 
   const grandTotal = filtered.reduce((s, a) => s + (a.amount ?? 0), 0);
-  const invoiceNumber = `INV-${year}${String(month + 1).padStart(2, "0")}-${assigneeId.slice(-4).toUpperCase() || "----"}`;
+  const invoiceNumber = `PS-${year}${String(month + 1).padStart(2, "0")}-${assigneeId.slice(-4).toUpperCase() || "----"}`;
   const invoiceDate = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" });
 
   const download = async () => {
@@ -49,7 +77,7 @@ const DownloadInvoices = () => {
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      const filename = `Invoice_${assignee?.name.replace(/\s/g, "")}_${MONTH_NAMES[month]}_${year}.pdf`;
+      const filename = `Payment_Slip_${assignee?.name.replace(/\s/g, "")}_${MONTH_NAMES[month]}_${year}.pdf`;
       pdf.save(filename);
 
       addInvoice({
@@ -62,7 +90,7 @@ const DownloadInvoices = () => {
         generatedBy: user || "user",
         total: grandTotal,
       });
-      toast.success("Invoice downloaded");
+      toast.success("Payment slip downloaded");
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate PDF");
@@ -74,7 +102,7 @@ const DownloadInvoices = () => {
     const printWindow = window.open("", "", "width=900,height=1200");
     if (!printWindow) return;
     printWindow.document.write(`
-      <html><head><title>Invoice</title>
+      <html><head><title>Payment Slip</title>
       <style>
         body{font-family:Arial,sans-serif;margin:0;padding:20px;background:#fff}
         ${document.head.innerHTML.match(/<style[^>]*>[\s\S]*?<\/style>/g)?.join("") || ""}
@@ -93,7 +121,7 @@ const DownloadInvoices = () => {
       <div className="p-6 max-w-6xl mx-auto space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Download Invoices</h1>
+            <h1 className="text-2xl font-bold text-foreground">Payment Slips</h1>
           </div>
           <MonthNavigator month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y); }} />
         </div>
@@ -126,7 +154,7 @@ const DownloadInvoices = () => {
                     <Printer className="h-4 w-4 mr-2" /> Print
                   </Button>
                   <Button onClick={download} className="gradient-saffron text-saffron-foreground">
-                    <Download className="h-4 w-4 mr-2" /> Download Invoice
+                    <Download className="h-4 w-4 mr-2" /> Download Payment Slip
                   </Button>
                 </div>
 
@@ -138,7 +166,7 @@ const DownloadInvoices = () => {
                     style={{ width: "210mm", minHeight: "297mm", padding: "10mm", fontFamily: "Arial, sans-serif" }}
                   >
                     <div style={{ border: "2px solid #666", textAlign: "center", fontWeight: "bold", padding: "4px", marginBottom: "6px" }}>
-                      Invoice
+                      Payment Slip
                     </div>
 
                     <div style={{ display: "flex", gap: 0 }}>
@@ -155,16 +183,14 @@ const DownloadInvoices = () => {
                         </div>
                       </div>
                       <div style={{ flex: 1, border: "1px solid #666", borderLeft: "none", padding: "8px" }}>
-                        <p style={{ margin: "3px 0", fontSize: 13 }}><b>Invoice No.:</b> {invoiceNumber}</p>
+                        <p style={{ margin: "3px 0", fontSize: 13 }}><b>Payment Slip No.:</b> {invoiceNumber}</p>
                         <p style={{ margin: "3px 0", fontSize: 13 }}><b>Date:</b> {invoiceDate}</p>
                         <p style={{ margin: "3px 0", fontSize: 13 }}><b>Billing Month:</b> {MONTH_NAMES[month]} {year}</p>
                       </div>
                     </div>
 
                     <div style={{ border: "1px solid #666", borderTop: "none", padding: "8px" }}>
-                      <b style={{ display: "block", marginBottom: 4 }}>Invoice For:</b>
-                      {assignee?.name}
-                      {assignee?.email ? ` · ${assignee.email}` : ""}
+                      <b>Full Name:</b> {assignee?.name}
                       {assignee?.mobile ? ` · ${assignee.mobile}` : ""}
                     </div>
 
@@ -195,12 +221,22 @@ const DownloadInvoices = () => {
                       </tbody>
                       <tfoot>
                         <tr>
-                          <td colSpan={6} style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right", fontWeight: "bold" }}>Sub Total</td>
-                          <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatINR(grandTotal)}</td>
+                          <td colSpan={7} style={{ height: 12, borderLeft: "1px solid #666", borderRight: "1px solid #666" }} />
                         </tr>
                         <tr>
-                          <td colSpan={6} style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right", fontWeight: "bold" }}>Grand Total</td>
-                          <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatINR(grandTotal)}</td>
+                          <td colSpan={6} style={{ borderLeft: "1px solid #666", borderTop: "1px solid #666", padding: "0 10px", fontSize: 13, textAlign: "left", fontWeight: "bold" }}>Sub Total</td>
+                          <td style={{ borderRight: "1px solid #666", borderTop: "1px solid #666", padding: "0 10px", fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatINR(grandTotal)}</td>
+                        </tr>
+                        <tr>
+                          <td colSpan={6} style={{ borderLeft: "1px solid #666", borderTop: "1px solid #666", padding: "0 10px", fontSize: 13, textAlign: "left", fontWeight: "bold" }}>Total</td>
+                          <td style={{ borderRight: "1px solid #666", borderTop: "1px solid #666", padding: "0 10px", fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatINR(grandTotal)}</td>
+                        </tr>
+                        <tr>
+                          <td colSpan={7} style={{ borderLeft: "1px solid #666", borderRight: "1px solid #666", borderTop: "1px solid #666", padding: "0 10px", fontSize: 13, textAlign: "left" }}><b>Amount in Words:</b> {amountInWords(grandTotal)}</td>
+                        </tr>
+                        <tr>
+                          <td colSpan={6} style={{ borderLeft: "1px solid #666", borderTop: "1px solid #666", borderBottom: "1px solid #666", padding: "0 10px", fontSize: 13, textAlign: "left", fontWeight: "bold" }}>Paid</td>
+                          <td style={{ borderRight: "1px solid #666", borderTop: "1px solid #666", borderBottom: "1px solid #666", padding: "0 10px", fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatINR(grandTotal)}</td>
                         </tr>
                       </tfoot>
                     </table>

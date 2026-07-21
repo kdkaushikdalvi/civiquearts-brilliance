@@ -1,4 +1,6 @@
+import { useMemo, useState } from "react";
 import AppShell from "@/components/pm/AppShell";
+import MonthNavigator from "@/components/pm/MonthNavigator";
 import { useData } from "@/contexts/DataContext";
 import { formatINR } from "@/lib/pmFormat";
 import { ClipboardList, CheckCircle2, Loader2, Wallet } from "lucide-react";
@@ -6,12 +8,19 @@ import { Link } from "react-router-dom";
 
 const Dashboard = () => {
   const { assignments, projects, employees } = useData();
-  const completed = assignments.filter((a) => a.status === "Completed");
-  const inProgress = assignments.filter((a) => a.status === "In Progress");
+  const now = new Date();
+  const [month, setMonth] = useState(now.getMonth());
+  const [year, setYear] = useState(now.getFullYear());
+  const monthlyAssignments = useMemo(
+    () => assignments.filter((a) => a.month === month && a.year === year),
+    [assignments, month, year],
+  );
+  const completed = monthlyAssignments.filter((a) => a.status === "Completed");
+  const inProgress = monthlyAssignments.filter((a) => a.status === "In Progress");
   const totalBilled = completed.reduce((s, a) => s + (a.amount ?? 0), 0);
 
   const cards = [
-    { label: "Total Records", value: assignments.length, icon: ClipboardList, color: "gradient-saffron" },
+    { label: "Total Records", value: monthlyAssignments.length, icon: ClipboardList, color: "gradient-saffron" },
     { label: "In Progress", value: inProgress.length, icon: Loader2, color: "bg-yellow-500" },
     { label: "Completed", value: completed.length, icon: CheckCircle2, color: "gradient-green" },
     { label: "Total Billed", value: formatINR(totalBilled), icon: Wallet, color: "gradient-hero" },
@@ -20,9 +29,12 @@ const Dashboard = () => {
   return (
     <AppShell>
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Overview of your projects and billing</p>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground">Overview of your projects and billing</p>
+          </div>
+          <MonthNavigator month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y); }} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -42,10 +54,10 @@ const Dashboard = () => {
             <h3 className="font-semibold mb-3">Quick Actions</h3>
             <div className="space-y-2">
               <Link to="/app/projects" className="block px-3 py-2 rounded-md hover:bg-secondary text-sm">
-                → Create new Project
+                → Create site allocation
               </Link>
               <Link to="/app/download-invoices" className="block px-3 py-2 rounded-md hover:bg-secondary text-sm">
-                → Generate invoices
+                → Generate payment slips
               </Link>
               <Link to="/app/master/project" className="block px-3 py-2 rounded-md hover:bg-secondary text-sm">
                 → Manage projects ({projects.length})
@@ -57,7 +69,7 @@ const Dashboard = () => {
           </div>
           <div className="bg-card rounded-xl p-5 shadow-card border border-border">
             <h3 className="font-semibold mb-3">Recent Activity</h3>
-            {assignments.slice(-5).reverse().map((a) => (
+            {monthlyAssignments.slice(-5).reverse().map((a) => (
               <div key={a.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                 <div className="text-sm">
                   <div className="font-medium">{a.projectName} → {a.siteName}</div>
@@ -68,7 +80,7 @@ const Dashboard = () => {
                 </span>
               </div>
             ))}
-            {assignments.length === 0 && <p className="text-sm text-muted-foreground">No projects yet.</p>}
+            {monthlyAssignments.length === 0 && <p className="text-sm text-muted-foreground">No projects for this month.</p>}
           </div>
         </div>
       </div>

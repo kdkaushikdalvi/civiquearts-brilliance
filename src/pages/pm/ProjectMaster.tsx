@@ -117,7 +117,16 @@ const ProjectMaster = () => {
                       <td className="px-4 py-3 text-muted-foreground">{(page - 1) * PAGE_SIZE + i + 1}</td>
                       <td className="px-4 py-3">
                         {editingId === p.id ? (
-                          <Input value={editValue} onChange={(e) => setEditValue(e.target.value)} />
+                          <Input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                saveEdit();
+                              }
+                            }}
+                          />
                         ) : (
                           p.name
                         )}

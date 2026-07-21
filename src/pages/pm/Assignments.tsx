@@ -112,7 +112,10 @@ const Assignments = () => {
 
   const addSite = () => {
     setSites((prev) => {
-      const next = [...prev, { id: crypto.randomUUID(), siteName: "", assigneeId: "" }];
+      const next = [
+        ...prev,
+        { id: crypto.randomUUID(), siteName: prev[0]?.siteName ?? "", assigneeId: "" },
+      ];
       persistDraft({ sites: next });
       return next;
     });
@@ -171,7 +174,7 @@ const Assignments = () => {
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Project</h1>
+            <h1 className="text-2xl font-bold text-foreground">Site Allocation</h1>
             <p className="text-muted-foreground">Assign sites to team members and track progress</p>
           </div>
           <MonthNavigator
@@ -265,7 +268,7 @@ const Assignments = () => {
         {/* Table */}
         <Card className="overflow-hidden">
           <div className="px-5 py-3 border-b border-border">
-            <h2 className="font-semibold">{MONTH_NAMES[month]} {year} — Project ({filtered.length})</h2>
+            <h2 className="font-semibold">{MONTH_NAMES[month]} {year} — Site Allocation ({filtered.length})</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
