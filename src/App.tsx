@@ -15,6 +15,7 @@ import ProjectMaster from "@/pages/pm/ProjectMaster";
 import EmployeeMaster from "@/pages/pm/EmployeeMaster";
 import DownloadInvoices from "@/pages/pm/DownloadInvoices";
 import UploadCsv from "@/pages/pm/UploadCsv";
+import GenerateCapProjectsList from "@/pages/pm/GenerateCapProjectsList";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <UploadCsv />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/app/cap-projects-list"
+                element={
+                  <ProtectedRoute>
+                    <GenerateCapProjectsList />
                   </ProtectedRoute>
                 }
               />

@@ -94,7 +94,6 @@ const DownloadInvoices = () => {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Download Invoices</h1>
-            <p className="text-muted-foreground">Generate assignee invoices from completed work</p>
           </div>
           <MonthNavigator month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y); }} />
         </div>
@@ -146,7 +145,7 @@ const DownloadInvoices = () => {
                       <div style={{ flex: 2, border: "1px solid #666", padding: "8px", display: "flex", alignItems: "center", gap: 10 }}>
                         <img src={logo} alt="Logo" style={{ height: 56, width: "auto" }} crossOrigin="anonymous" />
                         <div>
-                          <h1 style={{ margin: 0, fontSize: 18 }}>Choudhari Associates</h1>
+                          <h1 style={{ margin: 0, fontSize: 18 }}>Civique Arts</h1>
                           <p style={{ margin: "3px 0", fontSize: 13 }}>
                             Ground Floor Ghar No 214 Milkat No 2841 Inamdar Wasti Koregaon Mul
                           </p>

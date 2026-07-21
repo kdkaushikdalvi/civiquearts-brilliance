@@ -9,7 +9,12 @@ import { toast } from "sonner";
 const ContactSection = () => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
-  const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,7 +100,11 @@ const ContactSection = () => {
             </h3>
             {[
               { icon: User, label: "Owner", value: "Vijay Chaudhari" },
-              { icon: MapPin, label: "Address", value: "Uruli Kanchan, Maharashtra, India" },
+              {
+                icon: MapPin,
+                label: "Address",
+                value: "Uruli Kanchan, Maharashtra, India",
+              },
               { icon: Phone, label: "Phone", value: "+91 9011718351" },
               { icon: Mail, label: "Email", value: "info@civiquearts.com" },
             ].map((item, i) => (

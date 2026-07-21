@@ -46,7 +46,11 @@ const LoginPage = () => {
       >
         <div className="text-center mb-8">
           <Link to="/">
-            <img src={logo} alt="CiviqueArts" className="h-24 w-auto mx-auto mb-4" />
+            <img
+              src={logo}
+              alt="CiviqueArts"
+              className="h-24 w-auto mx-auto mb-4"
+            />
           </Link>
           <p className="text-primary-foreground/70 text-sm">
             Sign in to the Billing Management System
@@ -56,8 +60,12 @@ const LoginPage = () => {
         <div className="bg-card rounded-2xl shadow-card-hover overflow-hidden">
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div>
-              <h3 className="text-xl font-bold text-foreground mb-1">Welcome Back</h3>
-              <p className="text-sm text-muted-foreground mb-2">Enter your credentials to continue</p>
+              <h3 className="text-xl font-bold text-foreground mb-1">
+                Welcome Back
+              </h3>
+              <p className="text-sm text-muted-foreground mb-2">
+                Enter your credentials to continue
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -90,7 +98,11 @@ const LoginPage = () => {
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label={show ? "Hide password" : "Show password"}
                 >
-                  {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {show ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -101,20 +113,29 @@ const LoginPage = () => {
               </div>
             )}
 
-            <Button type="submit" className="w-full gradient-saffron text-saffron-foreground rounded-full hover:opacity-90">
+            <Button
+              type="submit"
+              className="w-full gradient-saffron text-saffron-foreground rounded-full hover:opacity-90"
+            >
               <LogIn className="mr-2 h-4 w-4" /> Sign In
             </Button>
 
             <div className="text-xs text-muted-foreground pt-2 border-t border-border">
-              <div className="font-medium text-foreground mb-1">Demo credentials</div>
-              Email: <code className="text-saffron">test@gmail.com</code><br />
+              <div className="font-medium text-foreground mb-1">
+                Demo credentials
+              </div>
+              Email: <code className="text-saffron">test@gmail.com</code>
+              <br />
               Password: <code className="text-saffron">123456</code>
             </div>
           </form>
         </div>
 
         <div className="text-center mt-6">
-          <Link to="/" className="inline-flex items-center text-sm text-primary-foreground/70 hover:text-saffron transition-colors">
+          <Link
+            to="/"
+            className="inline-flex items-center text-sm text-primary-foreground/70 hover:text-saffron transition-colors"
+          >
             <ArrowLeft className="mr-1 h-4 w-4" /> Back to Home
           </Link>
         </div>

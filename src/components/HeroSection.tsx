@@ -33,8 +33,8 @@ const HeroSection = () => {
             <span className="text-gradient-tricolor">CiviqueArts</span>
           </h1>
           <p className="text-lg md:text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-10 font-light leading-relaxed">
-            Delivering world-class engineering design, CAD drafting, GIS mapping,
-            and BIM solutions that transform ideas into reality.
+            Delivering world-class engineering design, CAD drafting, GIS
+            mapping, and BIM solutions that transform ideas into reality.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button

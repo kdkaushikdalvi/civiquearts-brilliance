@@ -221,7 +221,7 @@ const Assignments = () => {
                 <div key={s.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 items-start">
                   <div>
                     <Input
-                      placeholder="Site Name (e.g., Pune)"
+                      placeholder="Site Name"
                       value={s.siteName}
                       onChange={(e) => updateSite(s.id, { siteName: e.target.value })}
                     />

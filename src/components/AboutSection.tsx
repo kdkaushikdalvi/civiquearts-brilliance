@@ -20,7 +20,7 @@ const AboutSection = () => {
             About Us
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mt-2">
-            About CiviqueArts
+            About Civique Arts
           </h2>
           <div className="w-20 h-1 gradient-saffron mx-auto mt-4 rounded-full" />
         </motion.div>
@@ -35,7 +35,7 @@ const AboutSection = () => {
               Pioneering Engineering Solutions
             </h3>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              CiviqueArts is a leading engineering design and consulting firm
+              Civique Arts is a leading engineering design and consulting firm
               specializing in CAD drafting, GIS mapping, BIM modeling, and MEP
               design. With a commitment to precision and innovation, we deliver
               solutions that exceed expectations.

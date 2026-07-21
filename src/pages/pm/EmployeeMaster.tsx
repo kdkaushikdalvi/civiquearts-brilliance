@@ -58,7 +58,6 @@ const EmployeeMaster = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Employee List</h1>
-            <p className="text-muted-foreground">Manage team members used as assignees</p>
           </div>
           {returnTo && (
             <Button variant="outline" onClick={() => navigate(returnTo)}>

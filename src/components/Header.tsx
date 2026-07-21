@@ -79,7 +79,7 @@ const Header = () => {
           >
             <img
               src={logo}
-              alt="CiviqueArts Logo"
+              alt="Civique Arts Logo"
               className="h-16  transition-transform duration-300 scale-125"
             />
           </div>

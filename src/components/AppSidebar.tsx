@@ -103,7 +103,7 @@ const AppSidebar = () => {
       setDeferredPrompt(null);
     } else {
       toast.info(
-        "To install: use your browser's 'Add to Home Screen' or 'Install App' option."
+        "To install: use your browser's 'Add to Home Screen' or 'Install App' option.",
       );
     }
   };
@@ -216,7 +216,7 @@ const AppSidebar = () => {
                             >
                               {child.label}
                             </a>
-                          )
+                          ),
                         )}
                       </motion.div>
                     )}

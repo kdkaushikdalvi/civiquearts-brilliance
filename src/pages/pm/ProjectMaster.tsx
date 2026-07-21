@@ -56,7 +56,6 @@ const ProjectMaster = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Project List</h1>
-            <p className="text-muted-foreground">Manage projects used in assignments</p>
           </div>
           {returnTo && (
             <Button variant="outline" onClick={() => navigate(returnTo)}>

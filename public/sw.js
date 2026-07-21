@@ -1,4 +1,4 @@
-const CACHE_NAME = 'civiquearts-v1';
+const CACHE_NAME = 'civique-arts-v1';
 const PRECACHE_URLS = [
   '/',
   '/index.html',

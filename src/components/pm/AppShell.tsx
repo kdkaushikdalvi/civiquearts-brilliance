@@ -9,6 +9,7 @@ import {
   LogOut,
   Menu,
   FileSpreadsheet,
+  FileDown,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ const nav = [
   { to: "/app/master/project", label: "Project List", icon: FolderKanban },
   { to: "/app/master/employee", label: "Employee List", icon: UserCog },
   { to: "/app/download-invoices", label: "Download Invoices", icon: Download },
+  { to: "/app/cap-projects-list", label: "CAP Projects List", icon: FileDown },
   { to: "/app/upload-csv", label: "Upload CSV", icon: FileSpreadsheet },
   { to: "/app/dashboard", label: "Overview", icon: LayoutDashboard },
 ];
@@ -55,7 +57,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
                 "flex items-center gap-3 px-5 py-2.5 text-sm font-medium transition-colors border-l-2",
                 isActive
                   ? "border-saffron text-saffron bg-saffron/5"
-                  : "border-transparent text-foreground/80 hover:bg-secondary"
+                  : "border-transparent text-foreground/80 hover:bg-secondary",
               )
             }
           >
@@ -84,7 +86,10 @@ const AppShell = ({ children }: { children: ReactNode }) => {
 
       {mobileOpen && (
         <>
-          <div className="lg:hidden fixed inset-0 z-40 bg-foreground/40" onClick={() => setMobileOpen(false)} />
+          <div
+            className="lg:hidden fixed inset-0 z-40 bg-foreground/40"
+            onClick={() => setMobileOpen(false)}
+          />
           <aside className="lg:hidden fixed left-0 top-0 bottom-0 z-50 w-64 bg-card border-r border-border flex flex-col">
             {SidebarInner}
           </aside>
