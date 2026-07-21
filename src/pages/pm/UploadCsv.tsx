@@ -23,8 +23,8 @@ const UploadCsv = () => {
 
   const onPickFile = (f: File | null) => {
     if (!f) return;
-    if (!/\.csv$/i.test(f.name)) {
-      toast.error("Please upload a valid .csv file");
+    if (!/\.(csv|xlsx|xls)$/i.test(f.name)) {
+      toast.error("Please upload a valid .csv or .xlsx file");
       return;
     }
     setFile(f);
@@ -33,16 +33,23 @@ const UploadCsv = () => {
 
   const handleProcess = async () => {
     if (!accountingCode.trim()) return toast.error("Accounting Code is required");
-    if (!file) return toast.error("Please upload a CSV file first");
+    if (!file) return toast.error("Please upload a CSV or Excel file first");
 
     try {
-      const text = await file.text();
-      const wb = XLSX.read(text, { type: "string", raw: true });
+      const isCsv = /\.csv$/i.test(file.name);
+      let wb: XLSX.WorkBook;
+      if (isCsv) {
+        const text = await file.text();
+        wb = XLSX.read(text, { type: "string", raw: true });
+      } else {
+        const buf = await file.arrayBuffer();
+        wb = XLSX.read(buf, { type: "array" });
+      }
       const sheetName = wb.SheetNames[0];
       const sheet = wb.Sheets[sheetName];
       const data = XLSX.utils.sheet_to_json<Row>(sheet, { header: 1, defval: "", blankrows: true });
 
-      if (data.length === 0) return toast.error("CSV file is empty");
+      if (data.length === 0) return toast.error("File is empty");
 
       // Detect header row (contains "Accounting Code" or "Projects")
       let headerIdx = 0;
@@ -81,12 +88,12 @@ const UploadCsv = () => {
         data[i] = row;
       }
 
-      const baseName = file.name.replace(/\.csv$/i, "");
+      const baseName = file.name.replace(/\.(csv|xlsx|xls)$/i, "");
       setProcessed({ rows: data, headers: headerRow, filledCount: filled, baseName });
       toast.success(`Processed ${filled} project rows`);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to process the CSV file");
+      toast.error("Failed to process the file");
     }
   };
 
@@ -128,12 +135,12 @@ const UploadCsv = () => {
           </div>
 
           <div className="space-y-2">
-            <Label>Upload CSV</Label>
+            <Label>Upload File (CSV or Excel)</Label>
             <div className="flex items-center gap-3">
               <input
                 ref={inputRef}
                 type="file"
-                accept=".csv,text/csv"
+                accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                 onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
                 className="hidden"
                 id="csv-file"
