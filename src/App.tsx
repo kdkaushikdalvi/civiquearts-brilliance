@@ -40,7 +40,7 @@ const App = () => (
                 }
               />
               <Route
-                path="/app/assignments"
+                path="/app/projects"
                 element={
                   <ProtectedRoute>
                     <Assignments />

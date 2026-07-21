@@ -104,7 +104,7 @@ const Assignments = () => {
         rate: data.rate,
         amount: data.amount,
       });
-      toast.success("Assignment completed");
+      toast.success("Project completed");
       setModalOpen(false);
       setEditing(null);
     }
@@ -160,7 +160,7 @@ const Assignments = () => {
       };
     });
     addAssignments(records);
-    toast.success(`${records.length} assignment${records.length > 1 ? "s" : ""} saved`);
+    toast.success(`${records.length} project${records.length > 1 ? "s" : ""} saved`);
     setProjectId("");
     setSites([{ id: crypto.randomUUID(), siteName: "", assigneeId: "" }]);
     clearDraft();
@@ -201,7 +201,7 @@ const Assignments = () => {
                 emptyActionLabel="+ Add Project"
                 onEmptyAction={() => {
                   persistDraft({ projectId });
-                  navigate("/app/master/project", { state: { returnTo: "/app/assignments" } });
+                  navigate("/app/master/project", { state: { returnTo: "/app/projects" } });
                 }}
               />
               {errors.project && <p className="text-xs text-destructive mt-1">{errors.project}</p>}
@@ -239,7 +239,7 @@ const Assignments = () => {
                       onEmptyAction={() => {
                         persistDraft({});
                         navigate("/app/master/employee", {
-                          state: { returnTo: "/app/assignments", forSiteId: s.id },
+                          state: { returnTo: "/app/projects", forSiteId: s.id },
                         });
                       }}
                     />
@@ -284,7 +284,7 @@ const Assignments = () => {
                 {filtered.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                      No assignments for this month.
+                      No projects for this month.
                     </td>
                   </tr>
                 ) : (

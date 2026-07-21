@@ -23,7 +23,7 @@ const GenerateCapProjectsList = () => {
 
   const handleGenerate = async () => {
     if (filtered.length === 0) {
-      toast.error("No project assignments found for the selected month.");
+      toast.error("No projects found for the selected month.");
       return;
     }
     setBusy(true);
@@ -60,7 +60,7 @@ const GenerateCapProjectsList = () => {
               </p>
               <p>
                 <span className="font-medium text-foreground">Records:</span>{" "}
-                {filtered.length} assignment{filtered.length === 1 ? "" : "s"} for {MONTH_NAMES[month]} {year}
+                {filtered.length} project{filtered.length === 1 ? "" : "s"} for {MONTH_NAMES[month]} {year}
               </p>
               <ul className="list-disc pl-5 space-y-0.5 pt-1">
                 <li>Project names as bold section headers; sites listed underneath</li>

@@ -17,7 +17,7 @@ import logo from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { to: "/app/assignments", label: "All Projects", icon: ClipboardList },
+  { to: "/app/projects", label: "All Projects", icon: ClipboardList },
   { to: "/app/master/project", label: "Project List", icon: FolderKanban },
   { to: "/app/master/employee", label: "Employee List", icon: UserCog },
   { to: "/app/download-invoices", label: "Download Invoices", icon: Download },

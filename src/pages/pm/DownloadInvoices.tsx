@@ -116,7 +116,7 @@ const DownloadInvoices = () => {
               <Card className="p-10 text-center">
                 <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                 <p className="text-muted-foreground">
-                  No completed assignments found for the selected assignee and month.
+                  No completed projects found for the selected assignee and month.
                 </p>
               </Card>
             ) : (

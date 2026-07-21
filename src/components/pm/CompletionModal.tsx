@@ -94,7 +94,7 @@ const CompletionModal = ({ open, onClose, assignment, onSave }: Props) => {
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Complete Assignment</DialogTitle>
+          <DialogTitle>Complete Project</DialogTitle>
         </DialogHeader>
         {assignment && (
           <div className="text-sm text-muted-foreground -mt-2">
