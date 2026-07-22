@@ -14,7 +14,194 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assignments: {
+        Row: {
+          amount: number | null
+          assignee_id: string | null
+          assignee_name: string
+          created_at: string
+          id: string
+          month: number
+          project_id: string | null
+          project_name: string
+          quantity: number | null
+          rate: number | null
+          site_name: string
+          status: string
+          unit_type: string | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          amount?: number | null
+          assignee_id?: string | null
+          assignee_name: string
+          created_at?: string
+          id?: string
+          month: number
+          project_id?: string | null
+          project_name: string
+          quantity?: number | null
+          rate?: number | null
+          site_name: string
+          status?: string
+          unit_type?: string | null
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          amount?: number | null
+          assignee_id?: string | null
+          assignee_name?: string
+          created_at?: string
+          id?: string
+          month?: number
+          project_id?: string | null
+          project_name?: string
+          quantity?: number | null
+          rate?: number | null
+          site_name?: string
+          status?: string
+          unit_type?: string | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          created_at: string
+          id: string
+          mobile: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mobile?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mobile?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          assignee_id: string | null
+          assignee_name: string
+          created_at: string
+          generated_by: string | null
+          generated_date: string
+          id: string
+          invoice_number: string
+          month: number
+          total: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          assignee_id?: string | null
+          assignee_name: string
+          created_at?: string
+          generated_by?: string | null
+          generated_date?: string
+          id?: string
+          invoice_number: string
+          month: number
+          total?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          assignee_id?: string | null
+          assignee_name?: string
+          created_at?: string
+          generated_by?: string | null
+          generated_date?: string
+          id?: string
+          invoice_number?: string
+          month?: number
+          total?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

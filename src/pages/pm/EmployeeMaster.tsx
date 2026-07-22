@@ -29,10 +29,11 @@ const EmployeeMaster = () => {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.name.trim()) return toast.error("Employee name required");
-    const e = addEmployee({ name: form.name, mobile: form.mobile || undefined });
+    const e = await addEmployee({ name: form.name, mobile: form.mobile || undefined });
     setForm({ name: "", mobile: "" });
+    if (!e) return;
     toast.success("Employee added");
     if (returnTo) navigate(returnTo, { state: { newEmployeeId: e.id, forSiteId } });
   };

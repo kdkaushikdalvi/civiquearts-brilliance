@@ -1,50 +1,74 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Session, User } from "@supabase/supabase-js";
 
 interface AuthContextValue {
   isAuthenticated: boolean;
+  loading: boolean;
   user: string | null;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
+  supaUser: User | null;
+  session: Session | null;
+  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  signUp: (email: string, password: string, fullName?: string) => Promise<{ ok: boolean; error?: string }>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const AUTH_KEY = "isAuthenticated";
-const USER_KEY = "authUser";
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<string | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [supaUser, setSupaUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const auth = localStorage.getItem(AUTH_KEY);
-    const u = localStorage.getItem(USER_KEY);
-    if (auth === "true") {
-      setIsAuthenticated(true);
-      setUser(u);
-    }
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(s);
+      setSupaUser(s?.user ?? null);
+    });
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setSupaUser(data.session?.user ?? null);
+      setLoading(false);
+    });
+    return () => sub.subscription.unsubscribe();
   }, []);
 
-  const login = (email: string, password: string) => {
-    if (email === "test@gmail.com" && password === "123456") {
-      localStorage.setItem(AUTH_KEY, "true");
-      localStorage.setItem(USER_KEY, email);
-      setIsAuthenticated(true);
-      setUser(email);
-      return true;
-    }
-    return false;
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
   };
 
-  const logout = () => {
-    localStorage.removeItem(AUTH_KEY);
-    localStorage.removeItem(USER_KEY);
-    setIsAuthenticated(false);
-    setUser(null);
+  const signUp = async (email: string, password: string, fullName?: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/app/dashboard`,
+        data: { full_name: fullName || email },
+      },
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated: !!session,
+        loading,
+        user: supaUser?.email ?? null,
+        supaUser,
+        session,
+        login,
+        signUp,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
