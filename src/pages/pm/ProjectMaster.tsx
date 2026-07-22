@@ -28,11 +28,12 @@ const ProjectMaster = () => {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const trimmed = name.trim();
     if (!trimmed) return toast.error("Project name required");
-    const p = addProject(trimmed);
+    const p = await addProject(trimmed);
     setName("");
+    if (!p) return;
     toast.success("Project added");
     if (returnTo) {
       navigate(returnTo, { state: { newProjectId: p.id } });
