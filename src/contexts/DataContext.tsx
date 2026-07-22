@@ -92,12 +92,12 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   };
   const updateProject = async (id: string, name: string) => {
     const { error } = await supabase.from("projects").update({ name: name.trim() }).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name: name.trim() } : p)));
   };
   const deleteProject = async (id: string) => {
     const { error } = await supabase.from("projects").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setProjects((prev) => prev.filter((p) => p.id !== id));
   };
 
@@ -116,12 +116,12 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       .from("employees")
       .update({ name: data.name.trim(), mobile: data.mobile ?? null })
       .eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setEmployees((prev) => prev.map((e) => (e.id === id ? { ...e, ...data } : e)));
   };
   const deleteEmployee = async (id: string) => {
     const { error } = await supabase.from("employees").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setEmployees((prev) => prev.filter((e) => e.id !== id));
   };
 
@@ -141,7 +141,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       amount: r.amount ?? null,
     }));
     const { data, error } = await supabase.from("assignments").insert(rows).select();
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     if (data) setAssignments((prev) => [...data.map(mapAssignment), ...prev]);
   };
 
@@ -160,13 +160,13 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (patch.month !== undefined) row.month = patch.month;
     if (patch.year !== undefined) row.year = patch.year;
     const { error } = await supabase.from("assignments").update(row).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setAssignments((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)));
   };
 
   const deleteAssignment = async (id: string) => {
     const { error } = await supabase.from("assignments").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setAssignments((prev) => prev.filter((a) => a.id !== id));
   };
 
@@ -181,7 +181,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       generated_by: rec.generatedBy,
       total: rec.total,
     }).select().single();
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     if (data) setInvoices((prev) => [mapInvoice(data), ...prev]);
   };
 
