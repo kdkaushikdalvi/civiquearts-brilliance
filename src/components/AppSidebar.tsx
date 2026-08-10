@@ -58,9 +58,8 @@ const sidebarItems = [
     icon: LogIn,
     isRoute: true,
     children: [
-      { label: "User Login", href: "/login" },
+      { label: "Login", href: "/login" },
       { label: "Register", href: "/login" },
-      { label: "Admin Login", href: "/login" },
     ],
   },
 ];
