@@ -166,12 +166,12 @@ const DownloadInvoices = () => {
               </Card>
             ) : (
               <>
-                <div className="flex flex-wrap justify-end gap-2">
+                <div className="flex flex-wrap justify-center gap-2">
                   <Button variant="outline" onClick={printInvoice}>
                     <Printer className="h-4 w-4 mr-2" /> Print
                   </Button>
                   <Button onClick={download} className="gradient-saffron text-saffron-foreground">
-                    <Download className="h-4 w-4 mr-2" /> Download Payment Slip
+                    <Download className="h-4 w-4 mr-2" /> Download
                   </Button>
                 </div>
 
@@ -257,10 +257,6 @@ const DownloadInvoices = () => {
                         </tr>
                       </tfoot>
                     </table>
-
-                    <div style={{ marginTop: 20, fontSize: 12, color: "#555" }}>
-                      Generated on {invoiceDate} by {user}
-                    </div>
                   </div>
                 </div>
               </>
