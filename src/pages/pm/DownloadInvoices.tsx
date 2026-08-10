@@ -92,7 +92,7 @@ const DownloadInvoices = () => {
         assigneeName: assignee!.name,
         month,
         year,
-        generatedDate: new Date().toISOString(),
+        generatedDate: new Date(`${slipDate}T00:00:00`).toISOString(),
         generatedBy: user || "user",
         total: grandTotal,
       });
