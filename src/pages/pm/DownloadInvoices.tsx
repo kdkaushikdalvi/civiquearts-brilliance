@@ -48,6 +48,10 @@ const DownloadInvoices = () => {
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
   const [assigneeId, setAssigneeId] = useState("");
+  const [slipDate, setSlipDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   const assignee = employees.find((e) => e.id === assigneeId);
@@ -65,7 +69,9 @@ const DownloadInvoices = () => {
 
   const grandTotal = filtered.reduce((s, a) => s + (a.amount ?? 0), 0);
   const invoiceNumber = `PS-${year}${String(month + 1).padStart(2, "0")}-${assigneeId.slice(-4).toUpperCase() || "----"}`;
-  const invoiceDate = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const invoiceDate = slipDate
+    ? new Date(`${slipDate}T00:00:00`).toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" })
+    : "";
 
   const download = async () => {
     if (!invoiceRef.current || filtered.length === 0) return;
