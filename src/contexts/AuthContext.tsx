@@ -8,12 +8,21 @@ interface AuthContextValue {
   user: string | null;
   supaUser: User | null;
   session: Session | null;
-  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
-  signUp: (email: string, password: string, fullName?: string) => Promise<{ ok: boolean; error?: string }>;
+  login: (identifier: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  signUp: (
+    email: string,
+    password: string,
+    fullName: string,
+    mobile: string,
+  ) => Promise<{ ok: boolean; error?: string }>;
+  resetPassword: (email: string) => Promise<{ ok: boolean; error?: string }>;
+  updatePassword: (password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+const isEmail = (v: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -33,21 +42,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { ok: false, error: error.message };
+  const login = async (identifier: string, password: string) => {
+    const id = identifier.trim();
+    if (isEmail(id)) {
+      const { error } = await supabase.auth.signInWithPassword({ email: id, password });
+      if (error) return { ok: false, error: error.message };
+      return { ok: true };
+    }
+
+    // Mobile number login — resolved securely on the server
+    const { data, error } = await supabase.functions.invoke("mobile-login", {
+      body: { mobile: id, password },
+    });
+    if (error || !data?.access_token) {
+      return { ok: false, error: "Invalid mobile number or password" };
+    }
+    const { error: setErr } = await supabase.auth.setSession({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+    });
+    if (setErr) return { ok: false, error: setErr.message };
     return { ok: true };
   };
 
-  const signUp = async (email: string, password: string, fullName?: string) => {
+  const signUp = async (email: string, password: string, fullName: string, mobile: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/app/dashboard`,
-        data: { full_name: fullName || email },
+        data: { full_name: fullName || email, mobile: mobile.replace(/\D/g, "") },
       },
     });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  };
+
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  };
+
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
     if (error) return { ok: false, error: error.message };
     return { ok: true };
   };
@@ -66,6 +106,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         session,
         login,
         signUp,
+        resetPassword,
+        updatePassword,
         logout,
       }}
     >

@@ -4,19 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Eye, EyeOff, LogIn, UserPlus, Loader2 } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, LogIn, UserPlus, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/logo.png";
 
 const LoginPage = () => {
-  const { login, signUp, isAuthenticated, loading: authLoading } = useAuth();
+  const { login, signUp, resetPassword, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [email, setEmail] = useState("");
+  const [tab, setTab] = useState("login");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [email, setEmail] = useState("");
+  const [resetEmail, setResetEmail] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -31,26 +35,46 @@ const LoginPage = () => {
     e.preventDefault();
     setError("");
     setBusy(true);
-    const res = await login(email.trim(), password);
+    const res = await login(identifier.trim(), password);
     setBusy(false);
     if (res.ok) {
       toast.success("Logged in successfully");
       navigate(from, { replace: true });
     } else {
-      setError(res.error || "Invalid email or password.");
+      setError(res.error || "Invalid credentials.");
     }
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    const digits = mobile.replace(/\D/g, "");
+    if (digits.length < 10) {
+      setError("Enter a valid mobile number (at least 10 digits).");
+      return;
+    }
     setBusy(true);
-    const res = await signUp(email.trim(), password, fullName.trim());
+    const res = await signUp(email.trim(), password, fullName.trim(), digits);
     setBusy(false);
     if (res.ok) {
       toast.success("Account created. Please check your email to confirm, then sign in.");
+      setTab("login");
     } else {
       setError(res.error || "Sign up failed.");
+    }
+  };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setBusy(true);
+    const res = await resetPassword(resetEmail.trim());
+    setBusy(false);
+    if (res.ok) {
+      toast.success("Password reset link sent. Please check your email.");
+      setTab("login");
+    } else {
+      setError(res.error || "Could not send reset email.");
     }
   };
 
@@ -72,7 +96,7 @@ const LoginPage = () => {
         </div>
 
         <div className="bg-card rounded-2xl shadow-card-hover overflow-hidden">
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs value={tab} onValueChange={(v) => { setTab(v); setError(""); }} className="w-full">
             <TabsList className="w-full grid grid-cols-2 rounded-none">
               <TabsTrigger value="login">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Register</TabsTrigger>
@@ -87,9 +111,15 @@ const LoginPage = () => {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input id="login-email" type="email" value={email}
-                    onChange={(e) => setEmail(e.target.value)} required />
+                  <Label htmlFor="login-id">Email or Mobile Number</Label>
+                  <Input
+                    id="login-id"
+                    type="text"
+                    placeholder="you@example.com or 9876543210"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="login-password">Password</Label>
@@ -103,6 +133,15 @@ const LoginPage = () => {
                       {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => { setTab("forgot"); setError(""); }}
+                    className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4"
+                  >
+                    Forgot password?
+                  </button>
                 </div>
                 {error && (
                   <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-sm text-destructive">
@@ -128,7 +167,12 @@ const LoginPage = () => {
                 <div className="space-y-2">
                   <Label htmlFor="su-name">Full Name</Label>
                   <Input id="su-name" value={fullName}
-                    onChange={(e) => setFullName(e.target.value)} required />
+                    onChange={(e) => setFullName(e.target.value)} required maxLength={100} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="su-mobile">Mobile Number</Label>
+                  <Input id="su-mobile" type="tel" inputMode="tel" placeholder="9876543210"
+                    value={mobile} onChange={(e) => setMobile(e.target.value)} required maxLength={15} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="su-email">Email</Label>
@@ -150,6 +194,36 @@ const LoginPage = () => {
                   {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
                   Register
                 </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="forgot" className="p-6 space-y-4 mt-0">
+              <form onSubmit={handleForgot} className="space-y-4">
+                <div>
+                  <h3 className="text-xl font-bold text-foreground mb-1">Forgot Password</h3>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    We'll email you a link to reset your password
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fp-email">Email</Label>
+                  <Input id="fp-email" type="email" value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)} required />
+                </div>
+                {error && (
+                  <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-sm text-destructive">
+                    {error}
+                  </div>
+                )}
+                <Button type="submit" disabled={busy}
+                  className="w-full gradient-saffron text-saffron-foreground rounded-full hover:opacity-90">
+                  {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
+                  Send Reset Link
+                </Button>
+                <button type="button" onClick={() => { setTab("login"); setError(""); }}
+                  className="w-full text-sm text-muted-foreground hover:text-foreground">
+                  Back to Sign In
+                </button>
               </form>
             </TabsContent>
           </Tabs>
