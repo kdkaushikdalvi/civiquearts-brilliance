@@ -238,22 +238,22 @@ const DownloadInvoices = () => {
                       </tbody>
                       <tfoot>
                         <tr>
-                          <td colSpan={7} style={{ height: 12, borderLeft: "1px solid #666", borderRight: "1px solid #666" }} />
+                          <td colSpan={7} style={{ height: 12, border: "1px solid #666", borderTop: "none" }} />
                         </tr>
                         <tr>
-                          <td colSpan={6} style={{ borderLeft: "1px solid #666", borderTop: "1px solid #666", padding: "0 10px", fontSize: 13, textAlign: "left", fontWeight: "bold" }}>Sub Total</td>
-                          <td style={{ borderRight: "1px solid #666", borderTop: "1px solid #666", padding: "0 10px", fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatINR(grandTotal)}</td>
+                          <td colSpan={6} style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "left", fontWeight: "bold" }}>Sub Total</td>
+                          <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatINR(grandTotal)}</td>
                         </tr>
                         <tr>
-                          <td colSpan={6} style={{ borderLeft: "1px solid #666", borderTop: "1px solid #666", padding: "0 10px", fontSize: 13, textAlign: "left", fontWeight: "bold" }}>Total</td>
-                          <td style={{ borderRight: "1px solid #666", borderTop: "1px solid #666", padding: "0 10px", fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatINR(grandTotal)}</td>
+                          <td colSpan={6} style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "left", fontWeight: "bold" }}>Total</td>
+                          <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatINR(grandTotal)}</td>
                         </tr>
                         <tr>
-                          <td colSpan={7} style={{ borderLeft: "1px solid #666", borderRight: "1px solid #666", borderTop: "1px solid #666", padding: "0 10px", fontSize: 13, textAlign: "left" }}><b>Amount in Words:</b> {amountInWords(grandTotal)}</td>
+                          <td colSpan={7} style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "left" }}><b>Amount in Words:</b> {amountInWords(grandTotal)}</td>
                         </tr>
                         <tr>
-                          <td colSpan={6} style={{ borderLeft: "1px solid #666", borderTop: "1px solid #666", borderBottom: "1px solid #666", padding: "0 10px", fontSize: 13, textAlign: "left", fontWeight: "bold" }}>Paid</td>
-                          <td style={{ borderRight: "1px solid #666", borderTop: "1px solid #666", borderBottom: "1px solid #666", padding: "0 10px", fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatINR(grandTotal)}</td>
+                          <td colSpan={6} style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "left", fontWeight: "bold" }}>Paid</td>
+                          <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatINR(grandTotal)}</td>
                         </tr>
                       </tfoot>
                     </table>
