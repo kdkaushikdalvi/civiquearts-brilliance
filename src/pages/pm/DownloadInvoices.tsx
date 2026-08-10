@@ -48,6 +48,10 @@ const DownloadInvoices = () => {
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
   const [assigneeId, setAssigneeId] = useState("");
+  const [slipDate, setSlipDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   const assignee = employees.find((e) => e.id === assigneeId);
@@ -65,7 +69,9 @@ const DownloadInvoices = () => {
 
   const grandTotal = filtered.reduce((s, a) => s + (a.amount ?? 0), 0);
   const invoiceNumber = `PS-${year}${String(month + 1).padStart(2, "0")}-${assigneeId.slice(-4).toUpperCase() || "----"}`;
-  const invoiceDate = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const invoiceDate = slipDate
+    ? new Date(`${slipDate}T00:00:00`).toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" })
+    : "";
 
   const download = async () => {
     if (!invoiceRef.current || filtered.length === 0) return;
@@ -86,7 +92,7 @@ const DownloadInvoices = () => {
         assigneeName: assignee!.name,
         month,
         year,
-        generatedDate: new Date().toISOString(),
+        generatedDate: new Date(`${slipDate}T00:00:00`).toISOString(),
         generatedBy: user || "user",
         total: grandTotal,
       });
@@ -126,9 +132,9 @@ const DownloadInvoices = () => {
           <MonthNavigator month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y); }} />
         </div>
 
-        <Card className="p-5">
-          <label className="text-sm font-medium mb-1.5 block">Assignee</label>
-          <div className="max-w-md">
+        <Card className="p-5 grid gap-4 sm:grid-cols-2 max-w-3xl">
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Assignee</label>
             <SearchableSelect
               value={assigneeId}
               onChange={setAssigneeId}
@@ -136,7 +142,18 @@ const DownloadInvoices = () => {
               placeholder="Select Assignee"
             />
           </div>
+          <div>
+            <label htmlFor="slip-date" className="text-sm font-medium mb-1.5 block">Payment Slip Date</label>
+            <input
+              id="slip-date"
+              type="date"
+              value={slipDate}
+              onChange={(e) => setSlipDate(e.target.value)}
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
         </Card>
+
 
         {assigneeId && (
           <>
