@@ -244,7 +244,7 @@ const ClientInvoice = () => {
                 >
                   <div style={{ textAlign: "center", fontWeight: 700, fontSize: 20, marginBottom: 10 }}>Tax Invoice</div>
 
-                  <div style={{ border: "1px solid #c9ccd6", display: "flex", alignItems: "center", gap: 16, padding: 12 }}>
+                  <div style={{ border: "1px solid #c9ccd6", display: "flex", alignItems: "center", justifyContent:"space-evenly", padding: 12 }}>
                     <img src={logo} alt="Civique Arts logo" style={{ height: 64, width: "auto" }} crossOrigin="anonymous" />
                     <div>
                       <div style={{ fontSize: 22, fontWeight: 700 }}>Civique Arts Private Limited</div>
