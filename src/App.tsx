@@ -75,6 +75,14 @@ const App = () => (
                 }
               />
               <Route
+                path="/app/client-invoice"
+                element={
+                  <ProtectedRoute>
+                    <ClientInvoice />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/app/upload-csv"
                 element={
                   <ProtectedRoute>
