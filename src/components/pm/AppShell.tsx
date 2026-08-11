@@ -10,6 +10,7 @@ import {
   Menu,
   FileSpreadsheet,
   FileDown,
+  ReceiptText,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
