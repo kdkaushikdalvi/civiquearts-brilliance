@@ -305,48 +305,70 @@ const ClientInvoice = () => {
                     </tbody>
                   </table>
 
-                  <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 8 }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 12, border: "2px solid #4a4a4a" }}>
                     <tbody>
                       <tr>
-                        <td style={{ ...cell, border: "none" }}>Sub Total</td>
-                        <td style={{ ...cell, border: "none", width: 60 }}>:</td>
-                        <td style={{ ...cell, border: "none", textAlign: "right" }}>{usd(subTotal)}</td>
+                        <td style={{ ...cell, border: "1px solid #4a4a4a", fontWeight: 600, width: "55%" }}>Item Name</td>
+                        <td style={{ ...cell, border: "1px solid #4a4a4a", textAlign: "right" }}>Total</td>
                       </tr>
                       <tr>
-                        <td style={{ ...cell, border: "none" }}>Round Off</td>
-                        <td style={{ ...cell, border: "none" }}>:</td>
-                        <td style={{ ...cell, border: "none", textAlign: "right" }}>
-                          {roundOff < 0 ? "- " : ""}{usd(Math.abs(roundOff))}
+                        <td style={{ ...cell, border: "1px solid #4a4a4a" }} colSpan={2}>
+                          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+                            <span>Sub Total</span>
+                            <span>{usd(subTotal)}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+                            <span>Round Off</span>
+                            <span>{roundOff < 0 ? "- " : ""}{usd(Math.abs(roundOff))}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontWeight: 700 }}>
+                            <span>Total</span>
+                            <span>{usd(rounded, 4)}</span>
+                          </div>
                         </td>
                       </tr>
                       <tr>
-                        <td style={{ ...cell, fontWeight: 700 }}>Total</td>
-                        <td style={{ ...cell, fontWeight: 700 }}>:</td>
-                        <td style={{ ...cell, fontWeight: 700, textAlign: "right" }}>{usd(rounded, 4)}</td>
+                        <td style={{ ...cell, border: "1px solid #4a4a4a", fontWeight: 700 }} colSpan={2}>
+                          Invoice Amount in Words:
+                          <div style={{ marginTop: 4, fontWeight: 400 }}>{dollarsInWords(rounded)}</div>
+                        </td>
                       </tr>
                     </tbody>
                   </table>
 
-                  <div style={{ ...headCell, marginTop: 8 }}>Invoice Amount in Words:</div>
-                  <div style={{ ...cell, borderTop: "none" }}>{dollarsInWords(rounded)}</div>
+                  <div style={{ marginTop: 20 }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", border: "2px solid #4a4a4a" }}>
+                      <tbody>
+                        <tr>
+                          <td style={{ ...cell, border: "1px solid #4a4a4a", fontWeight: 700, width: "50%" }}>Terms &amp; Conditions:</td>
+                          <td style={{ ...cell, border: "1px solid #4a4a4a", fontWeight: 700 }}>Bank Details:</td>
+                        </tr>
+                        <tr>
+                          <td style={{ ...cell, border: "1px solid #4a4a4a", verticalAlign: "top", minHeight: 100 }}>
+                            Thanks for doing business with us!
+                          </td>
+                          <td style={{ ...cell, border: "1px solid #4a4a4a", verticalAlign: "top", lineHeight: 1.9 }}>
+                            <div>Name : <b>STATE BANK OF INDIA, URALIKANCHAN</b></div>
+                            <div>Account No. : <b>43302336371</b></div>
+                            <div>IFSC code : <b>SBIN0007762</b></div>
+                            <div>Swift code : <b>SBININBB238</b></div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
 
-                  <div style={{ ...headCell, marginTop: 8 }}>Terms &amp; Conditions:</div>
-                  <div style={{ ...cell, borderTop: "none" }}>Thanks for doing business with us!</div>
-
-                  <div style={{ display: "flex", marginTop: 8 }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={headCell}>Bank Details:</div>
-                      <div style={{ ...cell, borderTop: "none", lineHeight: 1.9 }}>
-                        <div>Name : <b>STATE BANK OF INDIA, URALIKANCHAN</b></div>
-                        <div>Account No. : <b>43302336371</b></div>
-                        <div>IFSC code : <b>SBIN0007762</b></div>
-                        <div>Swift code : <b>SBININBB238</b></div>
+                  <div style={{ display: "flex", marginTop: 16, border: "1px solid #4a4a4a" }}>
+                    <div style={{ flex: 1, borderRight: "1px solid #4a4a4a" }}>
+                      <div style={{ ...cell, border: "none", fontWeight: 700 }}>For Civique Arts Private Limited:</div>
+                      <div style={{ ...cell, border: "none", height: 90, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        Authorized Signatory
                       </div>
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ ...headCell, borderLeft: "none" }}>For Civique Arts Private Limited:</div>
-                      <div style={{ ...cell, borderTop: "none", borderLeft: "none", height: 118, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        Authorized Signatory
+                      <div style={{ ...cell, border: "none", fontWeight: 700 }}>Customer Acknowledgement:</div>
+                      <div style={{ ...cell, border: "none", height: 90, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        Signature &amp; Stamp
                       </div>
                     </div>
                   </div>
