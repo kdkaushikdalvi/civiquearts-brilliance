@@ -12,7 +12,7 @@ interface Props {
   options: Option[];
   placeholder?: string;
   emptyActionLabel?: string;
-  onEmptyAction?: () => void;
+  onEmptyAction?: (query: string) => void;
   disabled?: boolean;
 }
 
@@ -39,6 +39,11 @@ const SearchableSelect = ({
 
   const selected = options.find((o) => o.id === value);
   const filtered = options.filter((o) => o.label.toLowerCase().includes(q.toLowerCase()));
+  const trimmedQuery = q.trim();
+  const actionLabel =
+    emptyActionLabel && trimmedQuery
+      ? `${emptyActionLabel} "${trimmedQuery}"`
+      : emptyActionLabel;
 
   return (
     <div className="relative" ref={wrap}>
@@ -72,9 +77,24 @@ const SearchableSelect = ({
           </div>
           <div className="max-h-56 overflow-y-auto">
             {filtered.length === 0 ? (
-              <div className="p-3 text-center text-sm text-muted-foreground">
-                {options.length === 0 ? "No entries yet" : "No matches"}
-              </div>
+              emptyActionLabel && onEmptyAction ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const query = q.trim();
+                    setOpen(false);
+                    setQ("");
+                    onEmptyAction(query);
+                  }}
+                  className="flex w-full items-center justify-center gap-2 p-3 text-sm text-saffron transition-colors hover:bg-saffron hover:text-white"
+                >
+                  <Plus className="h-4 w-4" /> {actionLabel}
+                </button>
+              ) : (
+                <div className="p-3 text-center text-sm text-muted-foreground">
+                  {options.length === 0 ? "No entries yet" : "No matches"}
+                </div>
+              )
             ) : (
               filtered.map((o) => (
                 <button
@@ -96,16 +116,18 @@ const SearchableSelect = ({
               ))
             )}
           </div>
-          {emptyActionLabel && onEmptyAction && (
+          {emptyActionLabel && onEmptyAction && filtered.length > 0 && (
             <button
               type="button"
               onClick={() => {
+                const query = q.trim();
                 setOpen(false);
-                onEmptyAction();
+                setQ("");
+                onEmptyAction(query);
               }}
-              className="flex w-full items-center gap-2 border-t border-border px-3 py-2 text-sm text-saffron hover:bg-accent"
+              className="flex w-full items-center gap-2 border-t border-border px-3 py-2 text-sm text-saffron transition-colors hover:bg-saffron hover:text-white"
             >
-              <Plus className="h-4 w-4" /> {emptyActionLabel}
+              <Plus className="h-4 w-4" /> {actionLabel}
             </button>
           )}
         </div>

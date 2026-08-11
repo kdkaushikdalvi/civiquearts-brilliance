@@ -31,6 +31,8 @@ const Assignments = () => {
     addAssignments,
     updateAssignment,
     deleteAssignment,
+    addProject,
+    addEmployee,
   } = useData();
 
   const now = new Date();
@@ -201,10 +203,17 @@ const Assignments = () => {
                 }}
                 options={projects.map((p) => ({ id: p.id, label: p.name }))}
                 placeholder="Select Project"
-                emptyActionLabel="+ Add Project"
-                onEmptyAction={() => {
-                  persistDraft({ projectId });
-                  navigate("/app/master/project", { state: { returnTo: "/app/projects" } });
+                emptyActionLabel="Add Project"
+                onEmptyAction={async (query) => {
+                  if (!query) {
+                    toast.error("Project name required");
+                    return;
+                  }
+                  const p = await addProject(query);
+                  if (!p) return;
+                  setProjectId(p.id);
+                  persistDraft({ projectId: p.id });
+                  toast.success("Project added");
                 }}
               />
               {errors.project && <p className="text-xs text-destructive mt-1">{errors.project}</p>}
@@ -238,12 +247,16 @@ const Assignments = () => {
                       onChange={(id) => updateSite(s.id, { assigneeId: id })}
                       options={employees.map((e) => ({ id: e.id, label: e.name }))}
                       placeholder="Select Assignee *"
-                      emptyActionLabel="+ Add Assignee"
-                      onEmptyAction={() => {
-                        persistDraft({});
-                        navigate("/app/master/employee", {
-                          state: { returnTo: "/app/projects", forSiteId: s.id },
-                        });
+                      emptyActionLabel="Add Assignee"
+                      onEmptyAction={async (query) => {
+                        if (!query) {
+                          toast.error("Assignee name required");
+                          return;
+                        }
+                        const e = await addEmployee({ name: query });
+                        if (!e) return;
+                        updateSite(s.id, { assigneeId: e.id });
+                        toast.success("Assignee added");
                       }}
                     />
                     {errors.sites?.[`${s.id}-assignee`] && (
