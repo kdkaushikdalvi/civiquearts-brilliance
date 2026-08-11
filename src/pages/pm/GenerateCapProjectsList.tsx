@@ -6,17 +6,21 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Download, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
-import { capProjectsListFilename, generateAndDownloadCapProjectsList } from "@/lib/capProjectsListExcel";
+import {
+  capProjectsListFilename,
+  generateAndDownloadCapProjectsList,
+} from "@/lib/capProjectsListExcel";
 
 const GenerateCapProjectsList = () => {
   const { assignments } = useData();
-  const [month, setMonth] = useState(6); // July (0-indexed)
-  const [year, setYear] = useState(2026);
+  const now = new Date();
+  const [month, setMonth] = useState(now.getMonth());
+  const [year, setYear] = useState(now.getFullYear());
   const [busy, setBusy] = useState(false);
 
   const filtered = useMemo(
     () => assignments.filter((a) => a.month === month && a.year === year),
-    [assignments, month, year],
+    [assignments, month, year]
   );
 
   const filename = capProjectsListFilename(MONTH_NAMES[month], year);
@@ -28,8 +32,14 @@ const GenerateCapProjectsList = () => {
     }
     setBusy(true);
     try {
-      const count = await generateAndDownloadCapProjectsList(filtered, MONTH_NAMES[month], year);
-      toast.success(`Downloaded ${filename} (${count} site${count === 1 ? "" : "s"})`);
+      const count = await generateAndDownloadCapProjectsList(
+        filtered,
+        MONTH_NAMES[month],
+        year
+      );
+      toast.success(
+        `Downloaded ${filename} (${count} site${count === 1 ? "" : "s"})`
+      );
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate Excel file");
@@ -43,9 +53,18 @@ const GenerateCapProjectsList = () => {
       <div className="p-6 max-w-3xl mx-auto space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Generate Excel</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              Generate Excel
+            </h1>
           </div>
-          <MonthNavigator month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y); }} />
+          <MonthNavigator
+            month={month}
+            year={year}
+            onChange={(m, y) => {
+              setMonth(m);
+              setYear(y);
+            }}
+          />
         </div>
 
         <Card className="p-6 space-y-4">
@@ -53,11 +72,15 @@ const GenerateCapProjectsList = () => {
             <FileSpreadsheet className="h-8 w-8 text-saffron shrink-0" />
             <div className="space-y-1 text-sm text-muted-foreground">
               <p>
-                <span className="font-medium text-foreground">Output file:</span> {filename}
+                <span className="font-medium text-foreground">
+                  Output file:
+                </span>{" "}
+                {filename}
               </p>
               <p>
                 <span className="font-medium text-foreground">Records:</span>{" "}
-                {filtered.length} project{filtered.length === 1 ? "" : "s"} for {MONTH_NAMES[month]} {year}
+                {filtered.length} project{filtered.length === 1 ? "" : "s"} for{" "}
+                {MONTH_NAMES[month]} {year}
               </p>
             </div>
           </div>

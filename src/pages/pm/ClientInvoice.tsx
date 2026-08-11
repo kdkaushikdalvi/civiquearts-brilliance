@@ -229,6 +229,8 @@ const ClientInvoice = () => {
     }, 300);
   };
 
+  console.log("lines",lines);
+  
   return (
     <AppShell>
       <div className="p-6 max-w-6xl mx-auto space-y-6">
