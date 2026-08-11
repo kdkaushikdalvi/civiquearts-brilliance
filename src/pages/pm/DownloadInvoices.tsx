@@ -38,7 +38,7 @@ const amountInWords = (amount: number) => {
     }
   }
   if (rupees || parts.length === 0) parts.push(belowThousandToWords(rupees) || "Zero");
-  return `Rupees ${parts.join(" ")}${paise ? ` and Paise ${belowThousandToWords(paise)}` : ""} Only`;
+  return `${parts.join(" ")}${paise ? ` and Paise ${belowThousandToWords(paise)}` : ""} Rupees Only`;
 };
 
 const DownloadInvoices = () => {
@@ -195,7 +195,7 @@ const DownloadInvoices = () => {
                             Ground Floor Ghar No 214 Milkat No 2841 Inamdar Wasti Koregaon Mul
                           </p>
                           <p style={{ margin: "3px 0", fontSize: 13 }}>
-                            <b>Phone:</b> 9011718351 &nbsp;&nbsp; <b>Email:</b> vijaychoudhari93@gmail.com
+                            <b>Phone:</b> 9011718351 &nbsp;&nbsp; <b>Email:</b> vijayc@civiquearts.com
                           </p>
                         </div>
                       </div>
