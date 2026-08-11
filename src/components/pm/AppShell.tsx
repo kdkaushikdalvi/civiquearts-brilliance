@@ -1,9 +1,11 @@
-import { ReactNode, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { ReactNode, useEffect, useState } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   ClipboardList,
+  ChevronDown,
   FolderKanban,
+  List,
   UserCog,
   Download,
   LogOut,
@@ -11,6 +13,7 @@ import {
   FileSpreadsheet,
   FileDown,
   ReceiptText,
+  Receipt,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -18,20 +21,47 @@ import logo from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { to: "/app/projects", label: "Site Allocation", icon: ClipboardList },
-  { to: "/app/master/project", label: "Project List", icon: FolderKanban },
-  { to: "/app/master/employee", label: "Employee List", icon: UserCog },
-  { to: "/app/download-invoices", label: "Payment Slips", icon: Download },
-  { to: "/app/client-invoice", label: "Client Invoice", icon: ReceiptText },
-  { to: "/app/cap-projects-list", label: "Generate Excel", icon: FileDown },
-  { to: "/app/upload-csv", label: "Upload CSV", icon: FileSpreadsheet },
-  { to: "/app/dashboard", label: "Overview", icon: LayoutDashboard },
+  { to: "/app/projects", label: "Site Allocation", icon: ClipboardList, iconClass: "text-blue-500" },
+  { to: "/app/cap-projects-list", label: "Generate Excel", icon: FileDown, iconClass: "text-emerald-500" },
+  { to: "/app/upload-csv", label: "Upload CSV", icon: FileSpreadsheet, iconClass: "text-violet-500" },
+  { to: "/app/dashboard", label: "Overview", icon: LayoutDashboard, iconClass: "text-orange-500" },
+];
+
+const listNav = [
+  { to: "/app/master/project", label: "Project List", icon: FolderKanban, iconClass: "text-cyan-500" },
+  { to: "/app/master/employee", label: "Employee List", icon: UserCog, iconClass: "text-fuchsia-500" },
+];
+
+const invoiceNav = [
+  { to: "/app/download-invoices", label: "Payment Slip", icon: Download, iconClass: "text-amber-500" },
+  { to: "/app/client-invoice", label: "Client Invoice", icon: ReceiptText, iconClass: "text-rose-500" },
 ];
 
 const AppShell = ({ children }: { children: ReactNode }) => {
   const { logout, user } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [listOpen, setListOpen] = useState(() =>
+    listNav.some((n) => location.pathname === n.to),
+  );
+  const [invoiceOpen, setInvoiceOpen] = useState(() =>
+    invoiceNav.some((n) => location.pathname === n.to),
+  );
+  const listActive = listNav.some((n) => location.pathname === n.to);
+  const invoiceActive = invoiceNav.some((n) => location.pathname === n.to);
+
+  useEffect(() => {
+    if (listActive) {
+      setListOpen(true);
+    }
+  }, [listActive]);
+
+  useEffect(() => {
+    if (invoiceActive) {
+      setInvoiceOpen(true);
+    }
+  }, [invoiceActive]);
 
   const handleLogout = () => {
     logout();
@@ -63,10 +93,98 @@ const AppShell = ({ children }: { children: ReactNode }) => {
               )
             }
           >
-            <n.icon className="h-4 w-4" />
+            <n.icon className={cn("h-4 w-4", n.iconClass)} />
             {n.label}
           </NavLink>
         ))}
+        <div>
+          <button
+            type="button"
+            onClick={() => setListOpen((open) => !open)}
+            className={cn(
+              "flex w-full items-center gap-3 px-5 py-2.5 text-sm font-medium transition-colors border-l-2",
+              listActive
+                ? "border-saffron text-saffron bg-saffron/5"
+                : "border-transparent text-foreground/80 hover:bg-secondary",
+            )}
+            aria-expanded={listOpen}
+          >
+            <List className="h-4 w-4 text-indigo-500" />
+            <span className="flex-1 text-left">List</span>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 transition-transform",
+                listOpen && "rotate-180",
+              )}
+            />
+          </button>
+          {listOpen && (
+            <div className="ml-8 border-l border-border py-1">
+              {listNav.map((n) => (
+                <NavLink
+                  key={n.to}
+                  to={n.to}
+                  onClick={() => setMobileOpen(false)}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors",
+                      isActive
+                        ? "text-saffron bg-saffron/5"
+                        : "text-foreground/70 hover:bg-secondary hover:text-foreground",
+                    )
+                  }
+                >
+                  <n.icon className={cn("h-4 w-4", n.iconClass)} />
+                  {n.label}
+                </NavLink>
+              ))}
+            </div>
+          )}
+        </div>
+        <div>
+          <button
+            type="button"
+            onClick={() => setInvoiceOpen((open) => !open)}
+            className={cn(
+              "flex w-full items-center gap-3 px-5 py-2.5 text-sm font-medium transition-colors border-l-2",
+              invoiceActive
+                ? "border-saffron text-saffron bg-saffron/5"
+                : "border-transparent text-foreground/80 hover:bg-secondary",
+            )}
+            aria-expanded={invoiceOpen}
+          >
+            <Receipt className="h-4 w-4 text-teal-500" />
+            <span className="flex-1 text-left">Invoice</span>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 transition-transform",
+                invoiceOpen && "rotate-180",
+              )}
+            />
+          </button>
+          {invoiceOpen && (
+            <div className="ml-8 border-l border-border py-1">
+              {invoiceNav.map((n) => (
+                <NavLink
+                  key={n.to}
+                  to={n.to}
+                  onClick={() => setMobileOpen(false)}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors",
+                      isActive
+                        ? "text-saffron bg-saffron/5"
+                        : "text-foreground/70 hover:bg-secondary hover:text-foreground",
+                    )
+                  }
+                >
+                  <n.icon className={cn("h-4 w-4", n.iconClass)} />
+                  {n.label}
+                </NavLink>
+              ))}
+            </div>
+          )}
+        </div>
       </nav>
       <div className="border-t border-border p-3 text-xs text-muted-foreground truncate">
         Signed in as <span className="font-medium text-foreground">{user}</span>
@@ -75,7 +193,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
         onClick={handleLogout}
         className="border-t border-border w-full px-5 py-3 text-sm font-medium text-destructive hover:bg-destructive/10 flex items-center gap-2"
       >
-        <LogOut className="h-4 w-4" /> Logout
+        <LogOut className="h-4 w-4 text-red-500" /> Logout
       </button>
     </>
   );
