@@ -17,6 +17,7 @@ import EmployeeMaster from "@/pages/pm/EmployeeMaster";
 import DownloadInvoices from "@/pages/pm/DownloadInvoices";
 import UploadCsv from "@/pages/pm/UploadCsv";
 import GenerateCapProjectsList from "@/pages/pm/GenerateCapProjectsList";
+import ClientInvoice from "@/pages/pm/ClientInvoice";
 
 const queryClient = new QueryClient();
 
