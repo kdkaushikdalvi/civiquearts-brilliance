@@ -1,7 +1,10 @@
 export interface Assignment {
   id: string;
+  clientId?: string;
+  clientName?: string;
   projectId: string;
   projectName: string;
+  siteId?: string;
   siteName: string;
   assigneeId: string;
   assigneeName: string;
@@ -15,8 +18,21 @@ export interface Assignment {
   createdAt: string;
 }
 
+export interface Client {
+  id: string;
+  name: string;
+}
+
 export interface Project {
   id: string;
+  name: string;
+  clientId?: string;
+  clientName?: string;
+}
+
+export interface Site {
+  id: string;
+  projectId: string;
   name: string;
 }
 

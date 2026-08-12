@@ -7,16 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Pencil, Plus, Save, Search, Trash2, X, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import SearchableSelect from "@/components/pm/SearchableSelect";
 
 const PAGE_SIZE = 8;
 
 const ProjectMaster = () => {
-  const { projects, addProject, updateProject, deleteProject } = useData();
+  const { projects, clients, addClient, addProject, updateProject, deleteProject } = useData();
   const navigate = useNavigate();
   const location = useLocation();
   const returnTo = (location.state as any)?.returnTo;
 
   const [name, setName] = useState("");
+  const [clientId, setClientId] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [search, setSearch] = useState("");
@@ -31,7 +33,9 @@ const ProjectMaster = () => {
   const handleAdd = async () => {
     const trimmed = name.trim();
     if (!trimmed) return toast.error("Project name required");
-    const p = await addProject(trimmed);
+    if (!clientId) return toast.error("Select a client");
+    const client = clients.find((c) => c.id === clientId);
+    const p = await addProject(trimmed, clientId, client?.name);
     setName("");
     if (!p) return;
     toast.success("Project added");
@@ -67,6 +71,23 @@ const ProjectMaster = () => {
 
         <Card className="p-5">
           <label className="text-sm font-medium mb-2 block">Add Project</label>
+          <div className="mb-2">
+            <SearchableSelect
+              value={clientId}
+              onChange={setClientId}
+              options={clients.map((c) => ({ id: c.id, label: c.name }))}
+              placeholder="Select Client *"
+              emptyActionLabel="Add Client"
+              onEmptyAction={async (query) => {
+                if (!query) return toast.error("Client name required");
+                const c = await addClient(query);
+                if (c) {
+                  setClientId(c.id);
+                  toast.success("Client added");
+                }
+              }}
+            />
+          </div>
           <div className="flex gap-2">
             <Input
               placeholder="Project Name"
@@ -129,7 +150,12 @@ const ProjectMaster = () => {
                             }}
                           />
                         ) : (
-                          p.name
+                          <span>
+                            {p.name}
+                            {p.clientName && (
+                              <span className="text-muted-foreground"> — {p.clientName}</span>
+                            )}
+                          </span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right space-x-1">
