@@ -19,6 +19,8 @@ export type Database = {
           amount: number | null
           assignee_id: string | null
           assignee_name: string
+          client_id: string | null
+          client_name: string | null
           created_at: string
           id: string
           month: number
@@ -26,16 +28,20 @@ export type Database = {
           project_name: string
           quantity: number | null
           rate: number | null
+          site_id: string | null
           site_name: string
           status: string
           unit_type: string | null
           updated_at: string
+          user_id: string
           year: number
         }
         Insert: {
           amount?: number | null
           assignee_id?: string | null
           assignee_name: string
+          client_id?: string | null
+          client_name?: string | null
           created_at?: string
           id?: string
           month: number
@@ -43,16 +49,20 @@ export type Database = {
           project_name: string
           quantity?: number | null
           rate?: number | null
+          site_id?: string | null
           site_name: string
           status?: string
           unit_type?: string | null
           updated_at?: string
+          user_id: string
           year: number
         }
         Update: {
           amount?: number | null
           assignee_id?: string | null
           assignee_name?: string
+          client_id?: string | null
+          client_name?: string | null
           created_at?: string
           id?: string
           month?: number
@@ -60,10 +70,12 @@ export type Database = {
           project_name?: string
           quantity?: number | null
           rate?: number | null
+          site_id?: string | null
           site_name?: string
           status?: string
           unit_type?: string | null
           updated_at?: string
+          user_id?: string
           year?: number
         }
         Relationships: [
@@ -75,13 +87,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "assignments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "assignments_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assignments_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      clients: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       employees: {
         Row: {
@@ -90,6 +140,7 @@ export type Database = {
           mobile: string | null
           name: string
           updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -97,6 +148,7 @@ export type Database = {
           mobile?: string | null
           name: string
           updated_at?: string
+          user_id: string
         }
         Update: {
           created_at?: string
@@ -104,6 +156,7 @@ export type Database = {
           mobile?: string | null
           name?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -119,6 +172,7 @@ export type Database = {
           month: number
           total: number
           updated_at: string
+          user_id: string
           year: number
         }
         Insert: {
@@ -132,6 +186,7 @@ export type Database = {
           month: number
           total?: number
           updated_at?: string
+          user_id: string
           year: number
         }
         Update: {
@@ -145,6 +200,7 @@ export type Database = {
           month?: number
           total?: number
           updated_at?: string
+          user_id?: string
           year?: number
         }
         Relationships: [
@@ -186,24 +242,76 @@ export type Database = {
       }
       projects: {
         Row: {
+          client_id: string | null
+          client_name: string | null
           created_at: string
           id: string
           name: string
           updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          client_name?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          client_name?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sites: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          project_id: string
+          updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
+          project_id: string
           updated_at?: string
+          user_id: string
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
+          project_id?: string
           updated_at?: string
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sites_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
