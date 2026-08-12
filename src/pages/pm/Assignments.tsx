@@ -34,7 +34,7 @@ const Assignments = () => {
     deleteAssignment,
     addProject,
     addClient,
-    addSite,
+    addSite: upsertSite,
     addEmployee,
   } = useData();
 
@@ -162,7 +162,7 @@ const Assignments = () => {
     const client = clients.find((c) => c.id === clientId)!;
     const records = await Promise.all(sites.map(async (s) => {
       const emp = employees.find((e) => e.id === s.assigneeId)!;
-      const site = await addSite(project.id, s.siteName.trim());
+      const site = await upsertSite(project.id, s.siteName.trim());
       return {
         clientId: client.id,
         clientName: client.name,
