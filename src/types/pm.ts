@@ -1,7 +1,7 @@
 export interface Assignment {
   id: string;
-  clientId: string;
-  clientName: string;
+  clientId?: string;
+  clientName?: string;
   projectId: string;
   projectName: string;
   siteId?: string;
