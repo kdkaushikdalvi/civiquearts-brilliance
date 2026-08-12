@@ -179,7 +179,7 @@ const DownloadInvoices = () => {
                 <div className="overflow-auto">
                   <div
                     ref={invoiceRef}
-                    className="bg-white text-black mx-auto"
+                    className="bg-white text-black mx-auto rounded-lg border border-gray-300 shadow-card"
                     style={{ width: "210mm", minHeight: "297mm", padding: "10mm", fontFamily: "Arial, sans-serif" }}
                   >
                     <div style={{ border: "2px solid #666", textAlign: "center", fontWeight: "bold", padding: "4px", marginBottom: "6px" }}>

@@ -111,11 +111,11 @@ const headCell: React.CSSProperties = {
 };
 
 const ClientInvoice = () => {
-  const { projects, assignments } = useData();
+  const { clients, projects, assignments } = useData();
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
-  const [projectId, setProjectId] = useState("");
+  const [clientId, setClientId] = useState("");
   const [invoiceDate, setInvoiceDate] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
@@ -128,21 +128,29 @@ const ClientInvoice = () => {
   const [showPreview, setShowPreview] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
-  const project = projects.find((p) => p.id === projectId);
+  const client = clients.find((c) => c.id === clientId);
 
   const sites = useMemo(
-    () =>
-      assignments.filter(
-        (a) => a.month === month && a.year === year && a.projectId === projectId
-      ),
-    [assignments, month, year, projectId]
+    () => {
+      const clientProjectIds = new Set(
+        projects.filter((p) => p.clientId === clientId).map((p) => p.id)
+      );
+
+      return assignments.filter(
+        (a) =>
+          a.month === month &&
+          a.year === year &&
+          (a.clientId === clientId || clientProjectIds.has(a.projectId))
+      );
+    },
+    [assignments, clientId, month, projects, year]
   );
 
   useEffect(() => {
     setLines(
       sites.map((s) => ({
         id: s.id,
-        name: s.siteName,
+        name: `${s.siteName} (${s.projectName})`,
         code: "",
         quantity: s.quantity ?? 0,
         unit: s.unitType ?? "-",
@@ -204,7 +212,7 @@ const ClientInvoice = () => {
         (canvas.height * w) / canvas.width
       );
       pdf.save(
-        `Invoice_${project?.name.replace(/\s/g, "") || "Client"}_${
+        `Invoice_${client?.name.replace(/\s/g, "") || "Client"}_${
           MONTH_NAMES[month]
         }_${year}.pdf`
       );
@@ -229,8 +237,6 @@ const ClientInvoice = () => {
     }, 300);
   };
 
-  console.log("lines",lines);
-  
   return (
     <AppShell>
       <div className="p-6 max-w-6xl mx-auto space-y-6">
@@ -249,13 +255,13 @@ const ClientInvoice = () => {
         <Card className="p-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <label className="text-sm font-medium mb-1.5 block">
-              Project Name
+              Client Name
             </label>
             <SearchableSelect
-              value={projectId}
-              onChange={setProjectId}
-              options={projects.map((p) => ({ id: p.id, label: p.name }))}
-              placeholder="Select Project"
+              value={clientId}
+              onChange={setClientId}
+              options={clients.map((c) => ({ id: c.id, label: c.name }))}
+              placeholder="Select Client"
             />
           </div>
           <div>
@@ -283,17 +289,17 @@ const ClientInvoice = () => {
               id="bill-to"
               value={billTo}
               onChange={(e) => setBillTo(e.target.value)}
-              placeholder="Client name & address"
+              placeholder="Client name | address | city"
             />
           </div>
         </Card>
 
-        {projectId &&
+        {clientId &&
           (lines.length === 0 ? (
             <Card className="p-10 text-center">
               <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
               <p className="text-muted-foreground">
-                No sites found for this project in {MONTH_NAMES[month]} {year}.
+                No sites found for this client in {MONTH_NAMES[month]} {year}.
               </p>
             </Card>
           ) : (
@@ -306,7 +312,7 @@ const ClientInvoice = () => {
                         #
                       </th>
                       <th className="text-left font-semibold px-4 py-3">
-                        Site / Item
+                        Site Name (Project Name)
                       </th>
                       <th className="text-left font-semibold px-4 py-3 w-40">
                         Accounting Code
@@ -426,7 +432,7 @@ const ClientInvoice = () => {
               >
                 <div
                   ref={invoiceRef}
-                  className="bg-white text-black mx-auto"
+                  className="bg-white text-black mx-auto rounded-lg border border-gray-300 shadow-card"
                   style={{
                     width: "210mm",
                     minHeight: "297mm",
@@ -599,7 +605,7 @@ const ClientInvoice = () => {
                             {billTo
                               ? (() => {
                                   const parts = billTo
-                                    .split(",")
+                                    .split("|")
                                     .map((item) => item.trim())
                                     .filter(Boolean);
 
@@ -619,7 +625,6 @@ const ClientInvoice = () => {
                                       {parts.slice(1).map((part, index) => (
                                         <div key={index}>
                                           {part}
-                                          {index < parts.length - 2 ? "," : ""}
                                         </div>
                                       ))}
                                     </>
@@ -681,7 +686,7 @@ const ClientInvoice = () => {
                     <thead>
                       <tr>
                         <th style={{ ...headCell, width: 34 }}>#</th>
-                        <th style={headCell}>Item name</th>
+                        <th style={headCell}>Site Name (Project Name)</th>
                         <th
                           style={{
                             ...headCell,
@@ -824,6 +829,7 @@ const ClientInvoice = () => {
                               alignItems: "center",
                               justifyContent: "space-between",
                               lineHeight: "1.2",
+                              marginBottom: "1px",
                             }}
                           >
                             <span>Sub Total</span>
@@ -849,6 +855,7 @@ const ClientInvoice = () => {
                               alignItems: "center",
                               justifyContent: "space-between",
                               lineHeight: "1.2",
+                              marginBottom: "1px",
                             }}
                           >
                             <span>Round Off</span>

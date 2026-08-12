@@ -24,7 +24,7 @@ const nav = [
   { to: "/app/projects", label: "Site Allocation", icon: ClipboardList, iconClass: "text-blue-500" },
   { to: "/app/cap-projects-list", label: "Generate Excel", icon: FileDown, iconClass: "text-emerald-500" },
   { to: "/app/upload-csv", label: "Upload CSV", icon: FileSpreadsheet, iconClass: "text-violet-500" },
-  { to: "/app/dashboard", label: "Overview", icon: LayoutDashboard, iconClass: "text-orange-500" },
+  // { to: "/app/dashboard", label: "Overview", icon: LayoutDashboard, iconClass: "text-orange-500" },
 ];
 
 const listNav = [
@@ -79,7 +79,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
         </div>
       </div>
       <nav className="flex-1 overflow-y-auto py-3">
-        {nav.map((n) => (
+        {nav.slice(0, 1).map((n) => (
           <NavLink
             key={n.to}
             to={n.to}
@@ -185,6 +185,24 @@ const AppShell = ({ children }: { children: ReactNode }) => {
             </div>
           )}
         </div>
+        {nav.slice(1).map((n) => (
+          <NavLink
+            key={n.to}
+            to={n.to}
+            onClick={() => setMobileOpen(false)}
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 px-5 py-2.5 text-sm font-medium transition-colors border-l-2",
+                isActive
+                  ? "border-saffron text-saffron bg-saffron/5"
+                  : "border-transparent text-foreground/80 hover:bg-secondary",
+              )
+            }
+          >
+            <n.icon className={cn("h-4 w-4", n.iconClass)} />
+            {n.label}
+          </NavLink>
+        ))}
       </nav>
       <div className="border-t border-border p-3 text-xs text-muted-foreground truncate">
         Signed in as <span className="font-medium text-foreground">{user}</span>

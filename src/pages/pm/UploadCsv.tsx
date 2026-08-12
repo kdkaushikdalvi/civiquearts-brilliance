@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import AppShell from "@/components/pm/AppShell";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Upload, FileSpreadsheet, Download, CheckCircle2, X } from "lucide-react";
@@ -11,14 +10,12 @@ import ExcelJS from "exceljs";
 type ProcessedXlsx = {
   kind: "xlsx";
   workbook: ExcelJS.Workbook;
-  filledCount: number;
   baseName: string;
 };
 
 type ProcessedCsv = {
   kind: "csv";
   rows: string[][];
-  filledCount: number;
   baseName: string;
 };
 
@@ -26,7 +23,6 @@ type Processed = ProcessedXlsx | ProcessedCsv;
 
 const UploadCsv = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [accountingCode, setAccountingCode] = useState("");
   const [processed, setProcessed] = useState<Processed | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -70,27 +66,9 @@ const UploadCsv = () => {
       return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     }).join(",")).join("\r\n");
 
-  const findHeaderInfo = (getRow: (i: number) => string[], maxScan: number) => {
-    let headerIdx = 0;
-    for (let i = 0; i < maxScan; i++) {
-      const joined = getRow(i).map((c) => String(c).toLowerCase()).join("|");
-      if (joined.includes("accounting code") || joined.includes("projects")) {
-        headerIdx = i;
-        break;
-      }
-    }
-    const headerRow = getRow(headerIdx).map((c) => String(c));
-    const acCol = headerRow.findIndex((h) => h.toLowerCase().includes("accounting code"));
-    const srCol = headerRow.findIndex((h) => h.toLowerCase().includes("sr"));
-    const projectsCol = headerRow.findIndex((h) => h.toLowerCase().includes("projects"));
-    return { headerIdx, headerRow, acCol, srCol, projectsCol };
-  };
-
   const handleProcess = async () => {
-    if (!accountingCode.trim()) return toast.error("Accounting Code is required");
     if (!file) return toast.error("Please upload a CSV or Excel file first");
 
-    const code = accountingCode.trim();
     const baseName = file.name.replace(/\.(csv|xlsx|xls)$/i, "");
     const isCsv = /\.csv$/i.test(file.name);
 
@@ -99,70 +77,16 @@ const UploadCsv = () => {
         const text = await file.text();
         const rows = parseCsv(text);
         if (rows.length === 0) return toast.error("File is empty");
-        const info = findHeaderInfo((i) => rows[i] ?? [], Math.min(rows.length, 10));
-        let acCol = info.acCol;
-        if (acCol === -1) {
-          acCol = info.headerRow.length;
-          info.headerRow.push("Accounting Code");
-          rows[info.headerIdx] = info.headerRow;
-        }
-        let filled = 0;
-        for (let i = info.headerIdx + 1; i < rows.length; i++) {
-          const row = rows[i] ?? [];
-          while (row.length <= acCol) row.push("");
-          const srVal = info.srCol >= 0 ? String(row[info.srCol] ?? "").trim() : String(row[0] ?? "").trim();
-          const projVal = info.projectsCol >= 0 ? String(row[info.projectsCol] ?? "").trim() : "";
-          if (/^\d+$/.test(srVal) && projVal !== "") {
-            row[acCol] = code;
-            filled++;
-          }
-          rows[i] = row;
-        }
-        setProcessed({ kind: "csv", rows, filledCount: filled, baseName });
-        toast.success(`Processed ${filled} project rows`);
+        setProcessed({ kind: "csv", rows, baseName });
+        toast.success("File processed");
       } else {
         // XLSX — preserve original formatting/fonts using ExcelJS
         const buf = await file.arrayBuffer();
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.load(buf);
-        const sheet = workbook.worksheets[0];
-        if (!sheet) return toast.error("File has no sheets");
-
-        const maxScan = Math.min(sheet.rowCount, 10);
-        const getRowValues = (i: number): string[] => {
-          const r = sheet.getRow(i + 1); // exceljs is 1-indexed
-          const out: string[] = [];
-          const vals = r.values as unknown[];
-          // vals[0] is undefined placeholder
-          for (let c = 1; c < vals.length; c++) {
-            const v = vals[c];
-            out.push(v == null ? "" : typeof v === "object" && "text" in (v as any) ? String((v as any).text) : String(v));
-          }
-          return out;
-        };
-        const info = findHeaderInfo(getRowValues, maxScan);
-        let acCol = info.acCol; // 0-based
-        if (acCol === -1) {
-          acCol = info.headerRow.length;
-          const headerRow = sheet.getRow(info.headerIdx + 1);
-          headerRow.getCell(acCol + 1).value = "Accounting Code";
-          headerRow.commit();
-        }
-
-        let filled = 0;
-        for (let i = info.headerIdx + 1; i < sheet.rowCount; i++) {
-          const rowValues = getRowValues(i);
-          const srVal = info.srCol >= 0 ? String(rowValues[info.srCol] ?? "").trim() : String(rowValues[0] ?? "").trim();
-          const projVal = info.projectsCol >= 0 ? String(rowValues[info.projectsCol] ?? "").trim() : "";
-          if (/^\d+$/.test(srVal) && projVal !== "") {
-            const row = sheet.getRow(i + 1);
-            row.getCell(acCol + 1).value = code;
-            filled++;
-          }
-        }
-
-        setProcessed({ kind: "xlsx", workbook, filledCount: filled, baseName });
-        toast.success(`Processed ${filled} project rows`);
+        if (!workbook.worksheets[0]) return toast.error("File has no sheets");
+        setProcessed({ kind: "xlsx", workbook, baseName });
+        toast.success("File processed");
       }
     } catch (err) {
       console.error(err);
@@ -231,7 +155,6 @@ const UploadCsv = () => {
 
   const reset = () => {
     setFile(null);
-    setAccountingCode("");
     setProcessed(null);
     if (inputRef.current) inputRef.current.value = "";
   };
@@ -244,16 +167,6 @@ const UploadCsv = () => {
         </div>
 
         <Card className="p-6 space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="ac">Accounting Code</Label>
-            <Input
-              id="ac"
-              placeholder="e.g. AC-2026-001"
-              value={accountingCode}
-              onChange={(e) => setAccountingCode(e.target.value)}
-            />
-          </div>
-
           <div className="space-y-2">
             <Label>Upload File (CSV or Excel)</Label>
             <div className="flex items-center gap-3">
@@ -307,8 +220,7 @@ const UploadCsv = () => {
                   File processed successfully.
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Accounting Code added to {processed.filledCount} matching project row
-                  {processed.filledCount === 1 ? "" : "s"}. Original formatting preserved.
+                  Your file is ready to download. Original formatting is preserved.
                 </div>
               </div>
             </div>
