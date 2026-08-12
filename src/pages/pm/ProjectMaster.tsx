@@ -150,7 +150,12 @@ const ProjectMaster = () => {
                             }}
                           />
                         ) : (
-                          p.name
+                          <span>
+                            {p.name}
+                            {p.clientName && (
+                              <span className="text-muted-foreground"> — {p.clientName}</span>
+                            )}
+                          </span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right space-x-1">
