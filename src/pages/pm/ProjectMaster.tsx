@@ -172,7 +172,7 @@ const ProjectMaster = () => {
                               size="icon"
                               variant="ghost"
                               onClick={() => {
-                                if (confirm(`Delete "${p.name}{p.clientName ? ` — ${p.clientName}` : ""}"?`)) {
+                                if (confirm(`Delete "${p.name}"?`)) {
                                   deleteProject(p.id);
                                   toast.success("Deleted");
                                 }
