@@ -25,6 +25,7 @@ const Assignments = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const {
+    clients,
     projects,
     employees,
     assignments,
@@ -32,6 +33,8 @@ const Assignments = () => {
     updateAssignment,
     deleteAssignment,
     addProject,
+    addClient,
+    addSite,
     addEmployee,
   } = useData();
 
@@ -39,9 +42,10 @@ const Assignments = () => {
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
 
+  const [clientId, setClientId] = useState("");
   const [projectId, setProjectId] = useState("");
   const [sites, setSites] = useState<SiteRow[]>([{ id: crypto.randomUUID(), siteName: "", assigneeId: "" }]);
-  const [errors, setErrors] = useState<{ project?: string; sites?: Record<string, string> }>({});
+  const [errors, setErrors] = useState<{ client?: string; project?: string; sites?: Record<string, string> }>({});
 
   // Restore draft when returning from master pages
   useEffect(() => {
@@ -49,6 +53,7 @@ const Assignments = () => {
     if (draft) {
       try {
         const d = JSON.parse(draft);
+        if (d.clientId) setClientId(d.clientId);
         if (d.projectId) setProjectId(d.projectId);
         if (d.sites?.length) setSites(d.sites);
         if (typeof d.month === "number") setMonth(d.month);
@@ -73,8 +78,10 @@ const Assignments = () => {
     }
   }, [location, navigate]);
 
-  const persistDraft = (patch: Partial<{ projectId: string; sites: SiteRow[]; month: number; year: number }>) => {
-    const current = { projectId, sites, month, year, ...patch };
+  const persistDraft = (
+    patch: Partial<{ clientId: string; projectId: string; sites: SiteRow[]; month: number; year: number }>
+  ) => {
+    const current = { clientId, projectId, sites, month, year, ...patch };
     localStorage.setItem(DRAFT_KEY, JSON.stringify(current));
   };
   const clearDraft = () => localStorage.removeItem(DRAFT_KEY);
@@ -139,21 +146,27 @@ const Assignments = () => {
 
   const validate = () => {
     const errs: typeof errors = { sites: {} };
+    if (!clientId) errs.client = "Client is required";
     if (!projectId) errs.project = "Project is required";
     sites.forEach((s) => {
       if (!s.siteName.trim()) errs.sites![`${s.id}-name`] = "Required";
       if (!s.assigneeId) errs.sites![`${s.id}-assignee`] = "Required";
     });
     setErrors(errs);
-    return !errs.project && Object.keys(errs.sites!).length === 0;
+    return !errs.client && !errs.project && Object.keys(errs.sites!).length === 0;
   };
 
-  const saveAssignments = () => {
+  const saveAssignments = async () => {
     if (!validate()) return;
     const project = projects.find((p) => p.id === projectId)!;
-    const records = sites.map((s) => {
+    const client = clients.find((c) => c.id === clientId)!;
+    const records = await Promise.all(sites.map(async (s) => {
       const emp = employees.find((e) => e.id === s.assigneeId)!;
+      const site = await addSite(project.id, s.siteName.trim());
       return {
+        clientId: client.id,
+        clientName: client.name,
+        siteId: site?.id,
         projectId: project.id,
         projectName: project.name,
         siteName: s.siteName.trim(),
@@ -163,9 +176,10 @@ const Assignments = () => {
         year,
         status: "In Progress" as const,
       };
-    });
-    addAssignments(records);
+    }));
+    await addAssignments(records);
     toast.success(`${records.length} project${records.length > 1 ? "s" : ""} saved`);
+    setClientId("");
     setProjectId("");
     setSites([{ id: crypto.randomUUID(), siteName: "", assigneeId: "" }]);
     clearDraft();
@@ -194,6 +208,33 @@ const Assignments = () => {
         <Card className="p-5 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
+              <label className="text-sm font-medium mb-1.5 block">Client Name *</label>
+              <SearchableSelect
+                value={clientId}
+                onChange={(id) => {
+                  setClientId(id);
+                  setProjectId("");
+                  persistDraft({ clientId: id, projectId: "" });
+                }}
+                options={clients.map((c) => ({ id: c.id, label: c.name }))}
+                placeholder="Select Client"
+                emptyActionLabel="Add Client"
+                onEmptyAction={async (query) => {
+                  if (!query) {
+                    toast.error("Client name required");
+                    return;
+                  }
+                  const c = await addClient(query);
+                  if (!c) return;
+                  setClientId(c.id);
+                  persistDraft({ clientId: c.id });
+                  toast.success("Client added");
+                }}
+              />
+              {errors.client && <p className="text-xs text-destructive mt-1">{errors.client}</p>}
+            </div>
+
+            <div>
               <label className="text-sm font-medium mb-1.5 block">Project *</label>
               <SearchableSelect
                 value={projectId}
@@ -201,7 +242,9 @@ const Assignments = () => {
                   setProjectId(id);
                   persistDraft({ projectId: id });
                 }}
-                options={projects.map((p) => ({ id: p.id, label: p.name }))}
+                options={projects
+                  .filter((p) => !clientId || p.clientId === clientId)
+                  .map((p) => ({ id: p.id, label: p.name }))}
                 placeholder="Select Project"
                 emptyActionLabel="Add Project"
                 onEmptyAction={async (query) => {
@@ -209,7 +252,12 @@ const Assignments = () => {
                     toast.error("Project name required");
                     return;
                   }
-                  const p = await addProject(query);
+                  if (!clientId) {
+                    toast.error("Select a client first");
+                    return;
+                  }
+                  const client = clients.find((c) => c.id === clientId);
+                  const p = await addProject(query, clientId, client?.name);
                   if (!p) return;
                   setProjectId(p.id);
                   persistDraft({ projectId: p.id });
@@ -287,6 +335,7 @@ const Assignments = () => {
             <table className="w-full text-sm">
               <thead className="bg-secondary/50 text-left">
                 <tr>
+                  <th className="px-4 py-3 font-semibold">Client</th>
                   <th className="px-4 py-3 font-semibold">Project</th>
                   <th className="px-4 py-3 font-semibold">Site</th>
                   <th className="px-4 py-3 font-semibold">Assigned To</th>
@@ -299,13 +348,14 @@ const Assignments = () => {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                       No projects for this month.
                     </td>
                   </tr>
                 ) : (
                   filtered.map((a) => (
                     <tr key={a.id} className="border-t border-border hover:bg-secondary/30">
+                      <td className="px-4 py-3">{a.clientName || "-"}</td>
                       <td className="px-4 py-3">{a.projectName}</td>
                       <td className="px-4 py-3">{a.siteName}</td>
                       <td className="px-4 py-3">{a.assigneeName}</td>
