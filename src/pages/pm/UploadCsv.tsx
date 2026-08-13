@@ -3,7 +3,7 @@ import AppShell from "@/components/pm/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Upload, FileSpreadsheet, Download, CheckCircle2, X, Trash2 } from "lucide-react";
+import { Upload, FileSpreadsheet, X, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
@@ -34,15 +34,27 @@ const cellText = (v: unknown): string => {
   return String(v);
 };
 
-const extractCodePairs = (rows: string[][]) =>
-  rows
-    .map((r) => ({
-      sr: (r[0] ?? "").trim(),
-      siteName: (r[1] ?? "").trim(),
-      code: (r[2] ?? "").trim(),
-    }))
-    .filter((r) => /^\d+$/.test(r.sr) && r.siteName && r.code)
-    .map((r) => ({ siteName: r.siteName, code: r.code }));
+const clean = (s: string) => (s ?? "").replace(/\u00a0/g, " ").trim();
+
+const extractCodePairs = (rows: string[][]) => {
+  const out: { siteName: string; code: string }[] = [];
+  const seen = new Set<string>();
+  for (const r of rows) {
+    const siteName = clean(r[1] ?? "");
+    const code = clean(r[2] ?? "");
+    if (!siteName || !code) continue;
+    const ln = siteName.toLowerCase();
+    const lc = code.toLowerCase();
+    if (ln === "projects" || ln === "project" || ln === "site name" || ln === "sr no." ) continue;
+    if (lc === "accounting code") continue;
+    const key = ln;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ siteName, code });
+  }
+  return out;
+};
+
 
 const UploadCsv = () => {
   const { saveSiteCodes, siteCodes } = useData();
@@ -146,53 +158,6 @@ const UploadCsv = () => {
       console.error(err);
       toast.error("Failed to process the file");
     }
-  };
-
-  const downloadFile = async (kind: "xlsx" | "csv") => {
-    if (!processed) return;
-    const filename = `${processed.baseName}-updated.${kind}`;
-
-    if (kind === "xlsx" && processed.kind === "xlsx") {
-      const buf = await processed.workbook.xlsx.writeBuffer();
-      const blob = new Blob([buf], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      triggerDownload(blob, filename);
-      return;
-    }
-
-    if (kind === "csv") {
-      let csv: string;
-      if (processed.kind === "csv") csv = toCsv(processed.rows);
-      else {
-        csv = toCsv(sheetToRows(processed.workbook.worksheets[0]));
-      }
-      triggerDownload(new Blob([csv], { type: "text/csv;charset=utf-8" }), filename);
-      return;
-    }
-
-    if (kind === "xlsx" && processed.kind === "csv") {
-      // Build a fresh xlsx from csv rows (no source styles to preserve)
-      const wb = new ExcelJS.Workbook();
-      const ws = wb.addWorksheet("Sheet1");
-      processed.rows.forEach((r) => ws.addRow(r));
-      const buf = await wb.xlsx.writeBuffer();
-      triggerDownload(
-        new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
-        filename,
-      );
-    }
-  };
-
-  const triggerDownload = (blob: Blob, filename: string) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   const reset = () => {
@@ -350,32 +315,6 @@ const UploadCsv = () => {
           </Card>
         )}
 
-        {processed && (
-          <Card className="p-6 space-y-4 border-green-500/40 bg-green-500/5">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="h-6 w-6 text-green-600 shrink-0 mt-0.5" />
-              <div>
-                <div className="font-semibold text-foreground">
-                  File processed successfully.
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Your file is ready to download. Original formatting is preserved.
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={() => downloadFile("xlsx")}
-                className="gradient-saffron text-saffron-foreground"
-              >
-                <Download className="h-4 w-4 mr-2" /> Download Updated Excel
-              </Button>
-              <Button variant="outline" onClick={() => downloadFile("csv")}>
-                <Download className="h-4 w-4 mr-2" /> Download Updated CSV
-              </Button>
-            </div>
-          </Card>
-        )}
       </div>
     </AppShell>
   );
