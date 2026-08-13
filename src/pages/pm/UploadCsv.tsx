@@ -160,53 +160,6 @@ const UploadCsv = () => {
     }
   };
 
-  const downloadFile = async (kind: "xlsx" | "csv") => {
-    if (!processed) return;
-    const filename = `${processed.baseName}-updated.${kind}`;
-
-    if (kind === "xlsx" && processed.kind === "xlsx") {
-      const buf = await processed.workbook.xlsx.writeBuffer();
-      const blob = new Blob([buf], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      triggerDownload(blob, filename);
-      return;
-    }
-
-    if (kind === "csv") {
-      let csv: string;
-      if (processed.kind === "csv") csv = toCsv(processed.rows);
-      else {
-        csv = toCsv(sheetToRows(processed.workbook.worksheets[0]));
-      }
-      triggerDownload(new Blob([csv], { type: "text/csv;charset=utf-8" }), filename);
-      return;
-    }
-
-    if (kind === "xlsx" && processed.kind === "csv") {
-      // Build a fresh xlsx from csv rows (no source styles to preserve)
-      const wb = new ExcelJS.Workbook();
-      const ws = wb.addWorksheet("Sheet1");
-      processed.rows.forEach((r) => ws.addRow(r));
-      const buf = await wb.xlsx.writeBuffer();
-      triggerDownload(
-        new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
-        filename,
-      );
-    }
-  };
-
-  const triggerDownload = (blob: Blob, filename: string) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   const reset = () => {
     setFile(null);
     setProcessed(null);
