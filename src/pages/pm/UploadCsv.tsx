@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
 import { useData } from "@/contexts/DataContext";
+import { getSiteCode, normalizeSiteName } from "@/lib/siteCodeMatching";
 
 type ProcessedXlsx = {
   kind: "xlsx";
@@ -36,18 +37,38 @@ const cellText = (v: unknown): string => {
 
 const clean = (s: string) => (s ?? "").replace(/\u00a0/g, " ").trim();
 
-const extractCodePairs = (rows: string[][]) => {
+const headerText = (value: string) => normalizeSiteName(clean(value));
+
+const findMappingColumns = (rows: string[][]) => {
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+    const headers = rows[rowIndex].map(headerText);
+    const codeIndex = headers.findIndex((header) =>
+      header.includes("accountingcode") || header.includes("accountcode") || header.includes("acccode"),
+    );
+    const siteIndex = headers.findIndex((header) =>
+      /^(site|sitename|projects?|projectname)/.test(header),
+    );
+    if (codeIndex >= 0 && siteIndex >= 0) return { rowIndex, siteIndex, codeIndex };
+  }
+
+  // Preserve support for the original CAP template: site names in column B,
+  // accounting codes in column C.
+  return { rowIndex: -1, siteIndex: 1, codeIndex: 2 };
+};
+
+export const extractCodePairs = (rows: string[][]) => {
   const out: { siteName: string; code: string }[] = [];
   const seen = new Set<string>();
-  for (const r of rows) {
-    const siteName = clean(r[1] ?? "");
-    const code = clean(r[2] ?? "");
+  const { rowIndex, siteIndex, codeIndex } = findMappingColumns(rows);
+  for (const r of rows.slice(rowIndex + 1)) {
+    const siteName = clean(r[siteIndex] ?? "");
+    const code = clean(r[codeIndex] ?? "");
     if (!siteName || !code) continue;
     const ln = siteName.toLowerCase();
     const lc = code.toLowerCase();
     if (ln === "projects" || ln === "project" || ln === "site name" || ln === "sr no." ) continue;
     if (lc === "accounting code") continue;
-    const key = ln;
+    const key = normalizeSiteName(siteName);
     if (seen.has(key)) continue;
     seen.add(key);
     out.push({ siteName, code });
@@ -79,6 +100,12 @@ const UploadCsv = () => {
 
   // Simple CSV parser preserving quoted fields
   const parseCsv = (text: string): string[][] => {
+    const delimiters = [",", ";", "\t"];
+    const delimiter = delimiters.reduce((best, candidate) =>
+      text.split(candidate).length > text.split(best).length
+        ? candidate
+        : best,
+    );
     const rows: string[][] = [];
     let cur: string[] = [];
     let field = "";
@@ -91,7 +118,7 @@ const UploadCsv = () => {
         } else field += c;
       } else {
         if (c === '"') inQuotes = true;
-        else if (c === ",") { cur.push(field); field = ""; }
+        else if (c === delimiter) { cur.push(field); field = ""; }
         else if (c === "\n") { cur.push(field); rows.push(cur); cur = []; field = ""; }
         else if (c === "\r") { /* skip */ }
         else field += c;
@@ -249,7 +276,7 @@ const UploadCsv = () => {
                   </thead>
                   <tbody>
                     {pendingPairs.map((p, i) => {
-                      const existing = siteCodes[p.siteName.trim().toLowerCase()];
+                      const existing = getSiteCode(siteCodes, p.siteName);
                       const status = !existing
                         ? "New"
                         : existing === p.code.trim()

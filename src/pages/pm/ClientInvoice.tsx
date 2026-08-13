@@ -3,6 +3,7 @@ import AppShell from "@/components/pm/AppShell";
 import MonthNavigator, { MONTH_NAMES } from "@/components/pm/MonthNavigator";
 import SearchableSelect from "@/components/pm/SearchableSelect";
 import { useData } from "@/contexts/DataContext";
+import { getSiteCode } from "@/lib/siteCodeMatching";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -151,7 +152,7 @@ const ClientInvoice = () => {
       sites.map((s) => ({
         id: s.id,
         name: `${s.siteName} (${s.projectName})`,
-        code: siteCodes[s.siteName.trim().toLowerCase()] ?? "",
+        code: getSiteCode(siteCodes, s.siteName),
         quantity: s.quantity ?? 0,
         unit: s.unitType ?? "-",
         price: 0,

@@ -3,6 +3,7 @@ import { Assignment, Project, Employee, InvoiceRecord, Client, Site } from "@/ty
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { normalizeSiteName } from "@/lib/siteCodeMatching";
 
 interface DataContextValue {
   clients: Client[];
@@ -118,7 +119,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (iRes.data) setInvoices(iRes.data.map(mapInvoice));
     if (scRes.data) {
       const map: Record<string, string> = {};
-      scRes.data.forEach((r: any) => { map[r.site_name.trim().toLowerCase()] = r.accounting_code; });
+      scRes.data.forEach((r: any) => { map[normalizeSiteName(r.site_name)] = r.accounting_code; });
       setSiteCodes(map);
     }
     setLoading(false);
@@ -299,7 +300,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     const rows = pairs
       .map((p) => ({ site_name: p.siteName.trim(), accounting_code: p.code.trim(), user_id: userId }))
       .filter((r) => {
-        const k = r.site_name.toLowerCase();
+        const k = normalizeSiteName(r.site_name);
         if (!r.site_name || !r.accounting_code || seen.has(k)) return false;
         seen.add(k);
         return true;
@@ -316,7 +317,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     }
     setSiteCodes((prev) => {
       const next = { ...prev };
-      rows.forEach((r) => { next[r.site_name.toLowerCase()] = r.accounting_code; });
+      rows.forEach((r) => { next[normalizeSiteName(r.site_name)] = r.accounting_code; });
       return next;
     });
   };
