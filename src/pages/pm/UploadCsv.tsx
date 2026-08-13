@@ -34,15 +34,27 @@ const cellText = (v: unknown): string => {
   return String(v);
 };
 
-const extractCodePairs = (rows: string[][]) =>
-  rows
-    .map((r) => ({
-      sr: (r[0] ?? "").trim(),
-      siteName: (r[1] ?? "").trim(),
-      code: (r[2] ?? "").trim(),
-    }))
-    .filter((r) => /^\d+$/.test(r.sr) && r.siteName && r.code)
-    .map((r) => ({ siteName: r.siteName, code: r.code }));
+const clean = (s: string) => (s ?? "").replace(/\u00a0/g, " ").trim();
+
+const extractCodePairs = (rows: string[][]) => {
+  const out: { siteName: string; code: string }[] = [];
+  const seen = new Set<string>();
+  for (const r of rows) {
+    const siteName = clean(r[1] ?? "");
+    const code = clean(r[2] ?? "");
+    if (!siteName || !code) continue;
+    const ln = siteName.toLowerCase();
+    const lc = code.toLowerCase();
+    if (ln === "projects" || ln === "project" || ln === "site name" || ln === "sr no." ) continue;
+    if (lc === "accounting code") continue;
+    const key = ln;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ siteName, code });
+  }
+  return out;
+};
+
 
 const UploadCsv = () => {
   const { saveSiteCodes, siteCodes } = useData();
