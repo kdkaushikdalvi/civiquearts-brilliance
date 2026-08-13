@@ -3,7 +3,7 @@ import AppShell from "@/components/pm/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Upload, FileSpreadsheet, Download, CheckCircle2, X, Trash2 } from "lucide-react";
+import { Upload, FileSpreadsheet, X, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
@@ -362,32 +362,6 @@ const UploadCsv = () => {
           </Card>
         )}
 
-        {processed && (
-          <Card className="p-6 space-y-4 border-green-500/40 bg-green-500/5">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="h-6 w-6 text-green-600 shrink-0 mt-0.5" />
-              <div>
-                <div className="font-semibold text-foreground">
-                  File processed successfully.
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Your file is ready to download. Original formatting is preserved.
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={() => downloadFile("xlsx")}
-                className="gradient-saffron text-saffron-foreground"
-              >
-                <Download className="h-4 w-4 mr-2" /> Download Updated Excel
-              </Button>
-              <Button variant="outline" onClick={() => downloadFile("csv")}>
-                <Download className="h-4 w-4 mr-2" /> Download Updated CSV
-              </Button>
-            </div>
-          </Card>
-        )}
       </div>
     </AppShell>
   );
