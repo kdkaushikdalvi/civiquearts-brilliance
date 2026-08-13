@@ -3,7 +3,8 @@ import AppShell from "@/components/pm/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Upload, FileSpreadsheet, Download, CheckCircle2, X } from "lucide-react";
+import { Upload, FileSpreadsheet, Download, CheckCircle2, X, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
 import { useData } from "@/contexts/DataContext";
@@ -44,7 +45,10 @@ const extractCodePairs = (rows: string[][]) =>
     .map((r) => ({ siteName: r.siteName, code: r.code }));
 
 const UploadCsv = () => {
-  const { saveSiteCodes } = useData();
+  const { saveSiteCodes, siteCodes } = useData();
+  const [pendingPairs, setPendingPairs] = useState<{ siteName: string; code: string }[] | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [processed, setProcessed] = useState<Processed | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +61,8 @@ const UploadCsv = () => {
     }
     setFile(f);
     setProcessed(null);
+    setPendingPairs(null);
+    setConfirmed(false);
   };
 
   // Simple CSV parser preserving quoted fields
@@ -100,9 +106,13 @@ const UploadCsv = () => {
     return rows;
   };
 
-  const persistCodes = async (pairs: { siteName: string; code: string }[]) => {
-    if (pairs.length === 0) return;
+  const confirmMapping = async () => {
+    const pairs = (pendingPairs ?? []).filter((p) => p.siteName.trim() && p.code.trim());
+    if (pairs.length === 0) return toast.error("Nothing to save");
+    setSaving(true);
     await saveSiteCodes(pairs);
+    setSaving(false);
+    setConfirmed(true);
     toast.success(`Saved ${pairs.length} site accounting code${pairs.length > 1 ? "s" : ""}`);
   };
 
@@ -118,7 +128,8 @@ const UploadCsv = () => {
         const rows = parseCsv(text);
         if (rows.length === 0) return toast.error("File is empty");
         setProcessed({ kind: "csv", rows, baseName });
-        await persistCodes(extractCodePairs(rows));
+        setPendingPairs(extractCodePairs(rows));
+        setConfirmed(false);
         toast.success("File processed");
       } else {
         // XLSX — preserve original formatting/fonts using ExcelJS
@@ -127,7 +138,8 @@ const UploadCsv = () => {
         await workbook.xlsx.load(buf);
         if (!workbook.worksheets[0]) return toast.error("File has no sheets");
         setProcessed({ kind: "xlsx", workbook, baseName });
-        await persistCodes(extractCodePairs(sheetToRows(workbook.worksheets[0])));
+        setPendingPairs(extractCodePairs(sheetToRows(workbook.worksheets[0])));
+        setConfirmed(false);
         toast.success("File processed");
       }
     } catch (err) {
@@ -186,6 +198,8 @@ const UploadCsv = () => {
   const reset = () => {
     setFile(null);
     setProcessed(null);
+    setPendingPairs(null);
+    setConfirmed(false);
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -240,6 +254,101 @@ const UploadCsv = () => {
             </Button>
           </div>
         </Card>
+
+        {pendingPairs && (
+          <Card className="p-6 space-y-4">
+            <div>
+              <div className="font-semibold text-foreground">
+                Mapping preview {confirmed && <span className="text-green-600 text-sm font-medium">(saved)</span>}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Review each site name and accounting code. Edit or remove rows, then confirm to apply them to invoice prefill.
+              </div>
+            </div>
+
+            {pendingPairs.length === 0 ? (
+              <div className="text-sm text-muted-foreground">
+                No site rows with an accounting code were found in this file.
+              </div>
+            ) : (
+              <div className="rounded-lg border border-border overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-secondary/60">
+                    <tr>
+                      <th className="text-left px-4 py-2 font-semibold">#</th>
+                      <th className="text-left px-4 py-2 font-semibold">Site Name</th>
+                      <th className="text-left px-4 py-2 font-semibold">Accounting Code</th>
+                      <th className="text-left px-4 py-2 font-semibold">Status</th>
+                      <th className="px-4 py-2" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingPairs.map((p, i) => {
+                      const existing = siteCodes[p.siteName.trim().toLowerCase()];
+                      const status = !existing
+                        ? "New"
+                        : existing === p.code.trim()
+                        ? "Unchanged"
+                        : `Updates ${existing}`;
+                      return (
+                        <tr key={`${p.siteName}-${i}`} className="border-t border-border">
+                          <td className="px-4 py-2 text-muted-foreground">{i + 1}</td>
+                          <td className="px-4 py-2">
+                            <Input
+                              value={p.siteName}
+                              onChange={(e) =>
+                                setPendingPairs((prev) =>
+                                  (prev ?? []).map((r, idx) => (idx === i ? { ...r, siteName: e.target.value } : r))
+                                )
+                              }
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <Input
+                              value={p.code}
+                              onChange={(e) =>
+                                setPendingPairs((prev) =>
+                                  (prev ?? []).map((r, idx) => (idx === i ? { ...r, code: e.target.value } : r))
+                                )
+                              }
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-muted-foreground whitespace-nowrap">{status}</td>
+                          <td className="px-4 py-2">
+                            <button
+                              onClick={() =>
+                                setPendingPairs((prev) => (prev ?? []).filter((_, idx) => idx !== i))
+                              }
+                              className="text-muted-foreground hover:text-destructive"
+                              aria-label="Remove row"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {pendingPairs.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  onClick={confirmMapping}
+                  disabled={saving}
+                  className="gradient-saffron text-saffron-foreground"
+                >
+                  {saving ? "Saving..." : confirmed ? "Save Again" : "Confirm & Save Mapping"}
+                </Button>
+                <Button variant="outline" onClick={() => setPendingPairs(null)}>
+                  Discard Mapping
+                </Button>
+              </div>
+            )}
+          </Card>
+        )}
 
         {processed && (
           <Card className="p-6 space-y-4 border-green-500/40 bg-green-500/5">
