@@ -278,6 +278,33 @@ export type Database = {
           },
         ]
       }
+      site_codes: {
+        Row: {
+          accounting_code: string
+          created_at: string
+          id: string
+          site_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accounting_code: string
+          created_at?: string
+          id?: string
+          site_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accounting_code?: string
+          created_at?: string
+          id?: string
+          site_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sites: {
         Row: {
           created_at: string
