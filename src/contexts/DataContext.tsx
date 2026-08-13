@@ -27,6 +27,8 @@ interface DataContextValue {
   updateAssignment: (id: string, patch: Partial<Assignment>) => Promise<void>;
   deleteAssignment: (id: string) => Promise<void>;
   addInvoice: (rec: Omit<InvoiceRecord, "id">) => Promise<void>;
+  siteCodes: Record<string, string>;
+  saveSiteCodes: (pairs: { siteName: string; code: string }[]) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextValue | undefined>(undefined);
