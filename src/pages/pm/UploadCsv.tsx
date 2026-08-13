@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Upload, FileSpreadsheet, Download, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
+import { useData } from "@/contexts/DataContext";
 
 type ProcessedXlsx = {
   kind: "xlsx";
@@ -21,7 +22,29 @@ type ProcessedCsv = {
 
 type Processed = ProcessedXlsx | ProcessedCsv;
 
+const cellText = (v: unknown): string => {
+  if (v == null) return "";
+  if (typeof v === "object") {
+    const o = v as any;
+    if ("text" in o) return String(o.text);
+    if ("result" in o) return String(o.result ?? "");
+    if ("richText" in o) return (o.richText as any[]).map((t) => t.text).join("");
+  }
+  return String(v);
+};
+
+const extractCodePairs = (rows: string[][]) =>
+  rows
+    .map((r) => ({
+      sr: (r[0] ?? "").trim(),
+      siteName: (r[1] ?? "").trim(),
+      code: (r[2] ?? "").trim(),
+    }))
+    .filter((r) => /^\d+$/.test(r.sr) && r.siteName && r.code)
+    .map((r) => ({ siteName: r.siteName, code: r.code }));
+
 const UploadCsv = () => {
+  const { saveSiteCodes } = useData();
   const [file, setFile] = useState<File | null>(null);
   const [processed, setProcessed] = useState<Processed | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -66,6 +89,23 @@ const UploadCsv = () => {
       return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     }).join(",")).join("\r\n");
 
+  const sheetToRows = (sheet: ExcelJS.Worksheet): string[][] => {
+    const rows: string[][] = [];
+    for (let i = 1; i <= sheet.rowCount; i++) {
+      const vals = sheet.getRow(i).values as unknown[];
+      const out: string[] = [];
+      for (let c = 1; c < Math.max(vals.length, 4); c++) out.push(cellText(vals[c]));
+      rows.push(out);
+    }
+    return rows;
+  };
+
+  const persistCodes = async (pairs: { siteName: string; code: string }[]) => {
+    if (pairs.length === 0) return;
+    await saveSiteCodes(pairs);
+    toast.success(`Saved ${pairs.length} site accounting code${pairs.length > 1 ? "s" : ""}`);
+  };
+
   const handleProcess = async () => {
     if (!file) return toast.error("Please upload a CSV or Excel file first");
 
@@ -78,6 +118,7 @@ const UploadCsv = () => {
         const rows = parseCsv(text);
         if (rows.length === 0) return toast.error("File is empty");
         setProcessed({ kind: "csv", rows, baseName });
+        await persistCodes(extractCodePairs(rows));
         toast.success("File processed");
       } else {
         // XLSX — preserve original formatting/fonts using ExcelJS
@@ -86,6 +127,7 @@ const UploadCsv = () => {
         await workbook.xlsx.load(buf);
         if (!workbook.worksheets[0]) return toast.error("File has no sheets");
         setProcessed({ kind: "xlsx", workbook, baseName });
+        await persistCodes(extractCodePairs(sheetToRows(workbook.worksheets[0])));
         toast.success("File processed");
       }
     } catch (err) {
@@ -111,19 +153,7 @@ const UploadCsv = () => {
       let csv: string;
       if (processed.kind === "csv") csv = toCsv(processed.rows);
       else {
-        const sheet = processed.workbook.worksheets[0];
-        const rows: string[][] = [];
-        for (let i = 1; i <= sheet.rowCount; i++) {
-          const r = sheet.getRow(i);
-          const vals = r.values as unknown[];
-          const out: string[] = [];
-          for (let c = 1; c < vals.length; c++) {
-            const v = vals[c];
-            out.push(v == null ? "" : typeof v === "object" && "text" in (v as any) ? String((v as any).text) : String(v));
-          }
-          rows.push(out);
-        }
-        csv = toCsv(rows);
+        csv = toCsv(sheetToRows(processed.workbook.worksheets[0]));
       }
       triggerDownload(new Blob([csv], { type: "text/csv;charset=utf-8" }), filename);
       return;

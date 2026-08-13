@@ -111,7 +111,7 @@ const headCell: React.CSSProperties = {
 };
 
 const ClientInvoice = () => {
-  const { clients, projects, assignments } = useData();
+  const { clients, projects, assignments, siteCodes } = useData();
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
@@ -151,14 +151,14 @@ const ClientInvoice = () => {
       sites.map((s) => ({
         id: s.id,
         name: `${s.siteName} (${s.projectName})`,
-        code: "",
+        code: siteCodes[s.siteName.trim().toLowerCase()] ?? "",
         quantity: s.quantity ?? 0,
         unit: s.unitType ?? "-",
         price: 0,
         amount: 0,
       }))
     );
-  }, [sites]);
+  }, [sites, siteCodes]);
 
   const patch = (id: string, p: Partial<Line>) =>
     setLines((prev) =>

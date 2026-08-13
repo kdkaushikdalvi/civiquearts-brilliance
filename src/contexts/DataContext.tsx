@@ -27,6 +27,8 @@ interface DataContextValue {
   updateAssignment: (id: string, patch: Partial<Assignment>) => Promise<void>;
   deleteAssignment: (id: string) => Promise<void>;
   addInvoice: (rec: Omit<InvoiceRecord, "id">) => Promise<void>;
+  siteCodes: Record<string, string>;
+  saveSiteCodes: (pairs: { siteName: string; code: string }[]) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextValue | undefined>(undefined);
@@ -73,6 +75,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
+  const [siteCodes, setSiteCodes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
   const requireUser = () => {
@@ -86,17 +89,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const loadAll = useCallback(async () => {
     if (!isAuthenticated || !userId) {
       setClients([]); setProjects([]); setSites([]);
-      setEmployees([]); setAssignments([]); setInvoices([]);
+      setEmployees([]); setAssignments([]); setInvoices([]); setSiteCodes({});
       return;
     }
     setLoading(true);
-    const [cRes, pRes, sRes, eRes, aRes, iRes] = await Promise.all([
+    const [cRes, pRes, sRes, eRes, aRes, iRes, scRes] = await Promise.all([
       supabase.from("clients").select("*").eq("user_id", userId).order("name"),
       supabase.from("projects").select("*").eq("user_id", userId).order("name"),
       supabase.from("sites").select("*").eq("user_id", userId).order("name"),
       supabase.from("employees").select("*").eq("user_id", userId).order("name"),
       supabase.from("assignments").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
       supabase.from("invoices").select("*").eq("user_id", userId).order("generated_date", { ascending: false }),
+      supabase.from("site_codes").select("*").eq("user_id", userId),
     ]);
     if (cRes.data) setClients(cRes.data.map((r: any) => ({ id: r.id, name: r.name })));
     if (pRes.data)
@@ -112,6 +116,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (eRes.data) setEmployees(eRes.data.map((r: any) => ({ id: r.id, name: r.name, mobile: r.mobile ?? undefined })));
     if (aRes.data) setAssignments(aRes.data.map(mapAssignment));
     if (iRes.data) setInvoices(iRes.data.map(mapInvoice));
+    if (scRes.data) {
+      const map: Record<string, string> = {};
+      scRes.data.forEach((r: any) => { map[r.site_name.trim().toLowerCase()] = r.accounting_code; });
+      setSiteCodes(map);
+    }
     setLoading(false);
   }, [isAuthenticated, userId]);
 
@@ -284,6 +293,34 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data) setInvoices((prev) => [mapInvoice(data), ...prev]);
   };
 
+  const saveSiteCodes = async (pairs: { siteName: string; code: string }[]) => {
+    if (!requireUser()) return;
+    const seen = new Set<string>();
+    const rows = pairs
+      .map((p) => ({ site_name: p.siteName.trim(), accounting_code: p.code.trim(), user_id: userId }))
+      .filter((r) => {
+        const k = r.site_name.toLowerCase();
+        if (!r.site_name || !r.accounting_code || seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+    if (rows.length === 0) return;
+    const { error } = await supabase
+      .from("site_codes")
+      .upsert(rows, { onConflict: "user_id,site_name", ignoreDuplicates: false });
+    if (error) {
+      // fall back to delete + insert when the unique index is expression-based
+      await supabase.from("site_codes").delete().eq("user_id", userId).in("site_name", rows.map((r) => r.site_name));
+      const { error: e2 } = await supabase.from("site_codes").insert(rows);
+      if (e2) { toast.error(e2.message); return; }
+    }
+    setSiteCodes((prev) => {
+      const next = { ...prev };
+      rows.forEach((r) => { next[r.site_name.toLowerCase()] = r.accounting_code; });
+      return next;
+    });
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -294,6 +331,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         addEmployee, updateEmployee, deleteEmployee,
         addAssignments, updateAssignment, deleteAssignment,
         addInvoice,
+        siteCodes, saveSiteCodes,
       }}
     >
       {children}
