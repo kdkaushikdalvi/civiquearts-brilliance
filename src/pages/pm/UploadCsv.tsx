@@ -218,6 +218,7 @@ const UploadCsv = () => {
                 type="button"
                 variant="outline"
                 onClick={() => inputRef.current?.click()}
+                title="Choose a .csv or .xlsx file"
               >
                 <Upload className="h-4 w-4 mr-2" /> Choose File
               </Button>
@@ -240,9 +241,11 @@ const UploadCsv = () => {
           <div className="pt-2">
             <Button
               onClick={handleProcess}
-              className="gradient-saffron text-saffron-foreground"
+              disabled={!file}
+              title={file ? "Extract site names and accounting codes" : "Upload a .csv or .xlsx file first"}
+              className="gradient-saffron text-saffron-foreground disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Process File
+              Mapping
             </Button>
           </div>
         </Card>

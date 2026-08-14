@@ -271,8 +271,13 @@ const Assignments = () => {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium">Sites</label>
-              <Button variant="outline" size="sm" onClick={addSite}>
-                <Plus className="h-3.5 w-3.5 mr-1" /> Add Site
+              <Button
+                size="sm"
+                onClick={addSite}
+                title="Add another site row to this allocation"
+                className="bg-green-600 text-white hover:bg-green-700"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1" /> More Sites
               </Button>
             </div>
 
@@ -295,6 +300,7 @@ const Assignments = () => {
                       onChange={(id) => updateSite(s.id, { assigneeId: id })}
                       options={employees.map((e) => ({ id: e.id, label: e.name }))}
                       placeholder="Select Assignee *"
+                      title="Select Assignee*"
                       emptyActionLabel="Add Assignee"
                       onEmptyAction={async (query) => {
                         if (!query) {
@@ -311,7 +317,7 @@ const Assignments = () => {
                       <p className="text-xs text-destructive mt-1">{errors.sites?.[`${s.id}-assignee`]}</p>
                     )}
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => removeSite(s.id)} aria-label="Remove site">
+                  <Button variant="ghost" size="icon" onClick={() => removeSite(s.id)} aria-label="Remove site" title="Remove this site row">
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
@@ -320,7 +326,7 @@ const Assignments = () => {
           </div>
 
           <div className="flex justify-end">
-            <Button onClick={saveAssignments} className="gradient-saffron text-saffron-foreground">
+            <Button onClick={saveAssignments} title="Save the site allocation" className="gradient-saffron text-saffron-foreground">
               <Save className="h-4 w-4 mr-2" /> Save
             </Button>
           </div>
@@ -335,14 +341,14 @@ const Assignments = () => {
             <table className="w-full text-sm">
               <thead className="bg-secondary/50 text-left">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">Client</th>
-                  <th className="px-4 py-3 font-semibold">Project</th>
-                  <th className="px-4 py-3 font-semibold">Site</th>
-                  <th className="px-4 py-3 font-semibold">Assigned To</th>
-                  <th className="px-4 py-3 font-semibold">Unit / Qty</th>
-                  <th className="px-4 py-3 font-semibold">Amount</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold text-right">Action</th>
+                  <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Client">Client</th>
+                  <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Project">Project</th>
+                  <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Site">Site</th>
+                  <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Assigned To">Assigned To</th>
+                  <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Unit / Qty">Unit / Qty</th>
+                  <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Amount">Amount</th>
+                  <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Status">Status</th>
+                  <th className="px-4 py-3 font-semibold text-right whitespace-nowrap">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -355,17 +361,20 @@ const Assignments = () => {
                 ) : (
                   filtered.map((a) => (
                     <tr key={a.id} className="border-t border-border hover:bg-secondary/30">
-                      <td className="px-4 py-3">{a.clientName || "-"}</td>
-                      <td className="px-4 py-3">{a.projectName}</td>
-                      <td className="px-4 py-3">{a.siteName}</td>
-                      <td className="px-4 py-3">{a.assigneeName}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 max-w-[180px] truncate whitespace-nowrap" title={a.clientName || "-"}>{a.clientName || "-"}</td>
+                      <td className="px-4 py-3 max-w-[180px] truncate whitespace-nowrap" title={a.projectName}>{a.projectName}</td>
+                      <td className="px-4 py-3 max-w-[180px] truncate whitespace-nowrap" title={a.siteName}>{a.siteName}</td>
+                      <td className="px-4 py-3 max-w-[160px] truncate whitespace-nowrap" title={a.assigneeName}>{a.assigneeName}</td>
+                      <td
+                        className="px-4 py-3 max-w-[160px] truncate whitespace-nowrap"
+                        title={a.quantity != null ? `${a.unitType} · ${formatNumber(a.quantity)}` : "-"}
+                      >
                         {a.quantity != null ? `${a.unitType} · ${formatNumber(a.quantity)}` : "-"}
                       </td>
-                      <td className="px-4 py-3 font-medium">
+                      <td className="px-4 py-3 font-medium whitespace-nowrap">
                         {a.amount != null ? formatINR(a.amount) : "₹0.00"}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <select
                           value={a.status}
                           onChange={(e) => handleStatusChange(a, e.target.value as Assignment["status"])}
@@ -379,9 +388,9 @@ const Assignments = () => {
                           <option value="Completed">Completed</option>
                         </select>
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
                         {a.status === "Completed" && (
-                          <Button variant="ghost" size="icon" onClick={() => openComplete(a)} aria-label="Edit">
+                          <Button variant="ghost" size="icon" onClick={() => openComplete(a)} aria-label="Edit" title="Edit completion details">
                             <Pencil className="h-4 w-4" />
                           </Button>
                         )}
@@ -393,6 +402,7 @@ const Assignments = () => {
                             toast.success("Deleted");
                           }}
                           aria-label="Delete"
+                          title="Delete this allocation"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
