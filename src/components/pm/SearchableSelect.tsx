@@ -14,6 +14,7 @@ interface Props {
   emptyActionLabel?: string;
   onEmptyAction?: (query: string) => void;
   disabled?: boolean;
+  title?: string;
 }
 
 const SearchableSelect = ({
@@ -24,6 +25,7 @@ const SearchableSelect = ({
   emptyActionLabel,
   onEmptyAction,
   disabled,
+  title,
 }: Props) => {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -65,6 +67,11 @@ const SearchableSelect = ({
 
       {open && (
         <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg overflow-hidden">
+          {title && (
+            <div className="border-b border-border bg-secondary/60 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-foreground">
+              {title}
+            </div>
+          )}
           <div className="flex items-center border-b border-border px-2">
             <Search className="h-4 w-4 text-muted-foreground" />
             <input
