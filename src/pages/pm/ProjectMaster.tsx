@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import AppShell from "@/components/pm/AppShell";
 import { useData } from "@/contexts/DataContext";
@@ -55,12 +55,12 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
     toast.success("Updated");
   };
 
-  const Wrapper = ({ children }: { children: React.ReactNode }) =>
+  const Wrapper = ({ children }: { children: ReactNode }) =>
     embedded ? <>{children}</> : <AppShell>{children}</AppShell>;
 
   return (
     <Wrapper>
-      <div className={embedded ? "space-y-6" : "p-6 max-w-4xl mx-auto space-y-6">
+      <div className={embedded ? "space-y-6" : "p-6 max-w-4xl mx-auto space-y-6"}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Project List</h1>
