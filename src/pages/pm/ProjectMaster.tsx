@@ -11,7 +11,7 @@ import SearchableSelect from "@/components/pm/SearchableSelect";
 
 const PAGE_SIZE = 8;
 
-const ProjectMaster = () => {
+const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
   const { projects, clients, addClient, addProject, updateProject, deleteProject } = useData();
   const navigate = useNavigate();
   const location = useLocation();
@@ -55,9 +55,12 @@ const ProjectMaster = () => {
     toast.success("Updated");
   };
 
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
+    embedded ? <>{children}</> : <AppShell>{children}</AppShell>;
+
   return (
-    <AppShell>
-      <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <Wrapper>
+      <div className={embedded ? "space-y-6" : "p-6 max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Project List</h1>
@@ -207,7 +210,7 @@ const ProjectMaster = () => {
           )}
         </Card>
       </div>
-    </AppShell>
+    </Wrapper>
   );
 };
 

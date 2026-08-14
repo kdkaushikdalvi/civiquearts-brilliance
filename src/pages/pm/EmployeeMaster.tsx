@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 const PAGE_SIZE = 8;
 
-const EmployeeMaster = () => {
+const EmployeeMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
   const { employees, addEmployee, updateEmployee, deleteEmployee } = useData();
   const navigate = useNavigate();
   const location = useLocation();
@@ -52,9 +52,12 @@ const EmployeeMaster = () => {
     toast.success("Updated");
   };
 
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
+    embedded ? <>{children}</> : <AppShell>{children}</AppShell>;
+
   return (
-    <AppShell>
-      <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <Wrapper>
+      <div className={embedded ? "space-y-6" : "p-6 max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Employee List</h1>
@@ -146,7 +149,7 @@ const EmployeeMaster = () => {
           )}
         </Card>
       </div>
-    </AppShell>
+    </Wrapper>
   );
 };
 
