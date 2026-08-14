@@ -1,12 +1,9 @@
 import { ReactNode, useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
   ClipboardList,
   ChevronDown,
-  FolderKanban,
-  List,
-  UserCog,
+  Layers,
   Download,
   LogOut,
   Menu,
@@ -22,24 +19,26 @@ import logo from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { to: "/app/projects", label: "Site Allocation", icon: ClipboardList, iconClass: "text-blue-500" },
-  // { to: "/app/dashboard", label: "Overview", icon: LayoutDashboard, iconClass: "text-orange-500" },
+  {
+    to: "/app/projects",
+    label: "Site Allocation",
+    icon: ClipboardList,
+    iconClass: "text-blue-700",
+    tip: "Allocate sites to team members",
+  },
 ];
 
 const processExcelNav = [
-  { to: "/app/cap-projects-list", label: "Generate Excel", icon: FileDown, iconClass: "text-emerald-500" },
-  { to: "/app/upload-csv", label: "Upload CSV", icon: FileSpreadsheet, iconClass: "text-violet-500" },
-];
-
-const listNav = [
-  { to: "/app/master/project", label: "Project List", icon: FolderKanban, iconClass: "text-cyan-500" },
-  { to: "/app/master/employee", label: "Employee List", icon: UserCog, iconClass: "text-fuchsia-500" },
+  { to: "/app/cap-projects-list", label: "Generate Excel", icon: FileDown, iconClass: "text-emerald-700", tip: "Generate the CAP projects Excel file" },
+  { to: "/app/upload-csv", label: "Upload CSV", icon: FileSpreadsheet, iconClass: "text-violet-700", tip: "Upload a CSV/Excel and map accounting codes" },
 ];
 
 const invoiceNav = [
-  { to: "/app/download-invoices", label: "Payment Slip", icon: Download, iconClass: "text-amber-500" },
-  { to: "/app/client-invoice", label: "Client Invoice", icon: ReceiptText, iconClass: "text-rose-500" },
+  { to: "/app/download-invoices", label: "Payment Slip", icon: Download, iconClass: "text-amber-700", tip: "Generate and download payment slips" },
+  { to: "/app/client-invoice", label: "Client Invoice", icon: ReceiptText, iconClass: "text-rose-700", tip: "Create a client tax invoice" },
 ];
+
+const allListRoutes = ["/app/master/all", "/app/master/project", "/app/master/employee"];
 
 const AppShell = ({ children }: { children: ReactNode }) => {
   const { logout, user } = useAuth();
@@ -47,35 +46,22 @@ const AppShell = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [listOpen, setListOpen] = useState(() =>
-    listNav.some((n) => location.pathname === n.to),
-  );
   const [invoiceOpen, setInvoiceOpen] = useState(() =>
     invoiceNav.some((n) => location.pathname === n.to),
   );
   const [processExcelOpen, setProcessExcelOpen] = useState(() =>
     processExcelNav.some((n) => location.pathname === n.to),
   );
-  const listActive = listNav.some((n) => location.pathname === n.to);
   const invoiceActive = invoiceNav.some((n) => location.pathname === n.to);
   const processExcelActive = processExcelNav.some((n) => location.pathname === n.to);
+  const allListActive = allListRoutes.includes(location.pathname);
 
   useEffect(() => {
-    if (listActive) {
-      setListOpen(true);
-    }
-  }, [listActive]);
-
-  useEffect(() => {
-    if (invoiceActive) {
-      setInvoiceOpen(true);
-    }
+    if (invoiceActive) setInvoiceOpen(true);
   }, [invoiceActive]);
 
   useEffect(() => {
-    if (processExcelActive) {
-      setProcessExcelOpen(true);
-    }
+    if (processExcelActive) setProcessExcelOpen(true);
   }, [processExcelActive]);
 
   const handleLogout = () => {
@@ -99,6 +85,17 @@ const AppShell = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const topLevel = (isActive: boolean) =>
+    cn(
+      "flex w-full items-center gap-3 px-5 py-2.5 text-sm font-semibold transition-colors border-l-2",
+      isActive
+        ? "border-saffron text-saffron bg-saffron/5"
+        : "border-transparent text-foreground/80 hover:bg-secondary",
+    );
+
+  const iconBox = (className: string) =>
+    cn("h-5 w-5 shrink-0 stroke-[2.5]", className);
+
   const SidebarInner = (
     <>
       <div className="p-5 border-b border-border flex items-center gap-3">
@@ -109,88 +106,40 @@ const AppShell = ({ children }: { children: ReactNode }) => {
         </div>
       </div>
       <nav className="flex-1 overflow-y-auto py-3">
-        {nav.slice(0, 1).map((n) => (
+        {nav.map((n) => (
           <NavLink
             key={n.to}
             to={n.to}
+            title={n.tip}
             onClick={() => setMobileOpen(false)}
-            className={({ isActive }) =>
-              cn(
-                "flex items-center gap-3 px-5 py-2.5 text-sm font-medium transition-colors border-l-2",
-                isActive
-                  ? "border-saffron text-saffron bg-saffron/5"
-                  : "border-transparent text-foreground/80 hover:bg-secondary",
-              )
-            }
+            className={({ isActive }) => topLevel(isActive)}
           >
-            <n.icon className={cn("h-4 w-4", n.iconClass)} />
+            <n.icon className={iconBox(n.iconClass)} />
             {n.label}
           </NavLink>
         ))}
+
+        <NavLink
+          to="/app/master/all"
+          title="Projects, sites and employees in one place"
+          onClick={() => setMobileOpen(false)}
+          className={() => topLevel(allListActive)}
+        >
+          <Layers className={iconBox("text-indigo-700")} />
+          All List
+        </NavLink>
+
         <div>
           <button
             type="button"
-            onClick={() => setListOpen((open) => !open)}
-            className={cn(
-              "flex w-full items-center gap-3 px-5 py-2.5 text-sm font-medium transition-colors border-l-2",
-              listActive
-                ? "border-saffron text-saffron bg-saffron/5"
-                : "border-transparent text-foreground/80 hover:bg-secondary",
-            )}
-            aria-expanded={listOpen}
-          >
-            <List className="h-4 w-4 text-indigo-500" />
-            <span className="flex-1 text-left">List</span>
-            <ChevronDown
-              className={cn(
-                "h-4 w-4 transition-transform",
-                listOpen && "rotate-180",
-              )}
-            />
-          </button>
-          {listOpen && (
-            <div className="ml-8 border-l border-border py-1">
-              {listNav.map((n) => (
-                <NavLink
-                  key={n.to}
-                  to={n.to}
-                  onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors",
-                      isActive
-                        ? "text-saffron bg-saffron/5"
-                        : "text-foreground/70 hover:bg-secondary hover:text-foreground",
-                    )
-                  }
-                >
-                  <n.icon className={cn("h-4 w-4", n.iconClass)} />
-                  {n.label}
-                </NavLink>
-              ))}
-            </div>
-          )}
-        </div>
-        <div>
-          <button
-            type="button"
+            title="Invoice documents"
             onClick={() => setInvoiceOpen((open) => !open)}
-            className={cn(
-              "flex w-full items-center gap-3 px-5 py-2.5 text-sm font-medium transition-colors border-l-2",
-              invoiceActive
-                ? "border-saffron text-saffron bg-saffron/5"
-                : "border-transparent text-foreground/80 hover:bg-secondary",
-            )}
+            className={topLevel(invoiceActive)}
             aria-expanded={invoiceOpen}
           >
-            <Receipt className="h-4 w-4 text-teal-500" />
+            <Receipt className={iconBox("text-teal-700")} />
             <span className="flex-1 text-left">Invoice</span>
-            <ChevronDown
-              className={cn(
-                "h-4 w-4 transition-transform",
-                invoiceOpen && "rotate-180",
-              )}
-            />
+            <ChevronDown className={cn("h-4 w-4 transition-transform", invoiceOpen && "rotate-180")} />
           </button>
           {invoiceOpen && (
             <div className="ml-8 border-l border-border py-1">
@@ -198,6 +147,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
                 <NavLink
                   key={n.to}
                   to={n.to}
+                  title={n.tip}
                   onClick={() => setMobileOpen(false)}
                   className={({ isActive }) =>
                     cn(
@@ -208,26 +158,23 @@ const AppShell = ({ children }: { children: ReactNode }) => {
                     )
                   }
                 >
-                  <n.icon className={cn("h-4 w-4", n.iconClass)} />
+                  <n.icon className={iconBox(n.iconClass)} />
                   {n.label}
                 </NavLink>
               ))}
             </div>
           )}
         </div>
+
         <div>
           <button
             type="button"
+            title="Excel tools"
             onClick={() => setProcessExcelOpen((open) => !open)}
-            className={cn(
-              "flex w-full items-center gap-3 px-5 py-2.5 text-sm font-medium transition-colors border-l-2",
-              processExcelActive
-                ? "border-saffron text-saffron bg-saffron/5"
-                : "border-transparent text-foreground/80 hover:bg-secondary",
-            )}
+            className={topLevel(processExcelActive)}
             aria-expanded={processExcelOpen}
           >
-            <FileSpreadsheet className="h-4 w-4 text-emerald-500" />
+            <FileSpreadsheet className={iconBox("text-emerald-700")} />
             <span className="flex-1 text-left">Process Excel</span>
             <ChevronDown className={cn("h-4 w-4 transition-transform", processExcelOpen && "rotate-180")} />
           </button>
@@ -237,6 +184,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
                 <NavLink
                   key={n.to}
                   to={n.to}
+                  title={n.tip}
                   onClick={() => setMobileOpen(false)}
                   className={({ isActive }) =>
                     cn(
@@ -247,31 +195,13 @@ const AppShell = ({ children }: { children: ReactNode }) => {
                     )
                   }
                 >
-                  <n.icon className={cn("h-4 w-4", n.iconClass)} />
+                  <n.icon className={iconBox(n.iconClass)} />
                   {n.label}
                 </NavLink>
               ))}
             </div>
           )}
         </div>
-        {nav.slice(1).map((n) => (
-          <NavLink
-            key={n.to}
-            to={n.to}
-            onClick={() => setMobileOpen(false)}
-            className={({ isActive }) =>
-              cn(
-                "flex items-center gap-3 px-5 py-2.5 text-sm font-medium transition-colors border-l-2",
-                isActive
-                  ? "border-saffron text-saffron bg-saffron/5"
-                  : "border-transparent text-foreground/80 hover:bg-secondary",
-              )
-            }
-          >
-            <n.icon className={cn("h-4 w-4", n.iconClass)} />
-            {n.label}
-          </NavLink>
-        ))}
       </nav>
       <div className="border-t border-border p-3 text-xs text-muted-foreground truncate">
         Signed in as <span className="font-medium text-foreground">{user}</span>
@@ -280,19 +210,29 @@ const AppShell = ({ children }: { children: ReactNode }) => {
         type="button"
         onClick={handleRefreshApp}
         disabled={refreshing}
+        title="Clear cached data and reload the app"
         className="border-t border-border w-full px-5 py-3 text-sm font-medium text-foreground/80 hover:bg-secondary disabled:opacity-60 flex items-center gap-2"
       >
-        <RefreshCw className={cn("h-4 w-4 text-sky-500", refreshing && "animate-spin")} />
+        <RefreshCw className={cn("h-5 w-5 text-sky-700 stroke-[2.5]", refreshing && "animate-spin")} />
         {refreshing ? "Refreshing…" : "Refresh App"}
       </button>
       <button
         onClick={handleLogout}
+        title="Sign out of your account"
         className="border-t border-border w-full px-5 py-3 text-sm font-medium text-destructive hover:bg-destructive/10 flex items-center gap-2"
       >
-        <LogOut className="h-4 w-4 text-red-500" /> Logout
+        <LogOut className="h-5 w-5 text-red-700 stroke-[2.5]" /> Logout
       </button>
     </>
   );
+
+  const footerTabs = [
+    { to: "/app/projects", label: "Allocate", icon: ClipboardList, iconClass: "text-blue-700", tip: "Site Allocation" },
+    { to: "/app/master/all", label: "All List", icon: Layers, iconClass: "text-indigo-700", tip: "Project, Site & Employee lists", active: allListActive },
+    { to: "/app/download-invoices", label: "Slip", icon: Download, iconClass: "text-amber-700", tip: "Payment Slip" },
+    { to: "/app/client-invoice", label: "Invoice", icon: ReceiptText, iconClass: "text-rose-700", tip: "Client Invoice" },
+    { to: "/app/upload-csv", label: "Mapping", icon: FileSpreadsheet, iconClass: "text-violet-700", tip: "Upload CSV & map codes" },
+  ];
 
   return (
     <div className="min-h-screen flex bg-secondary/20">
@@ -314,16 +254,38 @@ const AppShell = ({ children }: { children: ReactNode }) => {
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="lg:hidden bg-card border-b border-border px-4 py-3 flex items-center justify-between sticky top-0 z-30">
-          <button onClick={() => setMobileOpen(true)} aria-label="Open menu">
+          <button onClick={() => setMobileOpen(true)} aria-label="Open menu" title="Open menu">
             <Menu className="h-5 w-5" />
           </button>
           <img src={logo} alt="CiviqueArts" className="h-8 w-auto" />
-          <button onClick={handleLogout} aria-label="Logout">
+          <button onClick={handleLogout} aria-label="Logout" title="Logout">
             <LogOut className="h-5 w-5" />
           </button>
         </header>
-        <main className="flex-1 overflow-x-auto">{children}</main>
+        <main className="flex-1 overflow-x-auto pb-20 lg:pb-0">{children}</main>
       </div>
+
+      {/* Mobile footer navigation */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border flex">
+        {footerTabs.map((t) => (
+          <NavLink
+            key={t.to}
+            to={t.to}
+            title={t.tip}
+            className={({ isActive }) =>
+              cn(
+                "flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold transition-colors",
+                (t.active ?? isActive)
+                  ? "text-saffron bg-saffron/5"
+                  : "text-foreground/70",
+              )
+            }
+          >
+            <t.icon className={cn("h-5 w-5 stroke-[2.5]", t.iconClass)} />
+            <span className="truncate max-w-full px-1">{t.label}</span>
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 };
