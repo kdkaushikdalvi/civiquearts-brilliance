@@ -63,7 +63,7 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
       <div className={embedded ? "space-y-6" : "p-6 max-w-4xl mx-auto space-y-6"}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Project List</h1>
+            {!embedded && <h1 className="text-2xl font-bold text-foreground">Project List</h1>}
           </div>
           {returnTo && (
             <Button variant="outline" onClick={() => navigate(returnTo)}>
