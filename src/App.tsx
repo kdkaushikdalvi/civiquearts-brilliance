@@ -53,6 +53,22 @@ const App = () => (
                 }
               />
               <Route
+                path="/app/master/all"
+                element={
+                  <ProtectedRoute>
+                    <AllLists />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/app/master/site"
+                element={
+                  <ProtectedRoute>
+                    <SiteList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/app/master/project"
                 element={
                   <ProtectedRoute>
