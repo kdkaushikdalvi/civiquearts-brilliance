@@ -18,6 +18,8 @@ import DownloadInvoices from "@/pages/pm/DownloadInvoices";
 import UploadCsv from "@/pages/pm/UploadCsv";
 import GenerateCapProjectsList from "@/pages/pm/GenerateCapProjectsList";
 import ClientInvoice from "@/pages/pm/ClientInvoice";
+import AllLists from "@/pages/pm/AllLists";
+import SiteList from "@/pages/pm/SiteList";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +49,22 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Assignments />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/app/master/all"
+                element={
+                  <ProtectedRoute>
+                    <AllLists />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/app/master/site"
+                element={
+                  <ProtectedRoute>
+                    <SiteList />
                   </ProtectedRoute>
                 }
               />
