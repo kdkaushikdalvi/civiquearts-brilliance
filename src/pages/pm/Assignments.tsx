@@ -98,6 +98,14 @@ const Assignments = () => {
       .sort((a, b) => statusSortAsc ? a.status.localeCompare(b.status) : b.status.localeCompare(a.status)),
     [assignments, month, year, statusSortAsc]
   );
+  const grouped = useMemo(() => {
+    const groups = new Map<string, Assignment[]>();
+    filtered.forEach((assignment) => {
+      const key = `${assignment.projectId}-${assignment.siteName}`;
+      groups.set(key, [...(groups.get(key) ?? []), assignment]);
+    });
+    return Array.from(groups.values());
+  }, [filtered]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Assignment | null>(null);
@@ -365,7 +373,6 @@ const Assignments = () => {
             <table className="w-full text-sm">
               <thead className="bg-gradient-to-r from-[#24105c] via-[#5c24ff] to-[#e91e9b] text-left text-white">
                 <tr>
-                  <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Client">Client</th>
                   <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Project">Project</th>
                   <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Site">Site</th>
                   <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Assigned To">Assigned To</th>
@@ -380,35 +387,35 @@ const Assignments = () => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 ? (
+                {grouped.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                       No projects for this month.
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((a, index) => (
-                    <tr key={a.id} className={`border-t border-slate-200 transition-colors hover:bg-blue-50 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`}>
-                      <td className="px-4 py-3 max-w-[180px] truncate whitespace-nowrap" title={a.clientName || "-"}>{a.clientName || "-"}</td>
+                  grouped.map((rows, index) => {
+                    const a = rows[0];
+                    return <tr key={a.id} className={`border-t border-slate-200 transition-colors hover:bg-blue-50 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`}>
                       <td className="px-4 py-3 max-w-[180px] truncate whitespace-nowrap" title={a.projectName}>{a.projectName}</td>
-                      <td className="px-4 py-3 max-w-[180px] truncate whitespace-nowrap" title={a.siteName}>{a.siteName}</td>
-                      <td className="px-4 py-3 max-w-[160px] truncate whitespace-nowrap" title={a.assigneeName}>{a.assigneeName}</td>
+                      <td className="px-4 py-3 whitespace-normal break-words" title={a.siteName}>{a.siteName}</td>
+                      <td className="px-4 py-3 align-top">{rows.map((row) => <div key={row.id} className="py-1 whitespace-nowrap">{row.assigneeName}</div>)}</td>
                       <td
                         className="px-4 py-3 max-w-[160px] truncate whitespace-nowrap"
                         title={a.quantity != null ? `${a.unitType} · ${formatNumber(a.quantity)}` : "-"}
                       >
-                        {a.quantity != null ? `${a.unitType} · ${formatNumber(a.quantity)}` : "-"}
+                        {rows.map((row) => <div key={row.id} className="py-1 whitespace-nowrap">{row.quantity != null ? `${row.unitType} · ${formatNumber(row.quantity)}` : "-"}</div>)}
                       </td>
                       <td className="px-4 py-3 font-medium whitespace-nowrap">
-                        {a.amount != null ? formatINR(a.amount) : "₹0.00"}
+                        {rows.map((row) => <div key={row.id} className="py-1 whitespace-nowrap">{row.amount != null ? formatINR(row.amount) : "₹0.00"}</div>)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1">
+                        {rows.map((row) => <div key={row.id} className="py-1">
                           <select
-                            value={a.status}
-                            onChange={(e) => handleStatusChange(a, e.target.value as Assignment["status"])}
+                            value={row.status}
+                            onChange={(e) => handleStatusChange(row, e.target.value as Assignment["status"])}
                             className={`cursor-pointer text-xs font-medium rounded-full px-3 py-1 border ${
-                            a.status === "Completed"
+                            row.status === "Completed"
                               ? "bg-green-accent/10 text-green-accent border-green-accent/30"
                               : a.status === "Hold"
                                 ? "bg-orange-500/10 text-orange-700 border-orange-500/30"
@@ -419,14 +426,14 @@ const Assignments = () => {
                             <option value="Hold">Hold</option>
                             <option value="Completed">Completed</option>
                           </select>
-                        </div>
+                        </div>)}
                       </td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
-                        {a.status === "Completed" && (
-                          <Button variant="ghost" size="icon" onClick={() => openComplete(a)} aria-label="Edit" title="Edit completion details">
+                        {rows.map((row) => row.status === "Completed" && (
+                          <Button key={row.id} variant="ghost" size="icon" onClick={() => openComplete(row)} aria-label="Edit" title="Edit completion details">
                             <Pencil className="h-4 w-4" />
                           </Button>
-                        )}
+                        ))}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -440,8 +447,8 @@ const Assignments = () => {
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </td>
-                    </tr>
-                  ))
+                    </tr>;
+                  })
                 )}
               </tbody>
             </table>
