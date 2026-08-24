@@ -12,6 +12,10 @@ import {
   ReceiptText,
   Receipt,
   RefreshCw,
+  FolderKanban,
+  Building2,
+  Users,
+  UserRound,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -23,7 +27,7 @@ const nav = [
     to: "/app/projects",
     label: "Site Allocation",
     icon: ClipboardList,
-    iconClass: "text-blue-700",
+    iconClass: "text-red-700",
     tip: "Allocate sites to team members",
   },
 ];
@@ -40,10 +44,10 @@ const invoiceNav = [
 
 const allListRoutes = ["/app/master/all", "/app/master/project", "/app/master/employee", "/app/master/site"];
 const masterDataNav = [
-  { tab: "projects", label: "Projects" },
-  { tab: "sites", label: "Sites" },
-  { tab: "employees", label: "Employees" },
-  { tab: "clients", label: "Clients" },
+  { tab: "projects", label: "Projects", icon: FolderKanban, iconClass: "text-cyan-600" },
+  { tab: "sites", label: "Sites", icon: Building2, iconClass: "text-lime-600" },
+  { tab: "employees", label: "Employees", icon: Users, iconClass: "text-fuchsia-600" },
+  { tab: "clients", label: "Clients", icon: UserRound, iconClass: "text-orange-600" },
 ] as const;
 
 const AppShell = ({ children }: { children: ReactNode }) => {
@@ -134,7 +138,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
             className={topLevel(invoiceActive)}
             aria-expanded={invoiceOpen}
           >
-            <Receipt className={iconBox("text-teal-700")} />
+            <Receipt className={iconBox("text-purple-700")} />
             <span className="flex-1 text-left">Invoice</span>
             <ChevronDown className={cn("h-4 w-4 transition-transform", invoiceOpen && "rotate-180")} />
           </button>
@@ -227,6 +231,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
                       : "text-foreground/70 hover:bg-secondary hover:text-foreground",
                   )}
                 >
+                  <item.icon className={iconBox(item.iconClass)} />
                   {item.label}
                 </NavLink>
               ))}
@@ -258,7 +263,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
   );
 
   const footerTabs = [
-    { to: "/app/projects", label: "Allocate", icon: ClipboardList, iconClass: "text-blue-700", tip: "Site Allocation" },
+    { to: "/app/projects", label: "Allocate", icon: ClipboardList, iconClass: "text-red-700", tip: "Site Allocation" },
     { to: "/app/master/all", label: "Master Data", icon: Layers, iconClass: "text-indigo-700", tip: "Project, Site, Employee & Client lists", active: allListActive },
     { to: "/app/download-invoices", label: "Slip", icon: Download, iconClass: "text-amber-700", tip: "Payment Slip" },
     { to: "/app/client-invoice", label: "Invoice", icon: ReceiptText, iconClass: "text-rose-700", tip: "Client Invoice" },
