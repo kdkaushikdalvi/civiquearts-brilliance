@@ -9,7 +9,7 @@ import { Assignment } from "@/types/pm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Plus, Trash2, Pencil, Save } from "lucide-react";
+import { Plus, Trash2, Pencil, Save, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, formatNumber } from "@/lib/pmFormat";
 
@@ -41,6 +41,7 @@ const Assignments = () => {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
+  const [allocationFormOpen, setAllocationFormOpen] = useState(false);
 
   const [clientId, setClientId] = useState("");
   const [projectId, setProjectId] = useState("");
@@ -205,8 +206,20 @@ const Assignments = () => {
         </div>
 
         {/* Create Section */}
-        <Card className="p-5 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setAllocationFormOpen((open) => !open)}
+            className="flex w-full items-center justify-between bg-gradient-to-r from-slate-800 to-slate-700 px-5 py-4 text-left text-white hover:from-slate-700 hover:to-slate-600"
+            aria-expanded={allocationFormOpen}
+          >
+            <span><span className="block font-semibold">Create Site Allocation</span><span className="mt-0.5 block text-xs text-slate-300">Assign one or more sites to a team member</span></span>
+            <ChevronDown className={`h-5 w-5 transition-transform ${allocationFormOpen ? "rotate-180" : ""}`} />
+          </button>
+          {allocationFormOpen && <div className="space-y-5 border-t border-border bg-slate-50/60 p-5">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">Assignment details</p>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Client Name *</label>
               <SearchableSelect
@@ -266,11 +279,12 @@ const Assignments = () => {
               />
               {errors.project && <p className="text-xs text-destructive mt-1">{errors.project}</p>}
             </div>
+            </div>
           </div>
 
-          <div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium">Sites</label>
+              <div><label className="text-sm font-semibold">Sites</label><p className="text-xs text-muted-foreground">Add the sites included in this allocation</p></div>
               <Button
                 size="sm"
                 onClick={addSite}
@@ -281,6 +295,11 @@ const Assignments = () => {
               </Button>
             </div>
 
+            <div className="mb-2 hidden grid-cols-[1fr_1fr_auto] gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:grid">
+              <span>Site Name</span>
+              <span>Select Assignee</span>
+              <span className="w-10" />
+            </div>
             <div className="space-y-2">
               {sites.map((s) => (
                 <div key={s.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 items-start">
@@ -325,11 +344,12 @@ const Assignments = () => {
             </div>
           </div>
 
-          <div className="flex justify-end">
-            <Button onClick={saveAssignments} title="Save the site allocation" className="gradient-saffron text-saffron-foreground">
+          <div className="flex justify-end border-t border-slate-200 pt-1">
+            <Button onClick={saveAssignments} title="Save the site allocation" className="gradient-saffron text-saffron-foreground px-6 shadow-sm">
               <Save className="h-4 w-4 mr-2" /> Save
             </Button>
           </div>
+          </div>}
         </Card>
 
         {/* Table */}

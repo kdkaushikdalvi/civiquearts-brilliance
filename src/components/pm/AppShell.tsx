@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   ClipboardList,
@@ -38,8 +39,8 @@ const processExcelNav = [
 ];
 
 const invoiceNav = [
-  { to: "/app/download-invoices", label: "Payment Slip", icon: Download, iconClass: "text-amber-700", tip: "Generate and download payment slips" },
-  { to: "/app/client-invoice", label: "Client Invoice", icon: ReceiptText, iconClass: "text-rose-700", tip: "Create a client tax invoice" },
+  { to: "/app/download-invoices", label: "Payment Slip", icon: Download, iconClass: "text-yellow-700", tip: "Generate and download payment slips" },
+  { to: "/app/client-invoice", label: "Client Invoice", icon: ReceiptText, iconClass: "text-pink-700", tip: "Create a client tax invoice" },
 ];
 
 const allListRoutes = ["/app/master/all", "/app/master/project", "/app/master/employee", "/app/master/site"];
@@ -109,13 +110,28 @@ const AppShell = ({ children }: { children: ReactNode }) => {
 
   const SidebarInner = (
     <>
-      <div className="p-5 border-b border-border flex items-center gap-3">
-        <img src={logo} alt="CiviqueArts" className="h-10 w-auto" />
-        <div className="leading-tight">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.12 } } }}
+        className="p-5 border-b border-border flex items-center gap-3"
+      >
+        <motion.img
+          src={logo}
+          alt="CiviqueArts"
+          className="h-10 w-auto animate-pulse"
+          variants={{ hidden: { opacity: 0, x: -12, scale: 0.9 }, visible: { opacity: 1, x: 0, scale: 1 } }}
+          transition={{ type: "spring", stiffness: 260, damping: 20 }}
+        />
+        <motion.div
+          className="leading-tight animate-pulse"
+          variants={{ hidden: { opacity: 0, x: 12 }, visible: { opacity: 1, x: 0 } }}
+          transition={{ duration: 0.35 }}
+        >
           <div className="font-bold text-sm">CiviqueArts</div>
           <div className="text-xs text-muted-foreground">Billing System</div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
       <nav className="flex-1 overflow-y-auto py-3">
         {nav.map((n) => (
           <NavLink
@@ -265,8 +281,8 @@ const AppShell = ({ children }: { children: ReactNode }) => {
   const footerTabs = [
     { to: "/app/projects", label: "Allocate", icon: ClipboardList, iconClass: "text-red-700", tip: "Site Allocation" },
     { to: "/app/master/all", label: "Master Data", icon: Layers, iconClass: "text-indigo-700", tip: "Project, Site, Employee & Client lists", active: allListActive },
-    { to: "/app/download-invoices", label: "Slip", icon: Download, iconClass: "text-amber-700", tip: "Payment Slip" },
-    { to: "/app/client-invoice", label: "Invoice", icon: ReceiptText, iconClass: "text-rose-700", tip: "Client Invoice" },
+    { to: "/app/download-invoices", label: "Slip", icon: Download, iconClass: "text-yellow-700", tip: "Payment Slip" },
+    { to: "/app/client-invoice", label: "Invoice", icon: ReceiptText, iconClass: "text-pink-700", tip: "Client Invoice" },
     { to: "/app/upload-csv", label: "Mapping", icon: FileSpreadsheet, iconClass: "text-violet-700", tip: "Upload CSV & map codes" },
   ];
 

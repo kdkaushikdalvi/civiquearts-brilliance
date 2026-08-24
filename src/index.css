@@ -145,6 +145,16 @@
 html {
   scroll-behavior: smooth;
 }
+
+/* Consistent dark page banner for the main app screens. */
+main h1.text-2xl {
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  color: hsl(215 60% 14%);
+  background: transparent;
+  border: 2px solid hsl(215 60% 14% / 0.75);
+  box-shadow: none;
+}
 #lovable-badge {
   display: none !important;
 }

@@ -27,6 +27,7 @@ const MonthNavigator = ({ month, year, onChange }: Props) => {
         <ChevronLeft className="h-4 w-4" strokeWidth={3} />
       </Button>
       <span className="min-w-[168px] px-5 py-2 text-center text-sm font-bold tracking-wide text-slate-800">
+        <span aria-hidden="true" className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-saffron align-middle shadow-[0_0_0_3px_hsl(var(--saffron)/0.15)]" />
         {MONTH_NAMES[month]} {year}
       </span>
       <Button
