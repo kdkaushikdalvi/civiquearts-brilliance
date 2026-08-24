@@ -187,9 +187,11 @@ const ClientInvoice = () => {
   const totalQty = lines.reduce((s, l) => s + (l.quantity || 0), 0);
   const subTotal = lines.reduce((s, l) => s + (l.amount || 0), 0);
 
-  const invoiceNumber = `CAPL-INV-${String(year).slice(-2)}-${String(
-    month + 1
-  ).padStart(2, "0")}`;
+  // Invoice number, financial year, and invoice month.
+  const invoiceSequence = 25;
+  const invoiceNumber = `CAPL-INV-${invoiceSequence}-${String(
+    year
+  ).slice(-2)}-${String(month + 1).padStart(2, "0")}`;
   const displayDate = invoiceDate
     ? new Date(`${invoiceDate}T00:00:00`).toLocaleDateString("en-GB", {
         day: "2-digit",
@@ -220,11 +222,17 @@ const ClientInvoice = () => {
         w,
         (canvas.height * w) / canvas.width
       );
-      pdf.save(
-        `Invoice_${client?.name.replace(/\s/g, "") || "Client"}_${
-          MONTH_NAMES[month]
-        }_${year}.pdf`
-      );
+      const selectedInvoiceDate = invoiceDate
+        ? new Date(`${invoiceDate}T00:00:00`)
+        : new Date();
+      const datePart = [
+        selectedInvoiceDate.getDate(),
+        selectedInvoiceDate.getMonth() + 1,
+        selectedInvoiceDate.getFullYear() % 100,
+      ]
+        .map((part) => String(part).padStart(2, "0"))
+        .join("_");
+      pdf.save(`${invoiceNumber}_${datePart}.pdf`);
       toast.success("Invoice downloaded");
     } catch (e) {
       console.error(e);
