@@ -102,7 +102,7 @@ const Assignments = () => {
 
   const handleStatusChange = (a: Assignment, next: Assignment["status"]) => {
     if (next === "Completed") openComplete(a);
-    else updateAssignment(a.id, { status: "In Progress" });
+    else updateAssignment(a.id, { status: next });
   };
 
   const handleSaveModal = (data: { unitType: Assignment["unitType"]; quantity: number; rate: number; amount: number }) => {
@@ -406,10 +406,13 @@ const Assignments = () => {
                           className={`text-xs font-medium rounded-full px-3 py-1 border ${
                             a.status === "Completed"
                               ? "bg-green-accent/10 text-green-accent border-green-accent/30"
+                              : a.status === "Hold"
+                                ? "bg-orange-500/10 text-orange-700 border-orange-500/30"
                               : "bg-yellow-500/10 text-yellow-700 border-yellow-500/30"
                           }`}
                         >
                           <option value="In Progress">In Progress</option>
+                          <option value="Hold">Hold</option>
                           <option value="Completed">Completed</option>
                         </select>
                       </td>

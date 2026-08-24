@@ -141,6 +141,7 @@ const ClientInvoice = () => {
         (a) =>
           a.month === month &&
           a.year === year &&
+          a.status === "Completed" &&
           (a.clientId === clientId || clientProjectIds.has(a.projectId))
       );
     },

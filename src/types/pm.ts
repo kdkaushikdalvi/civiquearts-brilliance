@@ -10,7 +10,7 @@ export interface Assignment {
   assigneeName: string;
   month: number; // 0-11
   year: number;
-  status: "In Progress" | "Completed";
+  status: "In Progress" | "Hold" | "Completed";
   unitType?: string;
   quantity?: number;
   rate?: number;
