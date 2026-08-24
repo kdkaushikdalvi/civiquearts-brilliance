@@ -57,9 +57,9 @@ const EmployeeMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
   return (
     <MasterWrapper embedded={embedded}>
       <div className={embedded ? "space-y-6" : "p-6 max-w-5xl mx-auto space-y-6"}>
-        <div className="flex items-center justify-between border-b border-border pb-4">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-4">
           <div>
-            {!embedded && <h1 className="text-2xl font-bold text-foreground">Employee List</h1>}
+            {!embedded && <h3 className="text-xl font-semibold text-fuchsia-800">Employee List</h3>}
           </div>
           {returnTo && (
             <Button variant="outline" onClick={() => navigate(returnTo)}>
@@ -69,7 +69,7 @@ const EmployeeMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
         </div>
 
         <Card className="p-5 space-y-3">
-          <label className="text-sm font-medium block">Add Employee</label>
+          <label className="block text-sm font-semibold text-fuchsia-800">Add Employee</label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <Input placeholder="Employee Name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <Input placeholder="Mobile (optional)" value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} />
@@ -82,7 +82,7 @@ const EmployeeMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
         </Card>
 
         <Card className="overflow-hidden">
-          <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-4">
+          <div className="px-5 py-3 flex items-center justify-between gap-4 bg-gradient-to-r from-[#24105c] via-[#5c24ff] to-[#e91e9b] text-white">
             <h2 className="font-semibold">Employees ({filtered.length})</h2>
             <div className="relative w-64 max-w-full">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

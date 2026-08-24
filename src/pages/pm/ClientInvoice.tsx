@@ -243,8 +243,8 @@ const ClientInvoice = () => {
   return (
     <AppShell>
       <div className="p-6 max-w-6xl mx-auto space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
-          <h1 className="text-2xl font-bold text-foreground">Client Invoice</h1>
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
+          <h3 className="text-xl font-semibold text-pink-800">Client Invoice</h3>
           <MonthNavigator
             month={month}
             year={year}
@@ -257,7 +257,7 @@ const ClientInvoice = () => {
 
         <Card className="p-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <label className="text-sm font-medium mb-1.5 block">
+            <label className="mb-1.5 block text-sm font-semibold text-pink-800">
               Client Name
             </label>
             <SearchableSelect
@@ -270,7 +270,7 @@ const ClientInvoice = () => {
           <div>
             <label
               htmlFor="inv-date"
-              className="text-sm font-medium mb-1.5 block"
+              className="mb-1.5 block text-sm font-semibold text-rose-800"
             >
               Invoice Date
             </label>
@@ -284,7 +284,7 @@ const ClientInvoice = () => {
           <div>
             <label
               htmlFor="bill-to"
-              className="text-sm font-medium mb-1.5 block"
+              className="mb-1.5 block text-sm font-semibold text-fuchsia-800"
             >
               Bill To
             </label>

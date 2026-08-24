@@ -60,9 +60,9 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
   return (
     <MasterWrapper embedded={embedded}>
       <div className={embedded ? "space-y-6" : "p-6 max-w-4xl mx-auto space-y-6"}>
-        <div className="flex items-center justify-between border-b border-border pb-4">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-4">
           <div>
-            {!embedded && <h1 className="text-2xl font-bold text-foreground">Project List</h1>}
+            {!embedded && <h3 className="text-xl font-semibold text-sky-800">Project List</h3>}
           </div>
           {returnTo && (
             <Button variant="outline" onClick={() => navigate(returnTo)}>
@@ -72,7 +72,7 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
         </div>
 
         <Card className="p-5">
-          <label className="text-sm font-medium mb-2 block">Add Project</label>
+          <label className="mb-2 block text-sm font-semibold text-sky-800">Add Project</label>
           <div className="mb-2">
             <SearchableSelect
               value={clientId}
@@ -97,14 +97,14 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             />
-            <Button onClick={handleAdd} className="gradient-saffron text-saffron-foreground">
+            <Button onClick={handleAdd} className="bg-[#5c24ff] text-white hover:bg-[#4b1ed6]">
               <Plus className="h-4 w-4 mr-2" /> Add
             </Button>
           </div>
         </Card>
 
         <Card className="overflow-hidden">
-          <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-4">
+          <div className="px-5 py-3 flex items-center justify-between gap-4 bg-gradient-to-r from-[#24105c] via-[#5c24ff] to-[#e91e9b] text-white">
             <h2 className="font-semibold">Projects ({filtered.length})</h2>
             <div className="relative w-64 max-w-full">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

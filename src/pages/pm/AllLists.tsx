@@ -30,12 +30,12 @@ const AllLists = () => {
   return (
     <AppShell>
       <div className="p-6 max-w-5xl mx-auto space-y-6">
-        <div className="border-b border-border pb-4">
-          <h1 className="text-2xl font-bold text-foreground">Master Data</h1>
+        <div className="border-b border-slate-200 pb-4">
+          <h3 className="text-xl font-semibold text-cyan-800">Master Data</h3>
         </div>
 
-        <Card className="p-1.5">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+        <Card className="rounded-full border-0 bg-[#2f2f2f] p-1 shadow-none">
+          <div className="grid grid-cols-2 gap-1 sm:grid-cols-4">
             {TABS.map((t) => {
               const Icon = t.icon;
               const active = tab === t.id;
@@ -46,13 +46,13 @@ const AllLists = () => {
                   title={t.label}
                   onClick={() => setTab(t.id)}
                   className={cn(
-                    "flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all whitespace-nowrap truncate",
+                    "flex items-center justify-center gap-1.5 rounded-full px-2 py-1.5 text-xs font-semibold transition-all whitespace-nowrap truncate",
                     active
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:bg-secondary",
+                      ? "bg-white text-[#2f2f2f] shadow-sm"
+                      : "text-white/80 hover:bg-white/10 hover:text-white",
                   )}
                 >
-                  <Icon className={cn("h-4 w-4 shrink-0", active ? "" : t.iconClass)} />
+                  <Icon className={cn("h-3.5 w-3.5 shrink-0", active ? "" : t.iconClass)} />
                   <span className="truncate">{t.label}</span>
                 </button>
               );

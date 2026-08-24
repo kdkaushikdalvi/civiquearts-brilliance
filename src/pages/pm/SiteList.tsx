@@ -48,10 +48,10 @@ const SiteList = ({ embedded = false }: { embedded?: boolean } = {}) => {
   return (
     <MasterWrapper embedded={embedded}>
       <div className={embedded ? "space-y-6" : "p-6 max-w-5xl mx-auto space-y-6"}>
-        {!embedded && <div className="border-b border-border pb-4"><h1 className="text-2xl font-bold text-foreground">Site List</h1></div>}
+        {!embedded && <div className="border-b border-slate-200 pb-4"><h3 className="text-xl font-semibold text-lime-800">Site List</h3></div>}
 
         <Card className="p-5 space-y-3">
-          <label className="text-sm font-medium block">Add Site</label>
+          <label className="block text-sm font-semibold text-lime-800">Add Site</label>
           <SearchableSelect
             value={projectId}
             onChange={setProjectId}
@@ -77,7 +77,7 @@ const SiteList = ({ embedded = false }: { embedded?: boolean } = {}) => {
         </Card>
 
         <Card className="overflow-hidden">
-          <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-4">
+          <div className="px-5 py-3 flex items-center justify-between gap-4 bg-gradient-to-r from-[#24105c] via-[#5c24ff] to-[#e91e9b] text-white">
             <h2 className="font-semibold whitespace-nowrap">Sites ({rows.length})</h2>
             <div className="relative w-64 max-w-full">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

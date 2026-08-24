@@ -125,16 +125,16 @@ const DownloadInvoices = () => {
   return (
     <AppShell>
       <div className="p-6 max-w-6xl mx-auto space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Payment Slips</h1>
+            <h3 className="text-xl font-semibold text-yellow-800">Payment Slips</h3>
           </div>
           <MonthNavigator month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y); }} />
         </div>
 
         <Card className="p-5 grid gap-4 sm:grid-cols-2 max-w-3xl">
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Assignee</label>
+            <label className="mb-1.5 block text-sm font-semibold text-yellow-800">Assignee</label>
             <SearchableSelect
               value={assigneeId}
               onChange={setAssigneeId}
@@ -143,7 +143,7 @@ const DownloadInvoices = () => {
             />
           </div>
           <div>
-            <label htmlFor="slip-date" className="text-sm font-medium mb-1.5 block">Payment Slip Date</label>
+            <label htmlFor="slip-date" className="mb-1.5 block text-sm font-semibold text-amber-800">Payment Slip Date</label>
             <input
               id="slip-date"
               type="date"

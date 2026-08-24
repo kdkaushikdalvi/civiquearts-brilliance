@@ -326,7 +326,9 @@ const AppShell = ({ children }: { children: ReactNode }) => {
               cn(
                 "flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold transition-colors",
                 (t.active ?? isActive)
-                  ? "text-saffron bg-saffron/5"
+                  ? t.label === "Mapping"
+                    ? "text-blue-700 bg-blue-50"
+                    : "text-saffron bg-saffron/5"
                   : "text-foreground/70",
               )
             }

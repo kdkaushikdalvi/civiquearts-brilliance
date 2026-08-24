@@ -10,7 +10,7 @@ import { Assignment } from "@/types/pm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Plus, Trash2, Pencil, Save, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Pencil, Save, ChevronDown, ArrowUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, formatNumber } from "@/lib/pmFormat";
 
@@ -43,6 +43,7 @@ const Assignments = () => {
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
   const [allocationFormOpen, setAllocationFormOpen] = useState(false);
+  const [statusSortAsc, setStatusSortAsc] = useState(true);
 
   const [clientId, setClientId] = useState("");
   const [projectId, setProjectId] = useState("");
@@ -89,8 +90,10 @@ const Assignments = () => {
   const clearDraft = () => localStorage.removeItem(DRAFT_KEY);
 
   const filtered = useMemo(
-    () => assignments.filter((a) => a.month === month && a.year === year),
-    [assignments, month, year]
+    () => assignments
+      .filter((a) => a.month === month && a.year === year)
+      .sort((a, b) => statusSortAsc ? a.status.localeCompare(b.status) : b.status.localeCompare(a.status)),
+    [assignments, month, year, statusSortAsc]
   );
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -181,18 +184,17 @@ const Assignments = () => {
     })))).flat();
     await addAssignments(records);
     toast.success(`${records.length} project${records.length > 1 ? "s" : ""} saved`);
-    setClientId("");
-    setProjectId("");
-    setSites([{ id: crypto.randomUUID(), siteName: "", assigneeIds: [] }]);
-    clearDraft();
+    const emptySites = [{ id: crypto.randomUUID(), siteName: "", assigneeIds: [] }];
+    setSites(emptySites);
+    persistDraft({ sites: emptySites });
   };
 
   return (
     <AppShell>
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Site Allocation</h1>
+            <h3 className="text-xl font-semibold text-blue-800">Site Allocation</h3>
           </div>
           <MonthNavigator
             month={month}
@@ -206,22 +208,28 @@ const Assignments = () => {
         </div>
 
         {/* Create Section */}
-        <Card className="overflow-hidden">
+        <Card className="overflow-visible">
           <button
             type="button"
             onClick={() => setAllocationFormOpen((open) => !open)}
-            className="flex w-full items-center justify-between bg-gradient-to-r from-slate-800 to-slate-700 px-5 py-4 text-left text-white hover:from-slate-700 hover:to-slate-600"
+            className="flex w-full items-center justify-between bg-gradient-to-r from-[#24105c] via-[#5c24ff] to-[#e91e9b] px-5 py-4 text-left text-white shadow-sm transition-colors hover:brightness-110"
             aria-expanded={allocationFormOpen}
           >
-            <span><span className="block font-semibold">Create Site Allocation</span><span className="mt-0.5 block text-xs text-slate-300">Assign one or more sites to a team member</span></span>
-            <ChevronDown className={`h-5 w-5 transition-transform ${allocationFormOpen ? "rotate-180" : ""}`} />
+            <span className="flex items-center gap-2 font-semibold">
+              <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-[#5c24ff] text-white shadow-sm">
+                <span className={`absolute inset-0 rounded-full bg-[#8a68ff] opacity-60 ${!allocationFormOpen ? "animate-ping" : ""}`} />
+                <Plus className="relative h-4 w-4" />
+              </span>
+              Create Site Allocation
+            </span>
+            <ChevronDown className={`h-5 w-5 transition-transform duration-300 ${allocationFormOpen ? "rotate-180" : "animate-bounce"}`} />
           </button>
-          {allocationFormOpen && <div className="space-y-5 border-t border-border bg-slate-50/60 p-5">
+          {allocationFormOpen && <div className="space-y-5 border-t border-border bg-blue-50/50 p-5">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-700">Assignment details</p>
+            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-indigo-700">Assignment details</p>
             <div className="space-y-4">
             <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-4">
-              <label className="w-32 shrink-0 pt-2 text-sm font-medium text-blue-800">Client Name *</label>
+              <label className="w-32 shrink-0 pt-2 text-sm font-semibold text-blue-800">Client Name *</label>
               <div className="min-w-0 flex-1">
                 <SearchableSelect
                 value={clientId}
@@ -250,7 +258,7 @@ const Assignments = () => {
             </div>
 
             <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-4">
-              <label className="w-32 shrink-0 pt-2 text-sm font-medium text-blue-800">Project *</label>
+              <label className="w-32 shrink-0 pt-2 text-sm font-semibold text-violet-800">Project *</label>
               <div className="min-w-0 flex-1">
                 <SearchableSelect
                 value={projectId}
@@ -288,7 +296,7 @@ const Assignments = () => {
 
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <div><label className="text-sm font-semibold">Sites</label></div>
+              <div><label className="text-sm font-semibold text-emerald-700">Sites</label></div>
               <Button
                 type="button"
                 size="icon"
@@ -302,8 +310,8 @@ const Assignments = () => {
             </div>
 
             <div className="mb-2 hidden grid-cols-[1fr_1fr_auto] gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:grid">
-              <span className="text-blue-800">Site Name</span>
-              <span className="text-violet-800">Select Assignee</span>
+              <span className="text-cyan-800">Site Name</span>
+              <span className="text-pink-800">Select Assignee</span>
               <span className="w-10" />
             </div>
             <div className="space-y-2">
@@ -347,12 +355,12 @@ const Assignments = () => {
 
         {/* Table */}
         <Card className="overflow-hidden">
-          <div className="px-5 py-3 border-b border-border">
+          <div className="px-5 py-3 bg-gradient-to-r from-[#24105c] via-[#5c24ff] to-[#e91e9b] text-white">
             <h2 className="font-semibold">{MONTH_NAMES[month]} {year} — Site Allocation ({filtered.length})</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-secondary/50 text-left">
+              <thead className="bg-gradient-to-r from-[#24105c] via-[#5c24ff] to-[#e91e9b] text-left text-white">
                 <tr>
                   <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Client">Client</th>
                   <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Project">Project</th>
@@ -360,7 +368,11 @@ const Assignments = () => {
                   <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Assigned To">Assigned To</th>
                   <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Unit / Qty">Unit / Qty</th>
                   <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Amount">Amount</th>
-                  <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Status">Status</th>
+                  <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Sort by status">
+                    <button type="button" onClick={() => setStatusSortAsc((current) => !current)} className="inline-flex items-center gap-1 hover:text-sky-200">
+                      Status <ArrowUpDown className="h-3.5 w-3.5" />
+                    </button>
+                  </th>
                   <th className="px-4 py-3 font-semibold text-right whitespace-nowrap">Action</th>
                 </tr>
               </thead>
@@ -372,8 +384,8 @@ const Assignments = () => {
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((a) => (
-                    <tr key={a.id} className="border-t border-border hover:bg-secondary/30">
+                  filtered.map((a, index) => (
+                    <tr key={a.id} className={`border-t border-slate-200 transition-colors hover:bg-blue-50 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`}>
                       <td className="px-4 py-3 max-w-[180px] truncate whitespace-nowrap" title={a.clientName || "-"}>{a.clientName || "-"}</td>
                       <td className="px-4 py-3 max-w-[180px] truncate whitespace-nowrap" title={a.projectName}>{a.projectName}</td>
                       <td className="px-4 py-3 max-w-[180px] truncate whitespace-nowrap" title={a.siteName}>{a.siteName}</td>
@@ -388,21 +400,23 @@ const Assignments = () => {
                         {a.amount != null ? formatINR(a.amount) : "₹0.00"}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <select
-                          value={a.status}
-                          onChange={(e) => handleStatusChange(a, e.target.value as Assignment["status"])}
-                          className={`text-xs font-medium rounded-full px-3 py-1 border ${
+                        <div className="inline-flex items-center gap-1">
+                          <select
+                            value={a.status}
+                            onChange={(e) => handleStatusChange(a, e.target.value as Assignment["status"])}
+                            className={`cursor-pointer text-xs font-medium rounded-full px-3 py-1 border ${
                             a.status === "Completed"
                               ? "bg-green-accent/10 text-green-accent border-green-accent/30"
                               : a.status === "Hold"
                                 ? "bg-orange-500/10 text-orange-700 border-orange-500/30"
                               : "bg-yellow-500/10 text-yellow-700 border-yellow-500/30"
-                          }`}
-                        >
-                          <option value="In Progress">In Progress</option>
-                          <option value="Hold">Hold</option>
-                          <option value="Completed">Completed</option>
-                        </select>
+                            }`}
+                          >
+                            <option value="In Progress">In Progress</option>
+                            <option value="Hold">Hold</option>
+                            <option value="Completed">Completed</option>
+                          </select>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         {a.status === "Completed" && (

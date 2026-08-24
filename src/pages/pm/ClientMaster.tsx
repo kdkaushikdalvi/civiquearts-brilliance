@@ -34,12 +34,12 @@ const ClientMaster = ({ embedded = false }: { embedded?: boolean }) => {
   };
 
   return <MasterWrapper embedded={embedded}><div className={embedded ? "space-y-6" : "p-6 max-w-4xl mx-auto space-y-6"}>
-    {!embedded && <div className="border-b border-border pb-4"><h1 className="text-2xl font-bold text-foreground">Client List</h1></div>}
-    <Card className="p-5"><label className="text-sm font-medium mb-2 block">Add Client</label>
+    {!embedded && <div className="border-b border-slate-200 pb-4"><h3 className="text-xl font-semibold text-orange-800">Client List</h3></div>}
+    <Card className="p-5"><label className="mb-2 block text-sm font-semibold text-orange-800">Add Client</label>
       <div className="flex gap-2"><Input placeholder="Client Name" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAdd()} />
         <Button onClick={handleAdd} className="gradient-saffron text-saffron-foreground"><Plus className="h-4 w-4 mr-2" />Add</Button></div>
     </Card>
-    <Card className="overflow-hidden"><div className="px-5 py-3 border-b border-border flex items-center justify-between gap-4"><h2 className="font-semibold">Clients ({filtered.length})</h2>
+    <Card className="overflow-hidden"><div className="px-5 py-3 flex items-center justify-between gap-4 bg-gradient-to-r from-[#24105c] via-[#5c24ff] to-[#e91e9b] text-white"><h2 className="font-semibold">Clients ({filtered.length})</h2>
       <div className="relative w-64 max-w-full"><Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="pl-8" /></div></div>
       <table className="w-full text-sm"><thead className="bg-secondary/50 text-left"><tr><th className="px-4 py-3">#</th><th className="px-4 py-3">Client Name</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody>
         {pageItems.length === 0 ? <tr><td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">No clients found.</td></tr> : pageItems.map((c, i) => <tr key={c.id} className="border-t border-border"><td className="px-4 py-3 text-muted-foreground">{(page - 1) * PAGE_SIZE + i + 1}</td><td className="px-4 py-3">{editingId === c.id ? <Input value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={(e) => e.key === "Enter" && saveEdit()} /> : c.name}</td><td className="px-4 py-3 text-right">{editingId === c.id ? <><Button size="icon" variant="ghost" onClick={saveEdit}><Save className="h-4 w-4" /></Button><Button size="icon" variant="ghost" onClick={() => setEditingId(null)}><X className="h-4 w-4" /></Button></> : <><Button size="icon" variant="ghost" onClick={() => { setEditingId(c.id); setEditValue(c.name); }}><Pencil className="h-4 w-4" /></Button><Button size="icon" variant="ghost" onClick={() => deleteClient(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></>}</td></tr>)}</tbody></table>
