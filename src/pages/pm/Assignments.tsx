@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import AppShell from "@/components/pm/AppShell";
 import MonthNavigator, { MONTH_NAMES } from "@/components/pm/MonthNavigator";
 import SearchableSelect from "@/components/pm/SearchableSelect";
+import MultiSearchableSelect from "@/components/pm/MultiSearchableSelect";
 import CompletionModal from "@/components/pm/CompletionModal";
 import { useData } from "@/contexts/DataContext";
 import { Assignment } from "@/types/pm";
@@ -16,7 +17,7 @@ import { formatINR, formatNumber } from "@/lib/pmFormat";
 interface SiteRow {
   id: string;
   siteName: string;
-  assigneeId: string;
+  assigneeIds: string[];
 }
 
 const DRAFT_KEY = "pm_assignment_draft";
@@ -45,7 +46,7 @@ const Assignments = () => {
 
   const [clientId, setClientId] = useState("");
   const [projectId, setProjectId] = useState("");
-  const [sites, setSites] = useState<SiteRow[]>([{ id: crypto.randomUUID(), siteName: "", assigneeId: "" }]);
+  const [sites, setSites] = useState<SiteRow[]>([{ id: crypto.randomUUID(), siteName: "", assigneeIds: [] }]);
   const [errors, setErrors] = useState<{ client?: string; project?: string; sites?: Record<string, string> }>({});
 
   // Restore draft when returning from master pages
@@ -73,7 +74,7 @@ const Assignments = () => {
     }
     if (st?.newEmployeeId && st.forSiteId) {
       setSites((prev) =>
-        prev.map((s) => (s.id === st.forSiteId ? { ...s, assigneeId: st.newEmployeeId } : s))
+        prev.map((s) => (s.id === st.forSiteId ? { ...s, assigneeIds: [...s.assigneeIds, st.newEmployeeId] } : s))
       );
       navigate(location.pathname, { replace: true, state: {} });
     }
@@ -124,7 +125,7 @@ const Assignments = () => {
     setSites((prev) => {
       const next = [
         ...prev,
-        { id: crypto.randomUUID(), siteName: prev[0]?.siteName ?? "", assigneeId: "" },
+        { id: crypto.randomUUID(), siteName: "", assigneeIds: [] },
       ];
       persistDraft({ sites: next });
       return next;
@@ -151,7 +152,7 @@ const Assignments = () => {
     if (!projectId) errs.project = "Project is required";
     sites.forEach((s) => {
       if (!s.siteName.trim()) errs.sites![`${s.id}-name`] = "Required";
-      if (!s.assigneeId) errs.sites![`${s.id}-assignee`] = "Required";
+      if (!s.assigneeIds.length) errs.sites![`${s.id}-assignee`] = "Required";
     });
     setErrors(errs);
     return !errs.client && !errs.project && Object.keys(errs.sites!).length === 0;
@@ -161,8 +162,8 @@ const Assignments = () => {
     if (!validate()) return;
     const project = projects.find((p) => p.id === projectId)!;
     const client = clients.find((c) => c.id === clientId)!;
-    const records = await Promise.all(sites.map(async (s) => {
-      const emp = employees.find((e) => e.id === s.assigneeId)!;
+    const records = (await Promise.all(sites.flatMap((s) => s.assigneeIds.map(async (assigneeId) => {
+      const emp = employees.find((e) => e.id === assigneeId)!;
       const site = await upsertSite(project.id, s.siteName.trim());
       return {
         clientId: client.id,
@@ -177,12 +178,12 @@ const Assignments = () => {
         year,
         status: "In Progress" as const,
       };
-    }));
+    })))).flat();
     await addAssignments(records);
     toast.success(`${records.length} project${records.length > 1 ? "s" : ""} saved`);
     setClientId("");
     setProjectId("");
-    setSites([{ id: crypto.randomUUID(), siteName: "", assigneeId: "" }]);
+    setSites([{ id: crypto.randomUUID(), siteName: "", assigneeIds: [] }]);
     clearDraft();
   };
 
@@ -319,23 +320,10 @@ const Assignments = () => {
                     )}
                   </div>
                   <div>
-                    <SearchableSelect
-                      value={s.assigneeId}
-                      onChange={(id) => updateSite(s.id, { assigneeId: id })}
+                    <MultiSearchableSelect
+                      value={s.assigneeIds}
+                      onChange={(ids) => updateSite(s.id, { assigneeIds: ids })}
                       options={employees.map((e) => ({ id: e.id, label: e.name }))}
-                      placeholder="Select Assignee *"
-                      title="Select Assignee*"
-                      emptyActionLabel="Add Assignee"
-                      onEmptyAction={async (query) => {
-                        if (!query) {
-                          toast.error("Assignee name required");
-                          return;
-                        }
-                        const e = await addEmployee({ name: query });
-                        if (!e) return;
-                        updateSite(s.id, { assigneeId: e.id });
-                        toast.success("Assignee added");
-                      }}
                     />
                     {errors.sites?.[`${s.id}-assignee`] && (
                       <p className="text-xs text-destructive mt-1">{errors.sites?.[`${s.id}-assignee`]}</p>
