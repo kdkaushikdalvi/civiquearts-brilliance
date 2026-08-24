@@ -61,7 +61,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
   const invoiceActive = invoiceNav.some((n) => location.pathname === n.to);
   const processExcelActive = processExcelNav.some((n) => location.pathname === n.to);
   const allListActive = allListRoutes.includes(location.pathname);
-  const [masterDataOpen, setMasterDataOpen] = useState(() => allListActive);
+  const [masterDataOpen, setMasterDataOpen] = useState(false);
 
   useEffect(() => {
     if (invoiceActive) setInvoiceOpen(true);
@@ -70,10 +70,6 @@ const AppShell = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (processExcelActive) setProcessExcelOpen(true);
   }, [processExcelActive]);
-
-  useEffect(() => {
-    if (allListActive) setMasterDataOpen(true);
-  }, [allListActive]);
 
   const handleLogout = () => {
     logout();
