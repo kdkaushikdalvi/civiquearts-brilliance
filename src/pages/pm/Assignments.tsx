@@ -399,25 +399,25 @@ const Assignments = () => {
                     return <tr key={a.id} className={`border-t border-slate-200 transition-colors hover:bg-blue-50 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`}>
                       <td className="px-4 py-3 max-w-[180px] truncate whitespace-nowrap" title={a.projectName}>{a.projectName}</td>
                       <td className="px-4 py-3 whitespace-normal break-words" title={a.siteName}>{a.siteName}</td>
-                      <td className="px-4 py-3 align-top">{rows.map((row) => <div key={row.id} className="py-1 whitespace-nowrap">{row.assigneeName}</div>)}</td>
+                      <td className="px-4 py-3 align-middle text-center">{rows.map((row) => <div key={row.id} className="border-b border-slate-200 py-2 last:border-b-0 whitespace-nowrap">{row.assigneeName}</div>)}</td>
                       <td
                         className="px-4 py-3 max-w-[160px] truncate whitespace-nowrap"
                         title={a.quantity != null ? `${a.unitType} · ${formatNumber(a.quantity)}` : "-"}
                       >
-                        {rows.map((row) => <div key={row.id} className="py-1 whitespace-nowrap">{row.quantity != null ? `${row.unitType} · ${formatNumber(row.quantity)}` : "-"}</div>)}
+                        {rows.map((row) => <div key={row.id} className="border-b border-slate-200 py-2 last:border-b-0 whitespace-nowrap text-center">{row.quantity != null ? `${row.unitType} · ${formatNumber(row.quantity)}` : "-"}</div>)}
                       </td>
                       <td className="px-4 py-3 font-medium whitespace-nowrap">
-                        {rows.map((row) => <div key={row.id} className="py-1 whitespace-nowrap">{row.amount != null ? formatINR(row.amount) : "₹0.00"}</div>)}
+                        {rows.map((row) => <div key={row.id} className="border-b border-slate-200 py-2 last:border-b-0 whitespace-nowrap text-center">{row.amount != null ? formatINR(row.amount) : "₹0.00"}</div>)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        {rows.map((row) => <div key={row.id} className="py-1">
+                        {rows.map((row) => <div key={row.id} className="flex justify-center border-b border-slate-200 py-2 last:border-b-0">
                           <select
                             value={row.status}
                             onChange={(e) => handleStatusChange(row, e.target.value as Assignment["status"])}
                             className={`cursor-pointer text-xs font-medium rounded-full px-3 py-1 border ${
                             row.status === "Completed"
                               ? "bg-green-accent/10 text-green-accent border-green-accent/30"
-                              : a.status === "Hold"
+                              : row.status === "Hold"
                                 ? "bg-orange-500/10 text-orange-700 border-orange-500/30"
                               : "bg-yellow-500/10 text-yellow-700 border-yellow-500/30"
                             }`}
@@ -428,24 +428,21 @@ const Assignments = () => {
                           </select>
                         </div>)}
                       </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        {rows.map((row) => row.status === "Completed" && (
-                          <Button key={row.id} variant="ghost" size="icon" onClick={() => openComplete(row)} aria-label="Edit" title="Edit completion details">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        ))}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            deleteAssignment(a.id);
-                            toast.success("Deleted");
-                          }}
-                          aria-label="Delete"
-                          title="Delete this allocation"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                      <td className="px-4 py-3 align-middle text-center whitespace-nowrap">
+                        <div className="flex flex-col items-center">
+                          {rows.map((row) => row.status === "Completed" && (
+                            <div key={row.id} className="flex w-full justify-center border-b border-slate-200 py-1 last:border-b-0">
+                              <Button variant="ghost" size="icon" onClick={() => openComplete(row)} aria-label="Edit" title="Edit completion details">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          <div className="pt-1">
+                            <Button variant="ghost" size="icon" onClick={() => { deleteAssignment(a.id); toast.success("Deleted"); }} aria-label="Delete" title="Delete this allocation">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
                       </td>
                     </tr>;
                   })
