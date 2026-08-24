@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/logo.png";
 
 const LoginPage = () => {
-  const { login, signUp, resetPassword, isAuthenticated, loading: authLoading } = useAuth();
+  const { login, signInWithGoogle, signUp, resetPassword, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [tab, setTab] = useState("login");
@@ -42,6 +42,16 @@ const LoginPage = () => {
       navigate(from, { replace: true });
     } else {
       setError(res.error || "Invalid credentials.");
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError("");
+    setBusy(true);
+    const res = await signInWithGoogle();
+    if (!res.ok) {
+      setBusy(false);
+      setError(res.error || "Google sign-in failed.");
     }
   };
 
@@ -156,6 +166,10 @@ const LoginPage = () => {
                   className="w-full gradient-saffron text-saffron-foreground rounded-full hover:opacity-90">
                   {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
                   Sign In
+                </Button>
+                <div className="relative py-1"><div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div><div className="relative flex justify-center"><span className="bg-card px-2 text-xs text-muted-foreground">OR</span></div></div>
+                <Button type="button" variant="outline" disabled={busy} onClick={handleGoogleSignIn} className="w-full rounded-full">
+                  <span className="mr-2 font-bold text-base">G</span> Continue with Google
                 </Button>
               </form>
             </TabsContent>

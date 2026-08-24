@@ -9,6 +9,7 @@ interface AuthContextValue {
   supaUser: User | null;
   session: Session | null;
   login: (identifier: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  signInWithGoogle: () => Promise<{ ok: boolean; error?: string }>;
   signUp: (
     email: string,
     password: string,
@@ -65,6 +66,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { ok: true };
   };
 
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/login` },
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  };
+
   const signUp = async (email: string, password: string, fullName: string, mobile: string) => {
     const { error } = await supabase.auth.signUp({
       email,
@@ -105,6 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         supaUser,
         session,
         login,
+        signInWithGoogle,
         signUp,
         resetPassword,
         updatePassword,
