@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import SearchableSelect from "@/components/pm/SearchableSelect";
 
 const PAGE_SIZE = 8;
+const MasterWrapper = ({ embedded, children }: { embedded: boolean; children: ReactNode }) =>
+  embedded ? <>{children}</> : <AppShell>{children}</AppShell>;
 
 const SiteList = ({ embedded = false }: { embedded?: boolean } = {}) => {
   const { sites, projects, addSite, deleteSite } = useData();
@@ -43,11 +45,8 @@ const SiteList = ({ embedded = false }: { embedded?: boolean } = {}) => {
     toast.success("Site added");
   };
 
-  const Wrapper = ({ children }: { children: ReactNode }) =>
-    embedded ? <>{children}</> : <AppShell>{children}</AppShell>;
-
   return (
-    <Wrapper>
+    <MasterWrapper embedded={embedded}>
       <div className={embedded ? "space-y-6" : "p-6 max-w-5xl mx-auto space-y-6"}>
         {!embedded && <h1 className="text-2xl font-bold text-foreground">Site List</h1>}
 
@@ -177,7 +176,7 @@ const SiteList = ({ embedded = false }: { embedded?: boolean } = {}) => {
           )}
         </Card>
       </div>
-    </Wrapper>
+    </MasterWrapper>
   );
 };
 
