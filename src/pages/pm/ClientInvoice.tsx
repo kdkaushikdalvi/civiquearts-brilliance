@@ -125,6 +125,11 @@ const ClientInvoice = () => {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
+  const [invoiceNumber, setInvoiceNumber] = useState(
+    `CAPL-INV-25-${String(now.getFullYear()).slice(-2)}-${String(
+      now.getMonth() + 1
+    ).padStart(2, "0")}`
+  );
   const [clientId, setClientId] = useState("");
   const [invoiceDate, setInvoiceDate] = useState(() => {
     const d = new Date();
@@ -187,11 +192,6 @@ const ClientInvoice = () => {
   const totalQty = lines.reduce((s, l) => s + (l.quantity || 0), 0);
   const subTotal = lines.reduce((s, l) => s + (l.amount || 0), 0);
 
-  // Invoice number, financial year, and invoice month.
-  const invoiceSequence = 25;
-  const invoiceNumber = `CAPL-INV-${invoiceSequence}-${String(
-    year
-  ).slice(-2)}-${String(month + 1).padStart(2, "0")}`;
   const displayDate = invoiceDate
     ? new Date(`${invoiceDate}T00:00:00`).toLocaleDateString("en-GB", {
         day: "2-digit",
@@ -270,6 +270,20 @@ const ClientInvoice = () => {
         </div>
 
         <Card className="p-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <label
+              htmlFor="invoice-number"
+              className="mb-1.5 block text-sm font-semibold text-pink-800"
+            >
+              Invoice Number
+            </label>
+            <Input
+              id="invoice-number"
+              value={invoiceNumber}
+              onChange={(e) => setInvoiceNumber(e.target.value)}
+              placeholder="CAPL-INV-25-26-08"
+            />
+          </div>
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-pink-800">
               Client Name
