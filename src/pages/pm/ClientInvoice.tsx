@@ -63,7 +63,12 @@ const belowThousandToWords = (value: number) => {
 };
 
 const dollarsInWords = (amount: number) => {
-  let dollars = Math.round(amount);
+  // The invoice displays four decimal places, but USD words should use the
+  // currency's two-decimal cents. Round the complete value first so the text
+  // always matches the displayed total instead of dropping the fractional part.
+  const totalCents = Math.round((amount + Number.EPSILON) * 100);
+  let dollars = Math.floor(totalCents / 100);
+  const cents = totalCents % 100;
   const parts: string[] = [];
   for (const [divisor, label] of [
     [1_000_000_000, "Billion"],
@@ -78,7 +83,11 @@ const dollarsInWords = (amount: number) => {
   }
   if (dollars || parts.length === 0)
     parts.push(belowThousandToWords(dollars) || "Zero");
-  return `${parts.join(" ")} Dollars only`;
+  const dollarWords = `${parts.join(" ")} Dollar${dollars === 1 ? "" : "s"}`;
+  const centWords = cents
+    ? ` and ${belowThousandToWords(cents)} Cent${cents === 1 ? "" : "s"}`
+    : "";
+  return `${dollarWords}${centWords} Only`;
 };
 
 interface Line {
