@@ -177,9 +177,6 @@ const ClientInvoice = () => {
 
   const totalQty = lines.reduce((s, l) => s + (l.quantity || 0), 0);
   const subTotal = lines.reduce((s, l) => s + (l.amount || 0), 0);
-  // Round only the final two digits: retain the hundreds and above.
-  const rounded = Math.round(subTotal / 100) * 100;
-  const roundOff = rounded - subTotal;
 
   const invoiceNumber = `CAPL-INV-${String(year).slice(-2)}-${String(
     month + 1
@@ -848,33 +845,6 @@ const ClientInvoice = () => {
                         <td
                           style={{
                             ...cell,
-                            padding: "4px 6px",
-                          }}
-                          colSpan={6}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              lineHeight: "1.2",
-                              marginBottom: "1px",
-                            }}
-                          >
-                            <span>Round Off</span>
-
-                            <span>
-                              <span style={{ marginRight: "250px" }}>:</span>
-                              {roundOff < 0 ? "- " : ""}
-                              {usd(Math.abs(roundOff), 4)}
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td
-                          style={{
-                            ...cell,
                             padding: "6px",
                             fontWeight: 700,
                           }}
@@ -892,7 +862,7 @@ const ClientInvoice = () => {
 
                             <span>
                               <span style={{ marginRight: "250px" }}>:</span>
-                              {usd(rounded, 4)}
+                              {usd(subTotal, 4)}
                             </span>
                           </div>
                         </td>
@@ -920,7 +890,7 @@ const ClientInvoice = () => {
                           }}
                           colSpan={6}
                         >
-                          {dollarsInWords(rounded)}
+                          {dollarsInWords(subTotal)}
                         </td>
                       </tr>
                     </tbody>
