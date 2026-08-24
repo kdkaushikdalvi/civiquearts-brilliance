@@ -58,7 +58,10 @@ const Assignments = () => {
         const d = JSON.parse(draft);
         if (d.clientId) setClientId(d.clientId);
         if (d.projectId) setProjectId(d.projectId);
-        if (d.sites?.length) setSites(d.sites);
+        if (d.sites?.length) setSites(d.sites.map((site: SiteRow & { assigneeId?: string }) => ({
+          ...site,
+          assigneeIds: site.assigneeIds ?? (site.assigneeId ? [site.assigneeId] : []),
+        })));
         if (typeof d.month === "number") setMonth(d.month);
         if (typeof d.year === "number") setYear(d.year);
       } catch {}
@@ -75,7 +78,7 @@ const Assignments = () => {
     }
     if (st?.newEmployeeId && st.forSiteId) {
       setSites((prev) =>
-        prev.map((s) => (s.id === st.forSiteId ? { ...s, assigneeIds: [...s.assigneeIds, st.newEmployeeId] } : s))
+        prev.map((s) => (s.id === st.forSiteId ? { ...s, assigneeIds: [...(s.assigneeIds ?? []), st.newEmployeeId] } : s))
       );
       navigate(location.pathname, { replace: true, state: {} });
     }
@@ -155,7 +158,7 @@ const Assignments = () => {
     if (!projectId) errs.project = "Project is required";
     sites.forEach((s) => {
       if (!s.siteName.trim()) errs.sites![`${s.id}-name`] = "Required";
-      if (!s.assigneeIds.length) errs.sites![`${s.id}-assignee`] = "Required";
+      if (!(s.assigneeIds ?? []).length) errs.sites![`${s.id}-assignee`] = "Required";
     });
     setErrors(errs);
     return !errs.client && !errs.project && Object.keys(errs.sites!).length === 0;
@@ -165,7 +168,7 @@ const Assignments = () => {
     if (!validate()) return;
     const project = projects.find((p) => p.id === projectId)!;
     const client = clients.find((c) => c.id === clientId)!;
-    const records = (await Promise.all(sites.flatMap((s) => s.assigneeIds.map(async (assigneeId) => {
+    const records = (await Promise.all(sites.flatMap((s) => (s.assigneeIds ?? []).map(async (assigneeId) => {
       const emp = employees.find((e) => e.id === assigneeId)!;
       const site = await upsertSite(project.id, s.siteName.trim());
       return {
@@ -329,7 +332,7 @@ const Assignments = () => {
                   </div>
                   <div>
                     <MultiSearchableSelect
-                      value={s.assigneeIds}
+                      value={s.assigneeIds ?? []}
                       onChange={(ids) => updateSite(s.id, { assigneeIds: ids })}
                       options={employees.map((e) => ({ id: e.id, label: e.name }))}
                     />
