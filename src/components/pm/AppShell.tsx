@@ -86,8 +86,6 @@ const AppShell = ({ children }: { children: ReactNode }) => {
     setRefreshing(true);
     setMobileOpen(false);
     try {
-      localStorage.clear();
-      sessionStorage.clear();
       if ("caches" in window) {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map((name) => caches.delete(name)));
