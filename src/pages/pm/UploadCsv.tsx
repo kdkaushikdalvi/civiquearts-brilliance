@@ -198,7 +198,7 @@ const UploadCsv = () => {
   return (
     <AppShell>
       <div className="p-6 max-w-3xl mx-auto space-y-6">
-        <div>
+        <div className="border-b border-border pb-4">
           <h1 className="text-2xl font-bold text-foreground">Upload CSV</h1>
         </div>
 

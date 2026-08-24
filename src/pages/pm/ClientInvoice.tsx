@@ -242,7 +242,7 @@ const ClientInvoice = () => {
   return (
     <AppShell>
       <div className="p-6 max-w-6xl mx-auto space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
           <h1 className="text-2xl font-bold text-foreground">Client Invoice</h1>
           <MonthNavigator
             month={month}

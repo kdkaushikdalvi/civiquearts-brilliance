@@ -30,11 +30,8 @@ const AllLists = () => {
   return (
     <AppShell>
       <div className="p-6 max-w-5xl mx-auto space-y-6">
-        <div>
+        <div className="border-b border-border pb-4">
           <h1 className="text-2xl font-bold text-foreground">Master Data</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage projects, sites and team members in one place.
-          </p>
         </div>
 
         <Card className="p-1.5">

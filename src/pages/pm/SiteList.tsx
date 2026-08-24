@@ -48,7 +48,7 @@ const SiteList = ({ embedded = false }: { embedded?: boolean } = {}) => {
   return (
     <MasterWrapper embedded={embedded}>
       <div className={embedded ? "space-y-6" : "p-6 max-w-5xl mx-auto space-y-6"}>
-        {!embedded && <h1 className="text-2xl font-bold text-foreground">Site List</h1>}
+        {!embedded && <div className="border-b border-border pb-4"><h1 className="text-2xl font-bold text-foreground">Site List</h1></div>}
 
         <Card className="p-5 space-y-3">
           <label className="text-sm font-medium block">Add Site</label>

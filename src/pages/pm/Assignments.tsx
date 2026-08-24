@@ -189,10 +189,9 @@ const Assignments = () => {
   return (
     <AppShell>
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Site Allocation</h1>
-            <p className="text-muted-foreground">Assign sites to team members and track progress</p>
           </div>
           <MonthNavigator
             month={month}
@@ -218,11 +217,12 @@ const Assignments = () => {
           </button>
           {allocationFormOpen && <div className="space-y-5 border-t border-border bg-slate-50/60 p-5">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">Assignment details</p>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Client Name *</label>
-              <SearchableSelect
+            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-700">Assignment details</p>
+            <div className="space-y-4">
+            <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-4">
+              <label className="w-32 shrink-0 pt-2 text-sm font-medium text-blue-800">Client Name *</label>
+              <div className="min-w-0 flex-1">
+                <SearchableSelect
                 value={clientId}
                 onChange={(id) => {
                   setClientId(id);
@@ -243,13 +243,15 @@ const Assignments = () => {
                   persistDraft({ clientId: c.id });
                   toast.success("Client added");
                 }}
-              />
-              {errors.client && <p className="text-xs text-destructive mt-1">{errors.client}</p>}
+                />
+                {errors.client && <p className="text-xs text-destructive mt-1">{errors.client}</p>}
+              </div>
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Project *</label>
-              <SearchableSelect
+            <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-4">
+              <label className="w-32 shrink-0 pt-2 text-sm font-medium text-blue-800">Project *</label>
+              <div className="min-w-0 flex-1">
+                <SearchableSelect
                 value={projectId}
                 onChange={(id) => {
                   setProjectId(id);
@@ -276,28 +278,31 @@ const Assignments = () => {
                   persistDraft({ projectId: p.id });
                   toast.success("Project added");
                 }}
-              />
-              {errors.project && <p className="text-xs text-destructive mt-1">{errors.project}</p>}
+                />
+                {errors.project && <p className="text-xs text-destructive mt-1">{errors.project}</p>}
+              </div>
             </div>
             </div>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <div><label className="text-sm font-semibold">Sites</label><p className="text-xs text-muted-foreground">Add the sites included in this allocation</p></div>
+              <div><label className="text-sm font-semibold">Sites</label></div>
               <Button
-                size="sm"
+                type="button"
+                size="icon"
                 onClick={addSite}
                 title="Add another site row to this allocation"
-                className="bg-green-600 text-white hover:bg-green-700"
+                aria-label="Add another site row"
+                className="h-8 w-8 rounded-full bg-green-600 text-white hover:bg-green-700"
               >
-                <Plus className="h-3.5 w-3.5 mr-1" /> More Sites
+                <Plus className="h-4 w-4" />
               </Button>
             </div>
 
             <div className="mb-2 hidden grid-cols-[1fr_1fr_auto] gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:grid">
-              <span>Site Name</span>
-              <span>Select Assignee</span>
+              <span className="text-blue-800">Site Name</span>
+              <span className="text-violet-800">Select Assignee</span>
               <span className="w-10" />
             </div>
             <div className="space-y-2">

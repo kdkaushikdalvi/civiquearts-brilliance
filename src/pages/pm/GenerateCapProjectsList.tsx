@@ -51,7 +51,7 @@ const GenerateCapProjectsList = () => {
   return (
     <AppShell>
       <div className="p-6 max-w-3xl mx-auto space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">
               Generate Excel
