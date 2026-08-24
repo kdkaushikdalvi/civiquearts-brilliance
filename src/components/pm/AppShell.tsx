@@ -39,6 +39,12 @@ const invoiceNav = [
 ];
 
 const allListRoutes = ["/app/master/all", "/app/master/project", "/app/master/employee", "/app/master/site"];
+const masterDataNav = [
+  { tab: "projects", label: "Projects" },
+  { tab: "sites", label: "Sites" },
+  { tab: "employees", label: "Employees" },
+  { tab: "clients", label: "Clients" },
+] as const;
 
 const AppShell = ({ children }: { children: ReactNode }) => {
   const { logout, user } = useAuth();
@@ -55,6 +61,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
   const invoiceActive = invoiceNav.some((n) => location.pathname === n.to);
   const processExcelActive = processExcelNav.some((n) => location.pathname === n.to);
   const allListActive = allListRoutes.includes(location.pathname);
+  const [masterDataOpen, setMasterDataOpen] = useState(() => allListActive);
 
   useEffect(() => {
     if (invoiceActive) setInvoiceOpen(true);
@@ -63,6 +70,10 @@ const AppShell = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (processExcelActive) setProcessExcelOpen(true);
   }, [processExcelActive]);
+
+  useEffect(() => {
+    if (allListActive) setMasterDataOpen(true);
+  }, [allListActive]);
 
   const handleLogout = () => {
     logout();
@@ -193,15 +204,39 @@ const AppShell = ({ children }: { children: ReactNode }) => {
           )}
         </div>
 
-        <NavLink
-          to="/app/master/all"
-          title="Manage projects, sites, employees and clients"
-          onClick={() => setMobileOpen(false)}
-          className={() => topLevel(allListActive)}
-        >
-          <Layers className={iconBox("text-indigo-700")} />
-          Master Data
-        </NavLink>
+        <div>
+          <button
+            type="button"
+            title="Manage projects, sites, employees and clients"
+            onClick={() => setMasterDataOpen((open) => !open)}
+            className={topLevel(allListActive)}
+            aria-expanded={masterDataOpen}
+          >
+            <Layers className={iconBox("text-indigo-700")} />
+            <span className="flex-1 text-left">Master Data</span>
+            <ChevronDown className={cn("h-4 w-4 transition-transform", masterDataOpen && "rotate-180")} />
+          </button>
+          {masterDataOpen && (
+            <div className="ml-8 border-l border-border py-1">
+              {masterDataNav.map((item) => (
+                <NavLink
+                  key={item.tab}
+                  to="/app/master/all"
+                  state={{ tab: item.tab }}
+                  onClick={() => setMobileOpen(false)}
+                  className={({ isActive }) => cn(
+                    "flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors",
+                    isActive && (location.state as any)?.tab === item.tab
+                      ? "text-saffron bg-saffron/5"
+                      : "text-foreground/70 hover:bg-secondary hover:text-foreground",
+                  )}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          )}
+        </div>
       </nav>
       <div className="border-t border-border p-3 text-xs text-muted-foreground truncate">
         Signed in as <span className="font-medium text-foreground">{user}</span>

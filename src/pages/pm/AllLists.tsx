@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import AppShell from "@/components/pm/AppShell";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -18,7 +19,13 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 const AllLists = () => {
-  const [tab, setTab] = useState<TabId>("projects");
+  const location = useLocation();
+  const requestedTab = (location.state as { tab?: TabId } | null)?.tab;
+  const [tab, setTab] = useState<TabId>(requestedTab ?? "projects");
+
+  useEffect(() => {
+    if (requestedTab) setTab(requestedTab);
+  }, [requestedTab]);
 
   return (
     <AppShell>
