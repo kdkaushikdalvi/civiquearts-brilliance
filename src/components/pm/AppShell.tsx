@@ -38,7 +38,7 @@ const invoiceNav = [
   { to: "/app/client-invoice", label: "Client Invoice", icon: ReceiptText, iconClass: "text-rose-700", tip: "Create a client tax invoice" },
 ];
 
-const allListRoutes = ["/app/master/all", "/app/master/project", "/app/master/employee"];
+const allListRoutes = ["/app/master/all", "/app/master/project", "/app/master/employee", "/app/master/site"];
 
 const AppShell = ({ children }: { children: ReactNode }) => {
   const { logout, user } = useAuth();
@@ -119,16 +119,6 @@ const AppShell = ({ children }: { children: ReactNode }) => {
           </NavLink>
         ))}
 
-        <NavLink
-          to="/app/master/all"
-          title="Projects, sites and employees in one place"
-          onClick={() => setMobileOpen(false)}
-          className={() => topLevel(allListActive)}
-        >
-          <Layers className={iconBox("text-indigo-700")} />
-          All List
-        </NavLink>
-
         <div>
           <button
             type="button"
@@ -202,6 +192,16 @@ const AppShell = ({ children }: { children: ReactNode }) => {
             </div>
           )}
         </div>
+
+        <NavLink
+          to="/app/master/all"
+          title="Manage projects, sites, employees and clients"
+          onClick={() => setMobileOpen(false)}
+          className={() => topLevel(allListActive)}
+        >
+          <Layers className={iconBox("text-indigo-700")} />
+          Master Data
+        </NavLink>
       </nav>
       <div className="border-t border-border p-3 text-xs text-muted-foreground truncate">
         Signed in as <span className="font-medium text-foreground">{user}</span>
@@ -228,7 +228,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
 
   const footerTabs = [
     { to: "/app/projects", label: "Allocate", icon: ClipboardList, iconClass: "text-blue-700", tip: "Site Allocation" },
-    { to: "/app/master/all", label: "All List", icon: Layers, iconClass: "text-indigo-700", tip: "Project, Site & Employee lists", active: allListActive },
+    { to: "/app/master/all", label: "Master Data", icon: Layers, iconClass: "text-indigo-700", tip: "Project, Site, Employee & Client lists", active: allListActive },
     { to: "/app/download-invoices", label: "Slip", icon: Download, iconClass: "text-amber-700", tip: "Payment Slip" },
     { to: "/app/client-invoice", label: "Invoice", icon: ReceiptText, iconClass: "text-rose-700", tip: "Client Invoice" },
     { to: "/app/upload-csv", label: "Mapping", icon: FileSpreadsheet, iconClass: "text-violet-700", tip: "Upload CSV & map codes" },
