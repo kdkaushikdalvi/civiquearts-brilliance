@@ -2,7 +2,8 @@ import { useState } from "react";
 import AppShell from "@/components/pm/AppShell";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { Building2, FolderKanban, Users } from "lucide-react";
+import { Building2, FolderKanban, Users, UserRound } from "lucide-react";
+import ClientMaster from "./ClientMaster";
 import ProjectMaster from "./ProjectMaster";
 import SiteList from "./SiteList";
 import EmployeeMaster from "./EmployeeMaster";
@@ -11,6 +12,7 @@ const TABS = [
   { id: "projects", label: "Project List", icon: FolderKanban, iconClass: "text-blue-600" },
   { id: "sites", label: "Site List", icon: Building2, iconClass: "text-emerald-600" },
   { id: "employees", label: "Employee List", icon: Users, iconClass: "text-violet-600" },
+  { id: "clients", label: "Client List", icon: UserRound, iconClass: "text-orange-600" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -29,7 +31,7 @@ const AllLists = () => {
         </div>
 
         <Card className="p-1.5">
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
             {TABS.map((t) => {
               const Icon = t.icon;
               const active = tab === t.id;
@@ -57,6 +59,7 @@ const AllLists = () => {
         {tab === "projects" && <ProjectMaster embedded />}
         {tab === "sites" && <SiteList embedded />}
         {tab === "employees" && <EmployeeMaster embedded />}
+        {tab === "clients" && <ClientMaster embedded />}
       </div>
     </AppShell>
   );

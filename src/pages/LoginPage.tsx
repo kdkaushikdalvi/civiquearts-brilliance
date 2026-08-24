@@ -53,6 +53,10 @@ const LoginPage = () => {
       setError("Enter a valid mobile number (at least 10 digits).");
       return;
     }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
     setBusy(true);
     const res = await signUp(email.trim(), password, fullName.trim(), digits);
     setBusy(false);

@@ -176,7 +176,8 @@ const ClientInvoice = () => {
 
   const totalQty = lines.reduce((s, l) => s + (l.quantity || 0), 0);
   const subTotal = lines.reduce((s, l) => s + (l.amount || 0), 0);
-  const rounded = Math.round(subTotal);
+  // Round only the final two digits: retain the hundreds and above.
+  const rounded = Math.round(subTotal / 100) * 100;
   const roundOff = rounded - subTotal;
 
   const invoiceNumber = `CAPL-INV-${String(year).slice(-2)}-${String(
