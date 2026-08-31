@@ -217,6 +217,14 @@ const ClientInvoice = () => {
         html2canvas: { scale: 1.5, backgroundColor: "#ffffff", useCORS: true },
       });
       exportStyle.remove();
+      const pageCount = pdf.getNumberOfPages();
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+      pdf.setTextColor(170, 170, 170);
+      for (let page = 1; page <= pageCount; page += 1) {
+        pdf.setPage(page);
+        pdf.text(`Page ${page} of ${pageCount}`, 200, 289, { align: "right" });
+      }
       const selectedInvoiceDate = invoiceDate
         ? new Date(`${invoiceDate}T00:00:00`)
         : new Date();
@@ -240,7 +248,7 @@ const ClientInvoice = () => {
     const w = window.open("", "", "width=900,height=1200");
     if (!w) return;
     w.document.write(`<html><head><title>Tax Invoice</title><style>
-      @page{size:A4 portrait;margin:10mm}*{box-sizing:border-box}
+      @page{size:A4 portrait;margin:10mm;@bottom-right{content:"Page " counter(page) " of " counter(pages);color:#aaa;font:8pt Arial}}*{box-sizing:border-box}
       html,body{margin:0;padding:0;background:#fff}body{font-family:Arial,sans-serif}
       .client-invoice{width:190mm!important;min-height:0!important;margin:0 auto!important;padding:0!important;border:0!important;box-shadow:none!important;border-radius:0!important}
       .client-invoice-title,.client-invoice-company,.client-invoice-billing,.client-invoice-table,.client-invoice-terms{break-inside:avoid;page-break-inside:avoid}

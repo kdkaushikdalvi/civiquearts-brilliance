@@ -6,7 +6,7 @@ import { useData } from "@/contexts/DataContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Download, Printer, FileText } from "lucide-react";
+import { Download, Printer, FileText, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, formatNumber } from "@/lib/pmFormat";
 import jsPDF from "jspdf";
@@ -40,6 +40,15 @@ const amountInWords = (amount: number) => {
   return `${parts.join(" ")}${paise ? ` and Paise ${belowThousandToWords(paise)}` : ""} Rupees Only`;
 };
 
+interface OtherItem {
+  id: string;
+  project: string;
+  site: string;
+  unit: string;
+  quantity: number;
+  rate: number;
+}
+
 const DownloadInvoices = () => {
   const { employees, assignments, addInvoice } = useData();
   const { user } = useAuth();
@@ -51,6 +60,7 @@ const DownloadInvoices = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   });
+  const [otherItems, setOtherItems] = useState<OtherItem[]>([]);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   const assignee = employees.find((e) => e.id === assigneeId);
@@ -66,19 +76,26 @@ const DownloadInvoices = () => {
     [assignments, month, year, assigneeId]
   );
 
-  const grandTotal = filtered.reduce((s, a) => s + (a.amount ?? 0), 0);
+  const othersTotal = otherItems.reduce((s, item) => s + item.quantity * item.rate, 0);
+  const grandTotal = filtered.reduce((s, a) => s + (a.amount ?? 0), 0) + othersTotal;
   const invoiceNumber = `PS-${year}${String(month + 1).padStart(2, "0")}-${assigneeId.slice(-4).toUpperCase() || "----"}`;
   const invoiceDate = slipDate
     ? new Date(`${slipDate}T00:00:00`).toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" })
     : "";
 
+  const addOther = () =>
+    setOtherItems((items) => [...items, { id: crypto.randomUUID(), project: "", site: "", unit: "", quantity: 0, rate: 0 }]);
+
+  const updateOther = (id: string, patch: Partial<OtherItem>) =>
+    setOtherItems((items) => items.map((item) => item.id === id ? { ...item, ...patch } : item));
+
   const download = async () => {
-    if (!invoiceRef.current || filtered.length === 0) return;
+    if (!invoiceRef.current || (filtered.length === 0 && otherItems.length === 0)) return;
     try {
       toast.info("Generating PDF...");
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const exportStyle = document.createElement("style");
-      exportStyle.textContent = `.payment-slip-page-header{position:fixed;top:0;left:0;width:190mm;background:#fff;z-index:2}.payment-slip-page-body{padding-top:52mm}.payment-slip-page-body .payment-slip-table{margin-top:10px!important}.payment-slip-table .payment-slip-footer{display:table-row-group;break-inside:avoid;page-break-inside:avoid}`;
+      exportStyle.textContent = `.payment-slip-page-header{position:static!important;width:100%;background:#fff}.payment-slip-page-body{padding-top:0!important}.payment-slip-page-body .payment-slip-table{margin-top:10px!important}.payment-slip-footer-table{break-inside:avoid;page-break-inside:avoid}.payment-slip-table .payment-slip-footer{display:table-row-group;break-inside:avoid;page-break-inside:avoid}.payment-slip-others,.payment-slip-others tr{break-inside:avoid;page-break-inside:avoid}`;
       document.head.appendChild(exportStyle);
       await pdf.html(invoiceRef.current, {
         x: 10,
@@ -90,6 +107,14 @@ const DownloadInvoices = () => {
         html2canvas: { scale: 1.5, backgroundColor: "#ffffff", useCORS: true },
       });
       exportStyle.remove();
+      const pageCount = pdf.getNumberOfPages();
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+      pdf.setTextColor(170, 170, 170);
+      for (let page = 1; page <= pageCount; page += 1) {
+        pdf.setPage(page);
+        pdf.text(`Page ${page} of ${pageCount}`, 200, 289, { align: "right" });
+      }
       const filename = `Payment_Slip_${assignee?.name.replace(/\s/g, "")}_${MONTH_NAMES[month]}_${year}.pdf`;
       pdf.save(filename);
 
@@ -117,20 +142,22 @@ const DownloadInvoices = () => {
     printWindow.document.write(`
       <html><head><title>Payment Slip</title>
       <style>
-        @page{size:A4 portrait;margin:10mm}
+        @page{size:A4 portrait;margin:10mm;@bottom-right{content:"Page " counter(page) " of " counter(pages);color:#aaa;font:8pt Arial}}
         *{box-sizing:border-box}
         html,body{margin:0;padding:0;background:#fff}
         body{font-family:Arial,sans-serif}
         .payment-slip{width:190mm!important;min-height:0!important;margin:0 auto!important;padding:0!important;border:0!important;box-shadow:none!important;border-radius:0!important}
         .payment-slip-page-header{position:fixed;top:0;left:0;width:190mm;background:#fff;z-index:2}
-        .payment-slip-page-body{padding-top:52mm}
+        .payment-slip-page-body{padding-top:0}
         .payment-slip-page-body .payment-slip-table{margin-top:10px!important}
         .payment-slip-header,.payment-slip-company,.payment-slip-customer,.payment-slip-table{break-inside:avoid;page-break-inside:avoid}
         .payment-slip-table{width:100%;table-layout:fixed}
         .payment-slip-table thead{display:table-header-group}
         .payment-slip-table tr{break-inside:avoid;page-break-inside:avoid}
         .payment-slip-table .payment-slip-footer{break-inside:avoid;page-break-inside:avoid;display:table-row-group}
-        @media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}.payment-slip{width:190mm!important}.payment-slip-page-header{position:fixed;top:0;left:0;width:190mm;background:#fff}.payment-slip-page-body{padding-top:52mm!important}.payment-slip-page-body .payment-slip-table{margin-top:10px!important}}
+        .payment-slip-others,.payment-slip-others tr{break-inside:avoid;page-break-inside:avoid}
+        .payment-slip-footer-table{break-inside:avoid;page-break-inside:avoid}
+        @media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}.payment-slip{width:190mm!important}.payment-slip-page-header{position:static;width:190mm;background:#fff}.payment-slip-page-body{padding-top:0!important}.payment-slip-page-body .payment-slip-table{margin-top:10px!important}}
         ${document.head.innerHTML.match(/<style[^>]*>[\s\S]*?<\/style>/g)?.join("") || ""}
       </style>
       </head><body>${invoiceRef.current.outerHTML}</body></html>
@@ -177,7 +204,7 @@ const DownloadInvoices = () => {
 
         {assigneeId && (
           <>
-            {filtered.length === 0 ? (
+            {filtered.length === 0 && otherItems.length === 0 ? (
               <Card className="p-10 text-center">
                 <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                 <p className="text-muted-foreground">
@@ -186,6 +213,27 @@ const DownloadInvoices = () => {
               </Card>
             ) : (
               <>
+                <Card className="p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-lg font-semibold text-yellow-800">Others</h4>
+                    <Button type="button" onClick={addOther} aria-label="Add other item" className="h-10 w-10 rounded-full bg-green-600 p-0 text-white hover:bg-green-700">
+                      <Plus className="h-5 w-5" />
+                    </Button>
+                  </div>
+                  {otherItems.map((item) => (
+                    <div key={item.id} className="grid min-w-0 items-center gap-2 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto]">
+                      {(["project", "site", "unit"] as const).map((field) => (
+                        <input key={field} value={item[field]} placeholder={field[0].toUpperCase() + field.slice(1)} onChange={(e) => updateOther(item.id, { [field]: e.target.value })} className="h-10 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm" />
+                      ))}
+                      <input type="number" min="0" value={item.quantity} placeholder="Qty" onChange={(e) => updateOther(item.id, { quantity: Math.max(0, Number(e.target.value) || 0) })} className="h-10 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm" />
+                      <input type="number" min="0" step="0.01" value={item.rate} placeholder="Rate (₹)" onChange={(e) => updateOther(item.id, { rate: Math.max(0, Number(e.target.value) || 0) })} className="h-10 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm" />
+                      <div className="flex h-10 min-w-0 items-center justify-end overflow-hidden rounded-lg border bg-muted px-3 text-sm" aria-label="Amount (₹)">{formatINR(item.quantity * item.rate)}</div>
+                      <Button type="button" variant="ghost" onClick={() => setOtherItems((items) => items.filter((current) => current.id !== item.id))} aria-label="Delete other item" className="h-10 w-10 shrink-0 p-0 text-red-500 hover:bg-red-50 hover:text-red-600">
+                        <Trash2 className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  ))}
+                </Card>
                 <div className="flex flex-wrap justify-center gap-2">
                   <Button variant="outline" onClick={printInvoice}>
                     <Printer className="h-4 w-4 mr-2" /> Print
@@ -206,7 +254,9 @@ const DownloadInvoices = () => {
                       <div className="payment-slip-header" style={{ border: "2px solid #666", textAlign: "center", fontWeight: "bold", padding: "4px", marginBottom: "6px" }}>
                         Payment Slip
                       </div>
+                    </div>
 
+                    <div className="payment-slip-page-body">
                       <div style={{ display: "flex", gap: 0 }}>
                       <div className="payment-slip-company" style={{ flex: 2, border: "1px solid #666", padding: "8px", display: "flex", alignItems: "center", gap: 10 }}>
                         <img src={logo} alt="Logo" style={{ height: 56, width: "auto" }} crossOrigin="anonymous" />
@@ -231,9 +281,6 @@ const DownloadInvoices = () => {
                         <b>Full Name:</b> {assignee?.name}
                         {assignee?.mobile ? ` · ${assignee.mobile}` : ""}
                       </div>
-                    </div>
-
-                    <div className="payment-slip-page-body">
                     <table className="payment-slip-table" style={{ width: "100%", borderCollapse: "collapse", marginTop: 6 }}>
                       <thead>
                         <tr style={{ background: "#f2f2f2" }}>
@@ -259,6 +306,26 @@ const DownloadInvoices = () => {
                           </tr>
                         ))}
                       </tbody>
+                      {otherItems.length > 0 && (
+                        <tbody className="payment-slip-others">
+                          <tr>
+                            <td colSpan={7} style={{ border: "1px solid #666", padding: 6, fontSize: 13, fontWeight: "bold", background: "#f2f2f2" }}>Others</td>
+                          </tr>
+                          {otherItems.map((item, i) => (
+                            <tr key={item.id}>
+                              <td style={{ border: "1px solid #666", padding: 6, fontSize: 13 }}>{filtered.length + i + 1}</td>
+                              <td style={{ border: "1px solid #666", padding: 6, fontSize: 13 }}>{item.project}</td>
+                              <td style={{ border: "1px solid #666", padding: 6, fontSize: 13 }}>{item.site}</td>
+                              <td style={{ border: "1px solid #666", padding: 6, fontSize: 13 }}>{item.unit}</td>
+                              <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right" }}>{formatNumber(item.quantity)}</td>
+                              <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right" }}>{item.rate.toFixed(2)}</td>
+                              <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right" }}>{formatINR(item.quantity * item.rate)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      )}
+                    </table>
+                    <table className="payment-slip-table payment-slip-footer-table" style={{ width: "100%", borderCollapse: "collapse", marginTop: 0 }}>
                       <tbody className="payment-slip-footer">
                         <tr>
                           <td colSpan={7} style={{ height: 12, border: "1px solid #666", borderTop: "none" }} />
