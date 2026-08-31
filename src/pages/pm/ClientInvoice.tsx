@@ -169,8 +169,8 @@ const ClientInvoice = () => {
         code: getSiteCode(siteCodes, s.siteName),
         quantity: s.quantity ?? 0,
         unit: s.unitType ?? "-",
-        price: 0,
-        amount: 0,
+        price: Number.isFinite(s.rate) ? s.rate ?? 0 : 0,
+        amount: Number.isFinite(s.amount) ? s.amount ?? 0 : 0,
       }))
     );
   }, [sites, siteCodes]);
@@ -209,7 +209,7 @@ const ClientInvoice = () => {
         format: "a4",
       });
       const exportStyle = document.createElement("style");
-      exportStyle.textContent = `.client-invoice-title{position:fixed;top:0;left:0;width:190mm;background:#fff;z-index:2}.client-invoice{padding-top:8mm!important}`;
+      exportStyle.textContent = `.client-invoice-title{position:static!important}.client-invoice{padding-top:0!important}`;
       document.head.appendChild(exportStyle);
       await pdf.html(invoiceRef.current, {
         x: 10, y: 10, width: 190, windowWidth: 794,
@@ -251,10 +251,10 @@ const ClientInvoice = () => {
       @page{size:A4 portrait;margin:10mm;@bottom-right{content:"Page " counter(page) " of " counter(pages);color:#aaa;font:8pt Arial}}*{box-sizing:border-box}
       html,body{margin:0;padding:0;background:#fff}body{font-family:Arial,sans-serif}
       .client-invoice{width:190mm!important;min-height:0!important;margin:0 auto!important;padding:0!important;border:0!important;box-shadow:none!important;border-radius:0!important}
-      .client-invoice-title,.client-invoice-company,.client-invoice-billing,.client-invoice-table,.client-invoice-terms{break-inside:avoid;page-break-inside:avoid}
+      .client-invoice-title,.client-invoice-company,.client-invoice-billing,.client-invoice-terms{break-inside:avoid;page-break-inside:avoid}
       .client-invoice-table{width:100%;table-layout:fixed}.client-invoice-table thead{display:table-header-group}
       .client-invoice-table tr{break-inside:avoid;page-break-inside:avoid}
-      @media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}.client-invoice{width:190mm!important;padding-top:16mm!important}.client-invoice-title{position:fixed;top:0;left:0;right:0;margin:0;background:#fff}}
+      @media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}.client-invoice{width:190mm!important}.client-invoice-title{position:static;margin:0 0 10px 0;background:#fff}}
       </style></head><body>${invoiceRef.current.outerHTML}</body></html>`);
     w.document.close();
     setTimeout(() => {
@@ -380,7 +380,12 @@ const ClientInvoice = () => {
                         <td className="px-4 py-2 font-medium">{l.name}</td>
                         <td className="px-4 py-2">
                           <Input
+                            type="text"
                             value={l.code}
+                            readOnly={false}
+                            disabled={false}
+                            aria-label={`Accounting code for ${l.name}`}
+                            autoComplete="off"
                             onChange={(e) =>
                               patch(l.id, { code: e.target.value })
                             }
@@ -536,7 +541,7 @@ const ClientInvoice = () => {
                                 src={logo}
                                 alt="Civique Arts logo"
                                 style={{
-                                  width: 210,
+                                  width: 165,
                                   height: "auto",
                                   objectFit: "contain",
                                 }}

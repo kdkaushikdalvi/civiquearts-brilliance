@@ -86,7 +86,7 @@ export async function buildCapProjectsListWorkbook(assignments: Assignment[]): P
         cell.fill = HEADER_FILL;
         cell.alignment = {
           vertical: "middle",
-          horizontal: c === 2 ? "left" : "center",
+          horizontal: "center",
           wrapText: true,
         };
         applyBorder(cell);
@@ -97,7 +97,7 @@ export async function buildCapProjectsListWorkbook(assignments: Assignment[]): P
       row.getCell(3).value = "";
       row.getCell(2).font = { bold: true };
       row.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
-      row.getCell(2).alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+      row.getCell(2).alignment = { vertical: "middle", horizontal: "center", wrapText: true };
       row.getCell(3).alignment = { vertical: "middle", horizontal: "center" };
       for (let c = 1; c <= 3; c++) applyBorder(row.getCell(c));
     } else {
@@ -105,7 +105,7 @@ export async function buildCapProjectsListWorkbook(assignments: Assignment[]): P
       row.getCell(2).value = item.siteName;
       row.getCell(3).value = "";
       row.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
-      row.getCell(2).alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+      row.getCell(2).alignment = { vertical: "middle", horizontal: "center", wrapText: true };
       row.getCell(3).alignment = { vertical: "middle", horizontal: "center" };
       for (let c = 1; c <= 3; c++) applyBorder(row.getCell(c));
     }

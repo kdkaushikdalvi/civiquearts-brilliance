@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import AppShell from "@/components/pm/AppShell";
 import MonthNavigator, { MONTH_NAMES } from "@/components/pm/MonthNavigator";
+import SearchableSelect from "@/components/pm/SearchableSelect";
 import { useData } from "@/contexts/DataContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,16 +13,22 @@ import {
 } from "@/lib/capProjectsListExcel";
 
 const GenerateCapProjectsList = () => {
-  const { assignments } = useData();
+  const { assignments, projects } = useData();
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
   const [busy, setBusy] = useState(false);
+  const [projectId, setProjectId] = useState("all");
 
   const filtered = useMemo(
-    () => assignments.filter((a) => a.month === month && a.year === year),
-    [assignments, month, year]
+    () => assignments.filter((a) => a.month === month && a.year === year && (projectId === "all" || a.projectId === projectId)),
+    [assignments, month, year, projectId]
   );
+
+  const projectOptions = [
+    { id: "all", label: "All Projects" },
+    ...projects.map((project) => ({ id: project.id, label: project.name })),
+  ];
 
   const filename = capProjectsListFilename(MONTH_NAMES[month], year);
 
@@ -68,6 +75,10 @@ const GenerateCapProjectsList = () => {
         </div>
 
         <Card className="p-6 space-y-4">
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-emerald-800">Project</label>
+            <SearchableSelect value={projectId} onChange={setProjectId} options={projectOptions} placeholder="Select Project" />
+          </div>
           <div className="flex items-start gap-3">
             <FileSpreadsheet className="h-8 w-8 text-saffron shrink-0" />
             <div className="space-y-1 text-sm text-muted-foreground">

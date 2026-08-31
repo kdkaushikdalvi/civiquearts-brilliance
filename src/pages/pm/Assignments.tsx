@@ -396,18 +396,18 @@ const Assignments = () => {
                 ) : (
                   grouped.map((rows, index) => {
                     const a = rows[0];
+                    const totalQuantity = rows.reduce((sum, row) => sum + (row.quantity ?? 0), 0);
+                    const totalAmount = rows.reduce((sum, row) => sum + (row.amount ?? 0), 0);
+                    const unitTypes = [...new Set(rows.map((row) => row.unitType).filter(Boolean))].join(" / ");
                     return <tr key={a.id} className={`border-t border-slate-200 transition-colors hover:bg-blue-50 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`}>
                       <td className="px-4 py-3 max-w-[180px] truncate whitespace-nowrap" title={a.projectName}>{a.projectName}</td>
                       <td className="px-4 py-3 whitespace-normal break-words" title={a.siteName}>{a.siteName}</td>
                       <td className="px-4 py-3 align-middle text-center">{rows.map((row) => <div key={row.id} className="border-b border-slate-200 py-2 last:border-b-0 whitespace-nowrap">{row.assigneeName}</div>)}</td>
-                      <td
-                        className="px-4 py-3 max-w-[160px] truncate whitespace-nowrap"
-                        title={a.quantity != null ? `${a.unitType} · ${formatNumber(a.quantity)}` : "-"}
-                      >
-                        {rows.map((row) => <div key={row.id} className="border-b border-slate-200 py-2 last:border-b-0 whitespace-nowrap text-center">{row.quantity != null ? `${row.unitType} · ${formatNumber(row.quantity)}` : "-"}</div>)}
+                      <td className="px-4 py-3 max-w-[160px] whitespace-nowrap text-center" title={`${unitTypes} · ${formatNumber(totalQuantity)}`}>
+                        {unitTypes ? `${unitTypes} · ${formatNumber(totalQuantity)}` : "-"}
                       </td>
-                      <td className="px-4 py-3 font-medium whitespace-nowrap">
-                        {rows.map((row) => <div key={row.id} className="border-b border-slate-200 py-2 last:border-b-0 whitespace-nowrap text-center">{row.amount != null ? formatINR(row.amount) : "₹0.00"}</div>)}
+                      <td className="px-4 py-3 font-medium whitespace-nowrap text-center">
+                        {formatINR(totalAmount)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         {rows.map((row) => <div key={row.id} className="flex justify-center border-b border-slate-200 py-2 last:border-b-0">
