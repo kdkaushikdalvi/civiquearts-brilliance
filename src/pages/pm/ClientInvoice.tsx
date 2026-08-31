@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Download, Printer, FileText } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 import logo from "@/assets/logo.png";
 
 const ONES = [
@@ -204,24 +203,20 @@ const ClientInvoice = () => {
     if (!invoiceRef.current) return;
     try {
       toast.info("Generating PDF...");
-      const canvas = await html2canvas(invoiceRef.current, {
-        scale: 2,
-        backgroundColor: "#ffffff",
-      });
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
       });
-      const w = pdf.internal.pageSize.getWidth();
-      pdf.addImage(
-        canvas.toDataURL("image/png"),
-        "PNG",
-        0,
-        0,
-        w,
-        (canvas.height * w) / canvas.width
-      );
+      const exportStyle = document.createElement("style");
+      exportStyle.textContent = `.client-invoice-title{position:fixed;top:0;left:0;width:190mm;background:#fff;z-index:2}.client-invoice{padding-top:8mm!important}`;
+      document.head.appendChild(exportStyle);
+      await pdf.html(invoiceRef.current, {
+        x: 10, y: 10, width: 190, windowWidth: 794,
+        autoPaging: "text", margin: [10, 10, 10, 10],
+        html2canvas: { scale: 1.5, backgroundColor: "#ffffff", useCORS: true },
+      });
+      exportStyle.remove();
       const selectedInvoiceDate = invoiceDate
         ? new Date(`${invoiceDate}T00:00:00`)
         : new Date();
@@ -244,9 +239,15 @@ const ClientInvoice = () => {
     if (!invoiceRef.current) return;
     const w = window.open("", "", "width=900,height=1200");
     if (!w) return;
-    w.document.write(
-      `<html><head><title>Tax Invoice</title><style>body{font-family:Arial,sans-serif;margin:0;padding:20px;background:#fff}</style></head><body>${invoiceRef.current.outerHTML}</body></html>`
-    );
+    w.document.write(`<html><head><title>Tax Invoice</title><style>
+      @page{size:A4 portrait;margin:10mm}*{box-sizing:border-box}
+      html,body{margin:0;padding:0;background:#fff}body{font-family:Arial,sans-serif}
+      .client-invoice{width:190mm!important;min-height:0!important;margin:0 auto!important;padding:0!important;border:0!important;box-shadow:none!important;border-radius:0!important}
+      .client-invoice-title,.client-invoice-company,.client-invoice-billing,.client-invoice-table,.client-invoice-terms{break-inside:avoid;page-break-inside:avoid}
+      .client-invoice-table{width:100%;table-layout:fixed}.client-invoice-table thead{display:table-header-group}
+      .client-invoice-table tr{break-inside:avoid;page-break-inside:avoid}
+      @media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}.client-invoice{width:190mm!important;padding-top:16mm!important}.client-invoice-title{position:fixed;top:0;left:0;right:0;margin:0;background:#fff}}
+      </style></head><body>${invoiceRef.current.outerHTML}</body></html>`);
     w.document.close();
     setTimeout(() => {
       w.print();
@@ -463,15 +464,17 @@ const ClientInvoice = () => {
               >
                 <div
                   ref={invoiceRef}
-                  className="bg-white text-black mx-auto rounded-lg border border-gray-300 shadow-card"
+                  className="client-invoice bg-white text-black mx-auto rounded-lg border border-gray-300 shadow-card"
                   style={{
-                    width: "210mm",
-                    minHeight: "297mm",
+                    width: "190mm",
+                    minHeight: "277mm",
                     padding: "10mm",
+                    boxSizing: "border-box",
                     fontFamily: "Arial, sans-serif",
                   }}
                 >
                   <div
+                    className="client-invoice-title"
                     style={{
                       textAlign: "center",
                       fontWeight: 700,
@@ -483,6 +486,7 @@ const ClientInvoice = () => {
                   </div>
 
                   <table
+                    className="client-invoice-company"
                     style={{
                       width: "100%",
                       borderCollapse: "collapse",
@@ -707,6 +711,7 @@ const ClientInvoice = () => {
                   </table>
 
                   <table
+                    className="client-invoice-table"
                     style={{
                       width: "100%",
                       borderCollapse: "collapse",
@@ -928,6 +933,7 @@ const ClientInvoice = () => {
                   </table>
                   <div>
                     <table
+                      className="client-invoice-terms"
                       style={{
                         width: "100%",
                         borderCollapse: "collapse",

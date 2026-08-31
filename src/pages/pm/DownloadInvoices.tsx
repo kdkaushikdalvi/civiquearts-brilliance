@@ -10,7 +10,6 @@ import { Download, Printer, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, formatNumber } from "@/lib/pmFormat";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 import logo from "@/assets/logo.png";
 
 const ONES = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
@@ -77,12 +76,20 @@ const DownloadInvoices = () => {
     if (!invoiceRef.current || filtered.length === 0) return;
     try {
       toast.info("Generating PDF...");
-      const canvas = await html2canvas(invoiceRef.current, { scale: 2, backgroundColor: "#ffffff" });
-      const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      const exportStyle = document.createElement("style");
+      exportStyle.textContent = `.payment-slip-page-header{position:fixed;top:0;left:0;width:190mm;background:#fff;z-index:2}.payment-slip-page-body{padding-top:52mm}.payment-slip-page-body .payment-slip-table{margin-top:10px!important}.payment-slip-table .payment-slip-footer{display:table-row-group;break-inside:avoid;page-break-inside:avoid}`;
+      document.head.appendChild(exportStyle);
+      await pdf.html(invoiceRef.current, {
+        x: 10,
+        y: 10,
+        width: 190,
+        windowWidth: 794,
+        autoPaging: "text",
+        margin: [10, 10, 10, 10],
+        html2canvas: { scale: 1.5, backgroundColor: "#ffffff", useCORS: true },
+      });
+      exportStyle.remove();
       const filename = `Payment_Slip_${assignee?.name.replace(/\s/g, "")}_${MONTH_NAMES[month]}_${year}.pdf`;
       pdf.save(filename);
 
@@ -110,7 +117,20 @@ const DownloadInvoices = () => {
     printWindow.document.write(`
       <html><head><title>Payment Slip</title>
       <style>
-        body{font-family:Arial,sans-serif;margin:0;padding:20px;background:#fff}
+        @page{size:A4 portrait;margin:10mm}
+        *{box-sizing:border-box}
+        html,body{margin:0;padding:0;background:#fff}
+        body{font-family:Arial,sans-serif}
+        .payment-slip{width:190mm!important;min-height:0!important;margin:0 auto!important;padding:0!important;border:0!important;box-shadow:none!important;border-radius:0!important}
+        .payment-slip-page-header{position:fixed;top:0;left:0;width:190mm;background:#fff;z-index:2}
+        .payment-slip-page-body{padding-top:52mm}
+        .payment-slip-page-body .payment-slip-table{margin-top:10px!important}
+        .payment-slip-header,.payment-slip-company,.payment-slip-customer,.payment-slip-table{break-inside:avoid;page-break-inside:avoid}
+        .payment-slip-table{width:100%;table-layout:fixed}
+        .payment-slip-table thead{display:table-header-group}
+        .payment-slip-table tr{break-inside:avoid;page-break-inside:avoid}
+        .payment-slip-table .payment-slip-footer{break-inside:avoid;page-break-inside:avoid;display:table-row-group}
+        @media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}.payment-slip{width:190mm!important}.payment-slip-page-header{position:fixed;top:0;left:0;width:190mm;background:#fff}.payment-slip-page-body{padding-top:52mm!important}.payment-slip-page-body .payment-slip-table{margin-top:10px!important}}
         ${document.head.innerHTML.match(/<style[^>]*>[\s\S]*?<\/style>/g)?.join("") || ""}
       </style>
       </head><body>${invoiceRef.current.outerHTML}</body></html>
@@ -179,15 +199,16 @@ const DownloadInvoices = () => {
                 <div className="overflow-auto">
                   <div
                     ref={invoiceRef}
-                    className="bg-white text-black mx-auto rounded-lg border border-gray-300 shadow-card"
-                    style={{ width: "210mm", minHeight: "297mm", padding: "10mm", fontFamily: "Arial, sans-serif" }}
+                    className="payment-slip bg-white text-black mx-auto rounded-lg border border-gray-300 shadow-card"
+                    style={{ width: "190mm", minHeight: "277mm", padding: "10mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}
                   >
-                    <div style={{ border: "2px solid #666", textAlign: "center", fontWeight: "bold", padding: "4px", marginBottom: "6px" }}>
-                      Payment Slip
-                    </div>
+                    <div className="payment-slip-page-header">
+                      <div className="payment-slip-header" style={{ border: "2px solid #666", textAlign: "center", fontWeight: "bold", padding: "4px", marginBottom: "6px" }}>
+                        Payment Slip
+                      </div>
 
-                    <div style={{ display: "flex", gap: 0 }}>
-                      <div style={{ flex: 2, border: "1px solid #666", padding: "8px", display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ display: "flex", gap: 0 }}>
+                      <div className="payment-slip-company" style={{ flex: 2, border: "1px solid #666", padding: "8px", display: "flex", alignItems: "center", gap: 10 }}>
                         <img src={logo} alt="Logo" style={{ height: 56, width: "auto" }} crossOrigin="anonymous" />
                         <div>
                           <h1 style={{ margin: 0, fontSize: 18 }}>Civique Arts</h1>
@@ -199,19 +220,21 @@ const DownloadInvoices = () => {
                           </p>
                         </div>
                       </div>
-                      <div style={{ flex: 1, border: "1px solid #666", borderLeft: "none", padding: "8px" }}>
+                      <div className="payment-slip-company" style={{ flex: 1, border: "1px solid #666", borderLeft: "none", padding: "8px" }}>
                         <p style={{ margin: "3px 0", fontSize: 13 }}><b>Payment Slip No.:</b> {invoiceNumber}</p>
                         <p style={{ margin: "3px 0", fontSize: 13 }}><b>Date:</b> {invoiceDate}</p>
                         <p style={{ margin: "3px 0", fontSize: 13 }}><b>Billing Month:</b> {MONTH_NAMES[month]} {year}</p>
                       </div>
+                      </div>
+
+                      <div className="payment-slip-customer" style={{ border: "1px solid #666", borderTop: "none", padding: "8px" }}>
+                        <b>Full Name:</b> {assignee?.name}
+                        {assignee?.mobile ? ` · ${assignee.mobile}` : ""}
+                      </div>
                     </div>
 
-                    <div style={{ border: "1px solid #666", borderTop: "none", padding: "8px" }}>
-                      <b>Full Name:</b> {assignee?.name}
-                      {assignee?.mobile ? ` · ${assignee.mobile}` : ""}
-                    </div>
-
-                    <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 6 }}>
+                    <div className="payment-slip-page-body">
+                    <table className="payment-slip-table" style={{ width: "100%", borderCollapse: "collapse", marginTop: 6 }}>
                       <thead>
                         <tr style={{ background: "#f2f2f2" }}>
                           <th style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "left", width: 40 }}>#</th>
@@ -236,7 +259,7 @@ const DownloadInvoices = () => {
                           </tr>
                         ))}
                       </tbody>
-                      <tfoot>
+                      <tbody className="payment-slip-footer">
                         <tr>
                           <td colSpan={7} style={{ height: 12, border: "1px solid #666", borderTop: "none" }} />
                         </tr>
@@ -255,8 +278,9 @@ const DownloadInvoices = () => {
                           <td colSpan={6} style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "left", fontWeight: "bold" }}>Paid</td>
                           <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatINR(grandTotal)}</td>
                         </tr>
-                      </tfoot>
+                      </tbody>
                     </table>
+                    </div>
                   </div>
                 </div>
               </>

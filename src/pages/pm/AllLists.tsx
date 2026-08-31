@@ -34,8 +34,12 @@ const AllLists = () => {
           <h3 className="text-xl font-semibold text-cyan-800">Master Data</h3>
         </div>
 
-        <Card className="rounded-full border-0 bg-[#2f2f2f] p-1 shadow-none">
-          <div className="grid grid-cols-2 gap-1 sm:grid-cols-4">
+        <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
+          <div
+            role="tablist"
+            aria-label="Master data sections"
+            className="flex overflow-x-auto border-b border-slate-200 px-2 sm:px-4"
+          >
             {TABS.map((t) => {
               const Icon = t.icon;
               const active = tab === t.id;
@@ -44,16 +48,18 @@ const AllLists = () => {
                   key={t.id}
                   type="button"
                   title={t.label}
+                  role="tab"
+                  aria-selected={active}
                   onClick={() => setTab(t.id)}
                   className={cn(
-                    "flex items-center justify-center gap-1.5 rounded-full px-2 py-1.5 text-xs font-semibold transition-all whitespace-nowrap truncate",
+                    "relative flex min-w-[132px] flex-1 items-center justify-center gap-2 whitespace-nowrap px-3 py-3 text-sm font-semibold transition-colors sm:min-w-0",
                     active
-                      ? "bg-white text-[#2f2f2f] shadow-sm"
-                      : "text-white/80 hover:bg-white/10 hover:text-white",
+                      ? "text-cyan-800 after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-cyan-700"
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-800",
                   )}
                 >
-                  <Icon className={cn("h-3.5 w-3.5 shrink-0", active ? "" : t.iconClass)} />
-                  <span className="truncate">{t.label}</span>
+                  <Icon className={cn("h-4 w-4 shrink-0", active ? "text-cyan-700" : t.iconClass)} />
+                  <span>{t.label}</span>
                 </button>
               );
             })}
