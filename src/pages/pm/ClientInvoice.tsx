@@ -188,6 +188,26 @@ const ClientInvoice = () => {
 
   const totalQty = lines.reduce((s, l) => s + (l.quantity || 0), 0);
   const subTotal = lines.reduce((s, l) => s + (l.amount || 0), 0);
+  const invoiceLines = useMemo(() => {
+    const grouped = new Map<string, Line>();
+    lines.forEach((line) => {
+      const key = `${line.name.trim().toLowerCase()}|${line.unit.trim().toLowerCase()}`;
+      const existing = grouped.get(key);
+      if (!existing) {
+        grouped.set(key, { ...line });
+        return;
+      }
+      const quantity = (existing.quantity || 0) + (line.quantity || 0);
+      const amount = (existing.amount || 0) + (line.amount || 0);
+      grouped.set(key, {
+        ...existing,
+        quantity,
+        amount,
+        price: quantity ? amount / quantity : existing.price,
+      });
+    });
+    return Array.from(grouped.values());
+  }, [lines]);
 
   const displayDate = invoiceDate
     ? new Date(`${invoiceDate}T00:00:00`).toLocaleDateString("en-GB", {
@@ -666,13 +686,22 @@ const ClientInvoice = () => {
                     style={{
                       width: "100%",
                       borderCollapse: "collapse",
+                      tableLayout: "fixed",
                       border: "2px solid #4a4a4a",
                       marginTop: 10,
                     }}
                   >
+                    <colgroup>
+                      <col style={{ width: "5.3%" }} />
+                      <col style={{ width: "51.5%" }} />
+                      <col style={{ width: "10.9%" }} />
+                      <col style={{ width: "6.9%" }} />
+                      <col style={{ width: "11.9%" }} />
+                      <col style={{ width: "13.6%" }} />
+                    </colgroup>
                     <thead>
                       <tr>
-                        <th style={{ ...headCell, width: 34 }}>#</th>
+                        <th style={headCell}>#</th>
                         <th style={headCell}>Site Name (Project Name)</th>
                         <th
                           style={{
@@ -714,7 +743,7 @@ const ClientInvoice = () => {
 
                     <tbody>
                       {/* Item Rows */}
-                      {lines.map((l, i) => (
+                      {invoiceLines.map((l, i) => (
                         <tr key={l.id}>
                           <td style={cell}>{i + 1}</td>
 

@@ -62,6 +62,7 @@ const DownloadInvoices = () => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   });
   const [otherItems, setOtherItems] = useState<OtherItem[]>([]);
+  const [isDownloading, setIsDownloading] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   const assignee = employees.find((e) => e.id === assigneeId);

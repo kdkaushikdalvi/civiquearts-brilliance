@@ -71,3 +71,14 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Invoice and payment-slip actions
+
+The application provides two document screens:
+
+- **Client Invoice** — select a client, billing month, invoice date, and billing details.
+- **Payment Slip** — select an assignee, billing month, payment-slip date, and optional items.
+
+Both screens show the document preview automatically when valid data is available. The **Preview & Download** action opens the browser print preview, where the document can be saved as a PDF or printed. Print layouts use A4 sizing and repeat table headers across pages.
+
+On desktop, the action button floats at the bottom-right of the screen. On mobile, it stays in the normal page layout. The main content area handles scrolling while the desktop sidebar remains fixed without its own scrollbar.
