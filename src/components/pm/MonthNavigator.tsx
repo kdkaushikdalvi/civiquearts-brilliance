@@ -22,11 +22,11 @@ const MonthNavigator = ({ month, year, onChange }: Props) => {
         size="icon"
         onClick={prev}
         aria-label="Previous month"
-        className="h-9 w-9 rounded-none bg-slate-800 text-white hover:bg-slate-950"
+        className="group h-9 w-9 rounded-none bg-slate-800 text-white hover:bg-slate-950"
       >
-        <ChevronLeft className="h-4 w-4" strokeWidth={3} />
+        <ChevronLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5 group-active:scale-90" strokeWidth={3} />
       </Button>
-      <span className="min-w-[168px] px-5 py-2 text-center text-sm font-bold tracking-wide text-slate-800">
+      <span className="min-w-[168px] px-5 py-2 text-center text-sm font-bold tracking-wide text-red-800">
         <span aria-hidden="true" className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-saffron align-middle shadow-[0_0_0_3px_hsl(var(--saffron)/0.15)]" />
         {MONTH_NAMES[month]} {year}
       </span>
@@ -35,9 +35,9 @@ const MonthNavigator = ({ month, year, onChange }: Props) => {
         size="icon"
         onClick={next}
         aria-label="Next month"
-        className="h-9 w-9 rounded-none bg-slate-800 text-white hover:bg-slate-950"
+        className="group h-9 w-9 rounded-none bg-slate-800 text-white hover:bg-slate-950"
       >
-        <ChevronRight className="h-4 w-4" strokeWidth={3} />
+        <ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-active:scale-90" strokeWidth={3} />
       </Button>
     </div>
   );

@@ -222,7 +222,7 @@ const DownloadInvoices = () => {
   return (
     <AppShell>
       <div className="p-6 max-w-6xl mx-auto space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
+        <div className="relative flex flex-wrap items-center justify-between gap-4 bg-slate-50 pb-4 before:absolute before:bottom-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-b before:border-slate-200 before:content-['']">
           <div>
             <h3 className="text-xl font-semibold text-yellow-800">Payment Slips</h3>
           </div>
@@ -322,7 +322,6 @@ const DownloadInvoices = () => {
                       <div className="payment-slip-company" style={{ flex: 1, border: "1px solid #666", borderLeft: "none", padding: "8px" }}>
                         <p style={{ margin: "3px 0", fontSize: 13 }}><b>Payment Slip No.:</b> {invoiceNumber}</p>
                         <p style={{ margin: "3px 0", fontSize: 13 }}><b>Date:</b> {invoiceDate}</p>
-                        <p style={{ margin: "3px 0", fontSize: 13 }}><b>Billing Month:</b> {MONTH_NAMES[month]} {year}</p>
                       </div>
                       </div>
 

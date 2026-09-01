@@ -60,7 +60,7 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
   return (
     <MasterWrapper embedded={embedded}>
       <div className={embedded ? "space-y-6" : "p-6 max-w-4xl mx-auto space-y-6"}>
-        <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+        <div className="relative flex items-center justify-between bg-slate-50 pb-4 before:absolute before:bottom-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-b before:border-slate-200 before:content-['']">
           <div>
             {!embedded && <h3 className="text-xl font-semibold text-sky-800">Project List</h3>}
           </div>

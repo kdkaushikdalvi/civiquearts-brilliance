@@ -249,7 +249,7 @@ const Assignments = () => {
   return (
     <AppShell>
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
+        <div className="relative flex flex-wrap items-center justify-between gap-4 bg-slate-50 pb-4 before:absolute before:bottom-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-b before:border-slate-200 before:content-['']">
           <div>
             <h3 className="text-xl font-semibold text-blue-800">Site Allocation</h3>
           </div>

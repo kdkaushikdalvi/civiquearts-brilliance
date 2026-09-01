@@ -30,7 +30,7 @@ const AllLists = () => {
   return (
     <AppShell>
       <div className="p-6 max-w-5xl mx-auto space-y-6">
-        <div className="border-b border-slate-200 pb-4">
+        <div className="relative bg-slate-50 pb-4 before:absolute before:bottom-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-b before:border-slate-200 before:content-['']">
           <h3 className="text-xl font-semibold text-cyan-800">Master Data</h3>
         </div>
 

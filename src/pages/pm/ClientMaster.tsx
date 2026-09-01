@@ -34,7 +34,7 @@ const ClientMaster = ({ embedded = false }: { embedded?: boolean }) => {
   };
 
   return <MasterWrapper embedded={embedded}><div className={embedded ? "space-y-6" : "p-6 max-w-4xl mx-auto space-y-6"}>
-    {!embedded && <div className="border-b border-slate-200 pb-4"><h3 className="text-xl font-semibold text-orange-800">Client List</h3></div>}
+    {!embedded && <div className="relative bg-slate-50 pb-4 before:absolute before:bottom-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-b before:border-slate-200 before:content-['']"><h3 className="text-xl font-semibold text-orange-800">Client List</h3></div>}
     <Card className="p-5"><label className="mb-2 block text-sm font-semibold text-orange-800">Add Client</label>
       <div className="flex gap-2"><Input placeholder="Client Name" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAdd()} />
         <Button onClick={handleAdd} className="gradient-saffron text-saffron-foreground"><Plus className="h-4 w-4 mr-2" />Add</Button></div>
