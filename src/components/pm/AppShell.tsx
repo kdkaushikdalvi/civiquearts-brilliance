@@ -130,7 +130,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
           <div className="text-xs text-muted-foreground">Billing System</div>
         </motion.div>
       </motion.div>
-      <nav className="flex-1 overflow-y-auto py-3">
+      <nav className="flex-1 py-3">
         {nav.map((n) => (
           <NavLink
             key={n.to}
@@ -285,8 +285,8 @@ const AppShell = ({ children }: { children: ReactNode }) => {
   ];
 
   return (
-    <div className="min-h-screen flex bg-secondary/20">
-      <aside className="hidden lg:flex w-64 bg-card border-r border-border flex-col shrink-0">
+    <div className="h-screen overflow-hidden flex bg-secondary/20">
+      <aside className="hidden lg:flex h-screen w-64 bg-card border-r border-border flex-col shrink-0">
         {SidebarInner}
       </aside>
 
@@ -302,7 +302,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
         </>
       )}
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         <header className="lg:hidden bg-card border-b border-border px-4 py-3 flex items-center justify-between sticky top-0 z-30">
           <button onClick={() => setMobileOpen(true)} aria-label="Open menu" title="Open menu">
             <Menu className="h-5 w-5" />
@@ -312,7 +312,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
             <LogOut className="h-5 w-5" />
           </button>
         </header>
-        <main className="flex-1 overflow-x-auto pb-20 lg:pb-0">{children}</main>
+        <main className="flex-1 min-h-0 overflow-auto pb-20 lg:pb-0">{children}</main>
       </div>
 
       {/* Mobile footer navigation */}

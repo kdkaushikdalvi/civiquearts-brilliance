@@ -10,6 +10,7 @@ import { Download, Printer, FileText, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, formatNumber } from "@/lib/pmFormat";
 import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import logo from "@/assets/logo.png";
 
 const ONES = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
@@ -61,7 +62,6 @@ const DownloadInvoices = () => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   });
   const [otherItems, setOtherItems] = useState<OtherItem[]>([]);
-  const [showPreview, setShowPreview] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   const assignee = employees.find((e) => e.id === assigneeId);
@@ -121,17 +121,22 @@ const DownloadInvoices = () => {
       exportRoot.style.pointerEvents = "none";
       document.body.appendChild(exportRoot);
       try {
-        await pdf.html(exportRoot, {
-          x: 10,
-          y: 10,
-          width: 190,
-          windowWidth: 794,
-          autoPaging: "text",
-          // The print layout already starts at the A4 10 mm page margin.
-          // Applying another html2canvas margin here changes pagination.
-          margin: 0,
-          html2canvas: { scale: 1.5, backgroundColor: "#ffffff", useCORS: true },
+        const canvas = await html2canvas(exportRoot, {
+          width: 718,
+          windowWidth: 718,
+          scale: 2,
+          backgroundColor: "#ffffff",
+          useCORS: true,
         });
+        const pageHeight = Math.floor(canvas.width * (277 / 190));
+        for (let top = 0; top < canvas.height; top += pageHeight) {
+          if (top > 0) pdf.addPage();
+          const slice = document.createElement("canvas");
+          slice.width = canvas.width;
+          slice.height = Math.min(pageHeight, canvas.height - top);
+          slice.getContext("2d")!.drawImage(canvas, 0, -top);
+          pdf.addImage(slice.toDataURL("image/jpeg", 0.95), "JPEG", 10, 10, 190, (slice.height / canvas.width) * 190);
+        }
       } finally {
         exportStyle.remove();
         exportRoot.remove();
@@ -264,9 +269,6 @@ const DownloadInvoices = () => {
                   ))}
                 </Card>
                 <div className="flex flex-wrap justify-center gap-2">
-                  <Button variant="outline" onClick={() => setShowPreview((s) => !s)}>
-                    <FileText className="h-4 w-4 mr-2" /> {showPreview ? "Hide Preview" : "Preview"}
-                  </Button>
                   <Button variant="outline" onClick={printInvoice}>
                     <Printer className="h-4 w-4 mr-2" /> Print
                   </Button>
@@ -277,8 +279,7 @@ const DownloadInvoices = () => {
 
                 {/* Payment Slip Preview */}
                 <div
-                  className={showPreview ? "overflow-auto" : "h-0 overflow-hidden"}
-                  aria-hidden={!showPreview}
+                  className="overflow-auto"
                 >
                   <div
                     ref={invoiceRef}
@@ -286,7 +287,7 @@ const DownloadInvoices = () => {
                     style={{ width: "190mm", minHeight: "277mm", padding: "10mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}
                   >
                     <div className="payment-slip-page-header">
-                      <div className="payment-slip-header" style={{ border: "2px solid #666", textAlign: "center", fontWeight: "bold", padding: "4px", marginBottom: "6px" }}>
+                      <div className="payment-slip-header" style={{ textAlign: "center", fontWeight: "bold", padding: "4px", marginBottom: "6px" }}>
                         Payment Slip
                       </div>
                     </div>

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Download, Printer, FileText } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import logo from "@/assets/logo.png";
 
 const ONES = [
@@ -139,7 +140,6 @@ const ClientInvoice = () => {
   });
   const [billTo, setBillTo] = useState("");
   const [lines, setLines] = useState<Line[]>([]);
-  const [showPreview, setShowPreview] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   const client = clients.find((c) => c.id === clientId);
@@ -230,11 +230,19 @@ const ClientInvoice = () => {
       exportRoot.style.pointerEvents = "none";
       document.body.appendChild(exportRoot);
       try {
-        await pdf.html(exportRoot, {
-          x: 10, y: 10, width: 190, windowWidth: 794,
-          autoPaging: "text", margin: 0,
-          html2canvas: { scale: 1.5, backgroundColor: "#ffffff", useCORS: true },
+        const canvas = await html2canvas(exportRoot, {
+          width: 718, windowWidth: 718, scale: 2,
+          backgroundColor: "#ffffff", useCORS: true,
         });
+        const pageHeight = Math.floor(canvas.width * (277 / 190));
+        for (let top = 0; top < canvas.height; top += pageHeight) {
+          if (top > 0) pdf.addPage();
+          const slice = document.createElement("canvas");
+          slice.width = canvas.width;
+          slice.height = Math.min(pageHeight, canvas.height - top);
+          slice.getContext("2d")!.drawImage(canvas, 0, -top);
+          pdf.addImage(slice.toDataURL("image/jpeg", 0.95), "JPEG", 10, 10, 190, (slice.height / canvas.width) * 190);
+        }
       } finally {
         exportStyle.remove();
         exportRoot.remove();
@@ -473,13 +481,6 @@ const ClientInvoice = () => {
               </Card>
 
               <div className="flex flex-wrap justify-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowPreview((s) => !s)}
-                >
-                  <FileText className="h-4 w-4 mr-2" />{" "}
-                  {showPreview ? "Hide Preview" : "Preview"}
-                </Button>
                 <Button variant="outline" onClick={printInvoice}>
                   <Printer className="h-4 w-4 mr-2" /> Print
                 </Button>
@@ -492,10 +493,7 @@ const ClientInvoice = () => {
               </div>
 
               <div
-                className={
-                  showPreview ? "overflow-auto" : "h-0 overflow-hidden"
-                }
-                aria-hidden={!showPreview}
+                className="overflow-auto"
               >
                 <div
                   ref={invoiceRef}
