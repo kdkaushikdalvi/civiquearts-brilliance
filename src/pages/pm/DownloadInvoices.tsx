@@ -79,6 +79,7 @@ const DownloadInvoices = () => {
   );
 
   const othersTotal = otherItems.reduce((s, item) => s + item.quantity * item.rate, 0);
+  const totalQty = filtered.reduce((s, a) => s + (a.quantity || 0), 0) + otherItems.reduce((s, item) => s + item.quantity, 0);
   const grandTotal = filtered.reduce((s, a) => s + (a.amount ?? 0), 0) + othersTotal;
   const invoiceNumber = `PS-${year}${String(month + 1).padStart(2, "0")}-${assigneeId.slice(-4).toUpperCase() || "----"}`;
   const invoiceDate = slipDate
@@ -263,10 +264,10 @@ const DownloadInvoices = () => {
             ) : (
               <>
                 <Card className="p-4 space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-start gap-5">
                     <h4 className="text-lg font-semibold text-yellow-800">Others</h4>
-                    <Button type="button" onClick={addOther} aria-label="Add other item" className="h-10 w-10 rounded-full bg-green-600 p-0 text-white hover:bg-green-700">
-                      <Plus className="h-5 w-5" />
+                    <Button type="button" onClick={addOther} aria-label="Add other item" className="h-8 w-8 rounded-full bg-green-600 p-0 text-white hover:bg-green-700">
+                      <Plus className="h-4 w-4" />
                     </Button>
                   </div>
                   {otherItems.map((item) => (
@@ -344,7 +345,7 @@ const DownloadInvoices = () => {
                           <th style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "left" }}>Site Name (Project Name)</th>
                           <th style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right" }}>Quantity</th>
                           <th style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right" }}>Unit</th>
-                          <th style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right" }}>Price/Unit (₹)</th>
+                          <th style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right" }}>Price (₹)</th>
                           <th style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right" }}>Amount (₹)</th>
                         </tr>
                       </thead>
@@ -360,7 +361,7 @@ const DownloadInvoices = () => {
                           </tr>
                         ))}
                       </tbody>
-                      {otherItems.length > 0 && (
+                        {otherItems.length > 0 && (
                         <tbody className="payment-slip-others">
                           <tr>
                             <td colSpan={6} style={{ border: "1px solid #666", padding: 6, fontSize: 13, fontWeight: "bold", background: "#f2f2f2" }}>Others</td>
@@ -377,29 +378,43 @@ const DownloadInvoices = () => {
                           ))}
                         </tbody>
                       )}
+                      <tbody>
+                        <tr>
+                          <td colSpan={2} style={{ border: "1px solid #666", padding: 6, fontSize: 13, fontWeight: "bold" }}>Total</td>
+                          <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatNumber(totalQty)}</td>
+                          <td style={{ border: "1px solid #666", padding: 6, fontSize: 13 }} />
+                          <td style={{ border: "1px solid #666", padding: 6, fontSize: 13 }} />
+                          <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatINR(grandTotal)}</td>
+                        </tr>
+                      </tbody>
                     </table>
-                    <table className="payment-slip-table payment-slip-footer-table" style={{ width: "100%", borderCollapse: "collapse", marginTop: 0 }}>
+                    <table className="payment-slip-table payment-slip-footer-table" style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed", marginTop: 0 }}>
+                      <colgroup>
+                        <col style={{ width: "5.3%" }} />
+                        <col style={{ width: "51.5%" }} />
+                        <col style={{ width: "10.9%" }} />
+                        <col style={{ width: "6.9%" }} />
+                        <col style={{ width: "11.9%" }} />
+                        <col style={{ width: "13.6%" }} />
+                      </colgroup>
                       <tbody className="payment-slip-footer">
                         <tr>
-                          <td colSpan={6} style={{ height: 12, border: "1px solid #666", borderTop: "none" }} />
-                        </tr>
-                        <tr>
-                          <td colSpan={6} style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "left", fontWeight: "bold" }}>Sub Total</td>
+                          <td colSpan={5} style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "left", fontWeight: "bold" }}>Sub Total</td>
                           <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatINR(grandTotal)}</td>
                         </tr>
                         <tr>
-                          <td colSpan={6} style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "left", fontWeight: "bold" }}>Total</td>
+                          <td colSpan={5} style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "left", fontWeight: "bold" }}>Total</td>
                           <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatINR(grandTotal)}</td>
                         </tr>
                         <tr>
                           <td colSpan={6} style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "left" }}><b>Amount in Words:</b> {amountInWords(grandTotal)}</td>
                         </tr>
-                        <tr>
-                          <td colSpan={6} style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "left", fontWeight: "bold" }}>Paid</td>
-                          <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right", fontWeight: "bold" }}>{formatINR(grandTotal)}</td>
-                        </tr>
                       </tbody>
                     </table>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid #666", borderTop: "none", padding: 6, fontSize: 13, fontWeight: "bold" }}>
+                      <span>Paid</span>
+                      <span>{formatINR(grandTotal)}</span>
+                    </div>
                     </div>
                   </div>
                 </div>
