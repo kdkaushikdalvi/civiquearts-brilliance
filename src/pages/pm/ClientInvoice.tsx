@@ -209,14 +209,36 @@ const ClientInvoice = () => {
         format: "a4",
       });
       const exportStyle = document.createElement("style");
-      exportStyle.textContent = `.client-invoice-title{position:static!important}.client-invoice{padding-top:0!important}`;
+      exportStyle.textContent = `
+        *{box-sizing:border-box}
+        .client-invoice{width:718px!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;border-radius:0!important}
+        .client-invoice-title,.client-invoice-company,.client-invoice-billing,.client-invoice-terms{break-inside:avoid;page-break-inside:avoid}
+        .client-invoice-table{width:100%;table-layout:fixed}
+        .client-invoice-table thead{display:table-header-group}
+        .client-invoice-table tr{break-inside:avoid;page-break-inside:avoid}
+        .client-invoice-title{position:static!important;margin:0 0 10px 0!important;background:#fff}
+      `;
       document.head.appendChild(exportStyle);
-      await pdf.html(invoiceRef.current, {
-        x: 10, y: 10, width: 190, windowWidth: 794,
-        autoPaging: "text", margin: [10, 10, 10, 10],
-        html2canvas: { scale: 1.5, backgroundColor: "#ffffff", useCORS: true },
-      });
-      exportStyle.remove();
+      const exportRoot = invoiceRef.current.cloneNode(true) as HTMLDivElement;
+      exportRoot.style.width = "718px";
+      exportRoot.style.minHeight = "0";
+      exportRoot.style.padding = "0";
+      exportRoot.style.position = "absolute";
+      exportRoot.style.left = "0";
+      exportRoot.style.top = "0";
+      exportRoot.style.zIndex = "-1";
+      exportRoot.style.pointerEvents = "none";
+      document.body.appendChild(exportRoot);
+      try {
+        await pdf.html(exportRoot, {
+          x: 10, y: 10, width: 190, windowWidth: 794,
+          autoPaging: "text", margin: 0,
+          html2canvas: { scale: 1.5, backgroundColor: "#ffffff", useCORS: true },
+        });
+      } finally {
+        exportStyle.remove();
+        exportRoot.remove();
+      }
       const pageCount = pdf.getNumberOfPages();
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(8);

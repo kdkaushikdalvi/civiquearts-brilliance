@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import AppShell from "@/components/pm/AppShell";
 import MonthNavigator, { MONTH_NAMES } from "@/components/pm/MonthNavigator";
@@ -10,9 +10,10 @@ import { Assignment } from "@/types/pm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Plus, Trash2, Pencil, Save, ChevronDown, ArrowUpDown } from "lucide-react";
+import { Plus, Trash2, Pencil, Save, ChevronDown, ArrowUpDown, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, formatNumber } from "@/lib/pmFormat";
+import ExcelJS from "exceljs";
 
 interface SiteRow {
   id: string;
@@ -44,6 +45,7 @@ const Assignments = () => {
   const [year, setYear] = useState(now.getFullYear());
   const [allocationFormOpen, setAllocationFormOpen] = useState(false);
   const [statusSortAsc, setStatusSortAsc] = useState(true);
+  const importRef = useRef<HTMLInputElement>(null);
 
   const [clientId, setClientId] = useState("");
   const [projectId, setProjectId] = useState("");
@@ -200,6 +202,50 @@ const Assignments = () => {
     persistDraft({ sites: emptySites });
   };
 
+  const exportAllocations = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Site Allocation");
+    sheet.addRow(["Project", "Site", "Client", "Assignee", "Unit", "Quantity", "Rate", "Amount", "Status", "Month", "Year"]);
+    filtered.forEach((a) => sheet.addRow([a.projectName, a.siteName, a.clientName, a.assigneeName, a.unitType, a.quantity ?? "", a.rate ?? "", a.amount ?? "", a.status, MONTH_NAMES[month], year]));
+    sheet.getRow(1).font = { bold: true };
+    sheet.getRow(1).alignment = { horizontal: "center" };
+    sheet.eachRow((row) => row.eachCell((cell) => { cell.alignment = { ...cell.alignment, horizontal: "center", vertical: "middle" }; }));
+    sheet.columns.forEach((column) => { column.width = 18; });
+    const buffer = await workbook.xlsx.writeBuffer();
+    const url = URL.createObjectURL(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Site Allocation ${MONTH_NAMES[month]} ${year}.xlsx`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Site allocation exported");
+  };
+
+  const importAllocations = async (file: File) => {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(await file.arrayBuffer());
+      const sheet = workbook.worksheets[0];
+      const rows = sheet.getSheetValues().slice(1) as unknown[][];
+      const records = [];
+      for (const row of rows) {
+        const [projectName, siteName, clientName, assigneeName, unitType, quantity, rate, amount, status] = row.slice(1);
+        const project = projects.find((p) => p.name.trim().toLowerCase() === String(projectName ?? "").trim().toLowerCase());
+        const client = clients.find((c) => c.name.trim().toLowerCase() === String(clientName ?? "").trim().toLowerCase());
+        const employee = employees.find((e) => e.name.trim().toLowerCase() === String(assigneeName ?? "").trim().toLowerCase());
+        if (!project || !client || !employee || !String(siteName ?? "").trim()) continue;
+        const site = await upsertSite(project.id, String(siteName).trim());
+        records.push({ clientId: client.id, clientName: client.name, siteId: site?.id, projectId: project.id, projectName: project.name, siteName: String(siteName).trim(), assigneeId: employee.id, assigneeName: employee.name, month, year, status: ["Completed", "Hold", "In Progress"].includes(String(status)) ? String(status) as Assignment["status"] : "In Progress", unitType: String(unitType ?? "-"), quantity: Number(quantity) || 0, rate: Number(rate) || 0, amount: Number(amount) || 0 });
+      }
+      if (!records.length) return toast.error("No valid allocation rows found in the file");
+      await addAssignments(records);
+      toast.success(`Imported ${records.length} allocation${records.length === 1 ? "" : "s"}`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to import allocation file");
+    }
+  };
+
   return (
     <AppShell>
       <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -207,15 +253,20 @@ const Assignments = () => {
           <div>
             <h3 className="text-xl font-semibold text-blue-800">Site Allocation</h3>
           </div>
-          <MonthNavigator
-            month={month}
-            year={year}
-            onChange={(m, y) => {
-              setMonth(m);
-              setYear(y);
-              persistDraft({ month: m, year: y });
-            }}
-          />
+          <div className="flex items-center gap-2">
+            <input ref={importRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) void importAllocations(file); e.currentTarget.value = ""; }} />
+            <Button variant="outline" size="icon" onClick={() => importRef.current?.click()} title="Import site allocations" aria-label="Import site allocations"><Upload className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={() => void exportAllocations()} disabled={!filtered.length} title="Export site allocations" aria-label="Export site allocations"><Download className="h-4 w-4" /></Button>
+            <MonthNavigator
+              month={month}
+              year={year}
+              onChange={(m, y) => {
+                setMonth(m);
+                setYear(y);
+                persistDraft({ month: m, year: y });
+              }}
+            />
+          </div>
         </div>
 
         {/* Create Section */}

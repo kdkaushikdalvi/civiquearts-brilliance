@@ -61,6 +61,7 @@ const DownloadInvoices = () => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   });
   const [otherItems, setOtherItems] = useState<OtherItem[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   const assignee = employees.find((e) => e.id === assigneeId);
@@ -95,18 +96,46 @@ const DownloadInvoices = () => {
       toast.info("Generating PDF...");
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const exportStyle = document.createElement("style");
-      exportStyle.textContent = `.payment-slip-page-header{position:static!important;width:100%;background:#fff}.payment-slip-page-body{padding-top:0!important}.payment-slip-page-body .payment-slip-table{margin-top:10px!important}.payment-slip-footer-table{break-inside:avoid;page-break-inside:avoid}.payment-slip-table .payment-slip-footer{display:table-row-group;break-inside:avoid;page-break-inside:avoid}.payment-slip-others,.payment-slip-others tr{break-inside:avoid;page-break-inside:avoid}`;
+      exportStyle.textContent = `
+        *{box-sizing:border-box}
+        .payment-slip{width:718px!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;border-radius:0!important}
+        .payment-slip-page-header{position:static!important;width:100%!important;background:#fff}
+        .payment-slip-page-body{padding-top:0!important}
+        .payment-slip-page-body .payment-slip-table{margin-top:10px!important}
+        .payment-slip-header,.payment-slip-company,.payment-slip-customer,.payment-slip-table{break-inside:avoid;page-break-inside:avoid}
+        .payment-slip-table{width:100%;table-layout:fixed}
+        .payment-slip-table thead{display:table-header-group}
+        .payment-slip-table tr{break-inside:avoid;page-break-inside:avoid}
+        .payment-slip-table .payment-slip-footer{break-inside:avoid;page-break-inside:avoid;display:table-row-group}
+        .payment-slip-others,.payment-slip-others tr,.payment-slip-footer-table{break-inside:avoid;page-break-inside:avoid}
+      `;
       document.head.appendChild(exportStyle);
-      await pdf.html(invoiceRef.current, {
-        x: 10,
-        y: 10,
-        width: 190,
-        windowWidth: 794,
-        autoPaging: "text",
-        margin: [10, 10, 10, 10],
-        html2canvas: { scale: 1.5, backgroundColor: "#ffffff", useCORS: true },
-      });
-      exportStyle.remove();
+      const exportRoot = invoiceRef.current.cloneNode(true) as HTMLDivElement;
+      exportRoot.style.width = "718px";
+      exportRoot.style.minHeight = "0";
+      exportRoot.style.padding = "0";
+      exportRoot.style.position = "absolute";
+      exportRoot.style.left = "0";
+      exportRoot.style.top = "0";
+      exportRoot.style.zIndex = "-1";
+      exportRoot.style.pointerEvents = "none";
+      document.body.appendChild(exportRoot);
+      try {
+        await pdf.html(exportRoot, {
+          x: 10,
+          y: 10,
+          width: 190,
+          windowWidth: 794,
+          autoPaging: "text",
+          // The print layout already starts at the A4 10 mm page margin.
+          // Applying another html2canvas margin here changes pagination.
+          margin: 0,
+          html2canvas: { scale: 1.5, backgroundColor: "#ffffff", useCORS: true },
+        });
+      } finally {
+        exportStyle.remove();
+        exportRoot.remove();
+      }
       const pageCount = pdf.getNumberOfPages();
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(8);
@@ -235,6 +264,9 @@ const DownloadInvoices = () => {
                   ))}
                 </Card>
                 <div className="flex flex-wrap justify-center gap-2">
+                  <Button variant="outline" onClick={() => setShowPreview((s) => !s)}>
+                    <FileText className="h-4 w-4 mr-2" /> {showPreview ? "Hide Preview" : "Preview"}
+                  </Button>
                   <Button variant="outline" onClick={printInvoice}>
                     <Printer className="h-4 w-4 mr-2" /> Print
                   </Button>
@@ -243,8 +275,11 @@ const DownloadInvoices = () => {
                   </Button>
                 </div>
 
-                {/* Invoice Preview */}
-                <div className="overflow-auto">
+                {/* Payment Slip Preview */}
+                <div
+                  className={showPreview ? "overflow-auto" : "h-0 overflow-hidden"}
+                  aria-hidden={!showPreview}
+                >
                   <div
                     ref={invoiceRef}
                     className="payment-slip bg-white text-black mx-auto rounded-lg border border-gray-300 shadow-card"
