@@ -7,10 +7,8 @@ import { getSiteCode } from "@/lib/siteCodeMatching";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Download, Printer, FileText } from "lucide-react";
+import { Printer, FileText } from "lucide-react";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 import logo from "@/assets/logo.png";
 
 const ONES = [
@@ -198,80 +196,6 @@ const ClientInvoice = () => {
         year: "numeric",
       })
     : "";
-
-  const download = async () => {
-    if (!invoiceRef.current) return;
-    try {
-      toast.info("Generating PDF...");
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-      const exportStyle = document.createElement("style");
-      exportStyle.textContent = `
-        *{box-sizing:border-box}
-        .client-invoice{width:718px!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;border-radius:0!important}
-        .client-invoice-title,.client-invoice-company,.client-invoice-billing,.client-invoice-terms{break-inside:avoid;page-break-inside:avoid}
-        .client-invoice-table{width:100%;table-layout:fixed}
-        .client-invoice-table thead{display:table-header-group}
-        .client-invoice-table tr{break-inside:avoid;page-break-inside:avoid}
-        .client-invoice-title{position:static!important;margin:0 0 10px 0!important;background:#fff}
-      `;
-      document.head.appendChild(exportStyle);
-      const exportRoot = invoiceRef.current.cloneNode(true) as HTMLDivElement;
-      exportRoot.style.width = "718px";
-      exportRoot.style.minHeight = "0";
-      exportRoot.style.padding = "0";
-      exportRoot.style.position = "absolute";
-      exportRoot.style.left = "0";
-      exportRoot.style.top = "0";
-      exportRoot.style.zIndex = "-1";
-      exportRoot.style.pointerEvents = "none";
-      document.body.appendChild(exportRoot);
-      try {
-        const canvas = await html2canvas(exportRoot, {
-          width: 718, windowWidth: 718, scale: 2,
-          backgroundColor: "#ffffff", useCORS: true,
-        });
-        const pageHeight = Math.floor(canvas.width * (277 / 190));
-        for (let top = 0; top < canvas.height; top += pageHeight) {
-          if (top > 0) pdf.addPage();
-          const slice = document.createElement("canvas");
-          slice.width = canvas.width;
-          slice.height = Math.min(pageHeight, canvas.height - top);
-          slice.getContext("2d")!.drawImage(canvas, 0, -top);
-          pdf.addImage(slice.toDataURL("image/jpeg", 0.95), "JPEG", 10, 10, 190, (slice.height / canvas.width) * 190);
-        }
-      } finally {
-        exportStyle.remove();
-        exportRoot.remove();
-      }
-      const pageCount = pdf.getNumberOfPages();
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(8);
-      pdf.setTextColor(170, 170, 170);
-      for (let page = 1; page <= pageCount; page += 1) {
-        pdf.setPage(page);
-        pdf.text(`Page ${page} of ${pageCount}`, 200, 289, { align: "right" });
-      }
-      const selectedInvoiceDate = invoiceDate
-        ? new Date(`${invoiceDate}T00:00:00`)
-        : new Date();
-      const datePart = [
-        selectedInvoiceDate.getDate(),
-        selectedInvoiceDate.getMonth() + 1,
-        selectedInvoiceDate.getFullYear() % 100,
-      ]
-        .map((part) => String(part).padStart(2, "0"))
-        .join("_");
-      pdf.save(`${invoiceNumber}_${datePart}.pdf`);
-      toast.success("Invoice downloaded");
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to generate PDF");
-    }
-  };
 
   const printInvoice = () => {
     if (!invoiceRef.current) return;
@@ -481,14 +405,8 @@ const ClientInvoice = () => {
               </Card>
 
               <div className="flex flex-wrap justify-center gap-2">
-                <Button variant="outline" onClick={printInvoice}>
-                  <Printer className="h-4 w-4 mr-2" /> Print
-                </Button>
-                <Button
-                  onClick={download}
-                  className="gradient-saffron text-saffron-foreground"
-                >
-                  <Download className="h-4 w-4 mr-2" /> Download
+                <Button onClick={printInvoice} className="lg:fixed lg:bottom-6 lg:right-6 lg:z-50 lg:shadow-lg">
+                  <Printer className="h-4 w-4 mr-2" /> Preview &amp; Download
                 </Button>
               </div>
 

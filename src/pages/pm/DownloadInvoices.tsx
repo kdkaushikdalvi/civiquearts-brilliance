@@ -6,7 +6,7 @@ import { useData } from "@/contexts/DataContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Download, Printer, FileText, Plus, Trash2 } from "lucide-react";
+import { Download, Printer, FileText, Plus, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, formatNumber } from "@/lib/pmFormat";
 import jsPDF from "jspdf";
@@ -92,6 +92,7 @@ const DownloadInvoices = () => {
 
   const download = async () => {
     if (!invoiceRef.current || (filtered.length === 0 && otherItems.length === 0)) return;
+    setIsDownloading(true);
     try {
       toast.info("Generating PDF...");
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -128,14 +129,25 @@ const DownloadInvoices = () => {
           backgroundColor: "#ffffff",
           useCORS: true,
         });
+        const tableHeader = exportRoot.querySelector(".payment-slip-table thead");
+        const headerCanvas = tableHeader
+          ? await html2canvas(tableHeader as HTMLElement, { scale: 2, backgroundColor: "#ffffff", useCORS: true })
+          : null;
         const pageHeight = Math.floor(canvas.width * (277 / 190));
-        for (let top = 0; top < canvas.height; top += pageHeight) {
-          if (top > 0) pdf.addPage();
+        const headerHeight = headerCanvas ? headerCanvas.height : 0;
+        const contentHeight = pageHeight - headerHeight;
+        for (let page = 0, top = 0; top < canvas.height; page += 1) {
+          if (page > 0) pdf.addPage();
+          const sliceTop = page === 0 ? top : top + headerHeight;
           const slice = document.createElement("canvas");
           slice.width = canvas.width;
-          slice.height = Math.min(pageHeight, canvas.height - top);
-          slice.getContext("2d")!.drawImage(canvas, 0, -top);
-          pdf.addImage(slice.toDataURL("image/jpeg", 0.95), "JPEG", 10, 10, 190, (slice.height / canvas.width) * 190);
+          slice.height = Math.min(page === 0 ? pageHeight : contentHeight, canvas.height - sliceTop);
+          slice.getContext("2d")!.drawImage(canvas, 0, -sliceTop);
+          pdf.addImage(slice.toDataURL("image/jpeg", 0.95), "JPEG", 10, page === 0 || !headerCanvas ? 10 : 10 + (headerHeight / canvas.width) * 190, 190, (slice.height / canvas.width) * 190);
+          if (page > 0 && headerCanvas) {
+            pdf.addImage(headerCanvas.toDataURL("image/png"), "PNG", 10, 10, 190, (headerHeight / canvas.width) * 190);
+          }
+          top = sliceTop + slice.height;
         }
       } finally {
         exportStyle.remove();
@@ -166,6 +178,8 @@ const DownloadInvoices = () => {
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate PDF");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -269,11 +283,8 @@ const DownloadInvoices = () => {
                   ))}
                 </Card>
                 <div className="flex flex-wrap justify-center gap-2">
-                  <Button variant="outline" onClick={printInvoice}>
-                    <Printer className="h-4 w-4 mr-2" /> Print
-                  </Button>
-                  <Button onClick={download} className="gradient-saffron text-saffron-foreground">
-                    <Download className="h-4 w-4 mr-2" /> Download
+                  <Button onClick={printInvoice} className="lg:fixed lg:bottom-6 lg:right-6 lg:z-50 lg:shadow-lg">
+                    <Printer className="h-4 w-4 mr-2" /> Preview &amp; Download
                   </Button>
                 </div>
 
