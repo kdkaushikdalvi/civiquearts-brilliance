@@ -158,3 +158,20 @@ main h1.text-2xl {
 #lovable-badge {
   display: none !important;
 }
+
+.bg-slate-50 {
+  position: relative;
+  z-index: 1;
+  box-shadow: none;
+}
+
+.bg-slate-50::after {
+  position: absolute;
+  inset: 0 auto 0 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  background: inherit;
+  box-shadow: 0 8px 12px -8px rgb(15 23 42 / 0.42);
+  content: "";
+  z-index: -1;
+}

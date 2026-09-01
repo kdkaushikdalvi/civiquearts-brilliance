@@ -6,7 +6,7 @@ import { useData } from "@/contexts/DataContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Download, Printer, FileText, Plus, Trash2, Loader2 } from "lucide-react";
+import { Download, Printer, FileText, Plus, Trash2, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, formatNumber } from "@/lib/pmFormat";
 import jsPDF from "jspdf";
@@ -62,6 +62,7 @@ const DownloadInvoices = () => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   });
   const [otherItems, setOtherItems] = useState<OtherItem[]>([]);
+  const [addedOtherIds, setAddedOtherIds] = useState<string[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
@@ -278,12 +279,33 @@ const DownloadInvoices = () => {
                       <input type="number" min="0" value={item.quantity} placeholder="Qty" onChange={(e) => updateOther(item.id, { quantity: Math.max(0, Number(e.target.value) || 0) })} className="h-10 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm" />
                       <input type="number" min="0" step="0.01" value={item.rate} placeholder="Rate (₹)" onChange={(e) => updateOther(item.id, { rate: Math.max(0, Number(e.target.value) || 0) })} className="h-10 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm" />
                       <div className="flex h-10 min-w-0 items-center justify-end overflow-hidden rounded-lg border bg-muted px-3 text-sm" aria-label="Amount (₹)">{formatINR(item.quantity * item.rate)}</div>
-                      <Button type="button" variant="ghost" onClick={() => setOtherItems((items) => items.filter((current) => current.id !== item.id))} aria-label="Delete other item" className="h-10 w-10 shrink-0 p-0 text-red-500 hover:bg-red-50 hover:text-red-600">
-                        <Trash2 className="h-5 w-5" />
-                      </Button>
+                      <Button type="button" onClick={() => setAddedOtherIds((ids) => ids.includes(item.id) ? ids : [...ids, item.id])} className="h-10 px-4">Add</Button>
                     </div>
                   ))}
                 </Card>
+                {addedOtherIds.length > 0 && (
+                  <Card className="overflow-x-auto">
+                    <h4 className="border-b border-border bg-slate-50 px-4 py-3 font-semibold text-yellow-800">Added Others</h4>
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {otherItems.filter((item) => addedOtherIds.includes(item.id)).map((item) => (
+                          <tr key={item.id} className="border-b border-border last:border-0">
+                            <td className="px-4 py-3">{item.project}</td>
+                            <td className="px-4 py-3">{item.site}</td>
+                            <td className="px-4 py-3">{item.unit}</td>
+                            <td className="px-4 py-3 text-right">{formatNumber(item.quantity)}</td>
+                            <td className="px-4 py-3 text-right">{item.rate.toFixed(2)}</td>
+                            <td className="px-4 py-3 text-right">{formatINR(item.quantity * item.rate)}</td>
+                            <td className="px-4 py-3 text-right whitespace-nowrap">
+                              <Button type="button" variant="ghost" size="icon" aria-label="Edit other item" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}><Pencil className="h-4 w-4" /></Button>
+                              <Button type="button" variant="ghost" size="icon" aria-label="Delete other item" onClick={() => { setOtherItems((items) => items.filter((current) => current.id !== item.id)); setAddedOtherIds((ids) => ids.filter((id) => id !== item.id)); }}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </Card>
+                )}
                 <div className="flex flex-wrap justify-center gap-2">
                   <Button onClick={printInvoice} className="lg:fixed lg:bottom-6 lg:right-6 lg:z-50 lg:shadow-lg">
                     <Printer className="h-4 w-4 mr-2" /> Preview &amp; Download
