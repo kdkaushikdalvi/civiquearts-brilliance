@@ -341,7 +341,7 @@ const DownloadInvoices = () => {
                       <thead>
                         <tr style={{ background: "#f2f2f2" }}>
                           <th style={{ border: "1px solid #666", padding: 6, fontSize: 13 }}>#</th>
-                          <th style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "left" }}>Site Name (Project Name)</th>
+                          <th style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "left" }}>Item Name</th>
                           <th style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right" }}>Quantity</th>
                           <th style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right" }}>Unit</th>
                           <th style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right" }}>Price (₹)</th>

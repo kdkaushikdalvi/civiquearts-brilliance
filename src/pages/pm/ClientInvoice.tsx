@@ -98,11 +98,11 @@ interface Line {
   amount: number;
 }
 
-const usd = (n: number, digits = 4) =>
-  `$ ${n.toLocaleString("en-US", {
+const plainUsd = (n: number, digits = 4) =>
+  n.toLocaleString("en-US", {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
-  })}`;
+  });
 
 const BORDER_COLOR = "#4a4a4a";
 
@@ -191,7 +191,9 @@ const ClientInvoice = () => {
   const invoiceLines = useMemo(() => {
     const grouped = new Map<string, Line>();
     lines.forEach((line) => {
-      const key = `${line.name.trim().toLowerCase()}|${line.unit.trim().toLowerCase()}`;
+      // A site/project pair is one invoice line, even when source records
+      // contain different units. Accounting codes are attached to this pair.
+      const key = line.name.trim().toLowerCase();
       const existing = grouped.get(key);
       if (!existing) {
         grouped.set(key, { ...line });
@@ -318,9 +320,19 @@ const ClientInvoice = () => {
             </Card>
           ) : (
             <>
-              <Card className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-secondary/60">
+              <h4 className="bg-slate-50 py-2 text-center text-lg font-semibold text-slate-800">Allocate Accounting Code</h4>
+              <Card className="overflow-x-auto rounded-2xl border-slate-200 shadow-sm">
+                <table className="w-full table-fixed text-sm">
+                  <colgroup>
+                    <col style={{ width: "5%" }} />
+                    <col style={{ width: "42%" }} />
+                    <col style={{ width: "17%" }} />
+                    <col style={{ width: "10%" }} />
+                    <col style={{ width: "7%" }} />
+                    <col style={{ width: "7%" }} />
+                    <col style={{ width: "12%" }} />
+                  </colgroup>
+                  <thead className="bg-gradient-to-r from-indigo-100 via-blue-50 to-cyan-100">
                     <tr>
                       <th className="text-left font-semibold px-4 py-3 w-10">
                         #
@@ -338,7 +350,7 @@ const ClientInvoice = () => {
                         Unit
                       </th>
                       <th className="text-right font-semibold px-4 py-3 w-32">
-                        Price/Unit ($)
+                        Price ($)
                       </th>
                       <th className="text-right font-semibold px-4 py-3 w-32">
                         Amount ($)
@@ -346,8 +358,8 @@ const ClientInvoice = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {lines.map((l, i) => (
-                      <tr key={l.id} className="border-t border-border">
+                    {invoiceLines.map((l, i) => (
+                      <tr key={l.id} className="border-t border-border transition-colors odd:bg-white even:bg-slate-100/70 hover:bg-blue-50/70">
                         <td className="px-4 py-2 text-muted-foreground">
                           {i + 1}
                         </td>
@@ -356,6 +368,7 @@ const ClientInvoice = () => {
                           <Input
                             type="text"
                             value={l.code}
+                            className="m-0 h-12 rounded-xl border-2 border-indigo-200 bg-white px-4 py-2 text-base shadow-sm focus-visible:ring-2 focus-visible:ring-indigo-400"
                             readOnly={false}
                             disabled={false}
                             aria-label={`Accounting code for ${l.name}`}
@@ -369,8 +382,9 @@ const ClientInvoice = () => {
                         <td className="px-4 py-2">
                           <Input
                             type="number"
-                            className="text-right"
+                            className="m-0 h-auto border-0 bg-transparent p-0 text-right shadow-none focus-visible:ring-0"
                             value={l.quantity}
+                            readOnly
                             onChange={(e) =>
                               patch(l.id, { quantity: Number(e.target.value) })
                             }
@@ -379,6 +393,8 @@ const ClientInvoice = () => {
                         <td className="px-4 py-2">
                           <Input
                             value={l.unit}
+                            className="m-0 h-auto border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
+                            readOnly
                             onChange={(e) =>
                               patch(l.id, { unit: e.target.value })
                             }
@@ -388,8 +404,9 @@ const ClientInvoice = () => {
                           <Input
                             type="number"
                             step="0.0001"
-                            className="text-right"
+                            className="m-0 h-auto border-0 bg-transparent p-0 text-right shadow-none focus-visible:ring-0"
                             value={l.price}
+                            readOnly
                             onChange={(e) =>
                               patch(l.id, { price: Number(e.target.value) })
                             }
@@ -399,8 +416,9 @@ const ClientInvoice = () => {
                           <Input
                             type="number"
                             step="0.0001"
-                            className="text-right"
+                            className="m-0 h-auto border-0 bg-transparent p-0 text-right shadow-none focus-visible:ring-0"
                             value={l.amount}
+                            readOnly
                             onChange={(e) =>
                               patch(l.id, { amount: Number(e.target.value) })
                             }
@@ -418,7 +436,7 @@ const ClientInvoice = () => {
                         {totalQty.toLocaleString("en-US")}
                       </td>
                       <td colSpan={2} />
-                      <td className="px-4 py-3 text-right">{usd(subTotal)}</td>
+                      <td className="px-4 py-3 text-right">{plainUsd(subTotal)}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -702,7 +720,7 @@ const ClientInvoice = () => {
                     <thead>
                       <tr>
                         <th style={headCell}>#</th>
-                        <th style={headCell}>Site Name (Project Name)</th>
+                        <th style={headCell}>Item Name</th>
                         <th
                           style={{
                             ...headCell,
@@ -727,7 +745,7 @@ const ClientInvoice = () => {
                             textAlign: "right",
                           }}
                         >
-                          Price
+                          Price ($)
                         </th>
 
                         <th
@@ -736,7 +754,7 @@ const ClientInvoice = () => {
                             textAlign: "right",
                           }}
                         >
-                          Amount($)
+                          Amount ($)
                         </th>
                       </tr>
                     </thead>
@@ -781,7 +799,7 @@ const ClientInvoice = () => {
                               textAlign: "right",
                             }}
                           >
-                            {usd(l.price)}
+                            {plainUsd(l.price)}
                           </td>
 
                           <td
@@ -790,7 +808,7 @@ const ClientInvoice = () => {
                               textAlign: "right",
                             }}
                           >
-                            {usd(l.amount)}
+                            {plainUsd(l.amount)}
                           </td>
                         </tr>
                       ))}
@@ -828,7 +846,7 @@ const ClientInvoice = () => {
                             fontWeight: 700,
                           }}
                         >
-                          {usd(subTotal)}
+                          {plainUsd(subTotal)}
                         </td>
                       </tr>
                       <tr>
@@ -852,7 +870,7 @@ const ClientInvoice = () => {
 
                             <span>
                               <span style={{ marginRight: "250px" }}>:</span>
-                              {usd(subTotal, 4)}
+                              $ {plainUsd(subTotal, 4)}
                             </span>
                           </div>
                         </td>
@@ -878,7 +896,7 @@ const ClientInvoice = () => {
 
                             <span>
                               <span style={{ marginRight: "250px" }}>:</span>
-                              {usd(subTotal, 4)}
+                              $ {plainUsd(subTotal, 4)}
                             </span>
                           </div>
                         </td>
