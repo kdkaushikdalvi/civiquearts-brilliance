@@ -92,14 +92,22 @@ export async function buildCapProjectsListWorkbook(assignments: Assignment[]): P
         applyBorder(cell);
       }
     } else if (item.kind === "project") {
-      row.getCell(1).value = "";
-      row.getCell(2).value = item.projectName;
-      row.getCell(3).value = "";
-      row.getCell(2).font = { bold: true };
-      row.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
-      row.getCell(2).alignment = { vertical: "middle", horizontal: "center", wrapText: true };
-      row.getCell(3).alignment = { vertical: "middle", horizontal: "center" };
-      for (let c = 1; c <= 3; c++) applyBorder(row.getCell(c));
+      // Keep project groups visually separated in the generated workbook.
+      if (excelRow > 2) {
+        excelRow++;
+      }
+      const projectRow = sheet.getRow(excelRow);
+      projectRow.getCell(1).value = "";
+      projectRow.getCell(2).value = item.projectName;
+      projectRow.getCell(3).value = "";
+      projectRow.getCell(2).font = { bold: true };
+      projectRow.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
+      projectRow.getCell(2).alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+      projectRow.getCell(3).alignment = { vertical: "middle", horizontal: "center" };
+      for (let c = 1; c <= 3; c++) applyBorder(projectRow.getCell(c));
+      projectRow.commit();
+      excelRow++;
+      continue;
     } else {
       row.getCell(1).value = item.srNo;
       row.getCell(2).value = item.siteName;

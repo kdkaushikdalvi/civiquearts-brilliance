@@ -349,12 +349,12 @@ const ClientInvoice = () => {
                 <table className="w-full table-fixed text-sm">
                   <colgroup>
                     <col style={{ width: "5%" }} />
-                    <col style={{ width: "42%" }} />
+                    <col style={{ width: "37%" }} />
                     <col style={{ width: "17%" }} />
                     <col style={{ width: "10%" }} />
                     <col style={{ width: "7%" }} />
                     <col style={{ width: "7%" }} />
-                    <col style={{ width: "12%" }} />
+                    <col style={{ width: "17%" }} />
                   </colgroup>
                   <thead className="bg-gradient-to-r from-indigo-100 via-blue-50 to-cyan-100">
                     <tr>
@@ -428,12 +428,12 @@ const ClientInvoice = () => {
                           <Input
                             type="number"
                             step="0.0001"
-                            className="m-0 h-auto border-0 bg-transparent p-0 text-right shadow-none focus-visible:ring-0"
+                            className="m-0 -mx-4 w-[calc(100%+2rem)] h-auto border-2 border-indigo-200 bg-white px-2 py-1 text-right shadow-sm focus-visible:ring-2 focus-visible:ring-indigo-400"
                             value={l.price}
-                            readOnly
                             onChange={(e) =>
                               patch(l.id, { price: Number(e.target.value) })
                             }
+                            aria-label={`Price for ${l.name}`}
                           />
                         </td>
                         <td className="px-4 py-2">
