@@ -11,10 +11,10 @@ import EmployeeMaster from "./EmployeeMaster";
 import BillToMaster from "./BillToMaster";
 
 const TABS = [
+  { id: "clients", label: "Client Name", icon: UserRound, iconClass: "text-orange-600" },
   { id: "projects", label: "Project List", icon: FolderKanban, iconClass: "text-blue-600" },
   { id: "sites", label: "Site List", icon: Building2, iconClass: "text-emerald-600" },
   { id: "employees", label: "Employee List", icon: Users, iconClass: "text-violet-600" },
-  { id: "clients", label: "Client List", icon: UserRound, iconClass: "text-orange-600" },
   { id: "billto", label: "Bill To", icon: Receipt, iconClass: "text-teal-600" },
 ] as const;
 

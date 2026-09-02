@@ -45,10 +45,11 @@ const invoiceNav = [
 
 const allListRoutes = ["/app/master/all", "/app/master/project", "/app/master/employee", "/app/master/site"];
 const masterDataNav = [
+  { tab: "clients", label: "Client Name", icon: UserRound, iconClass: "text-orange-600" },
   { tab: "projects", label: "Projects", icon: FolderKanban, iconClass: "text-cyan-600" },
   { tab: "sites", label: "Sites", icon: Building2, iconClass: "text-lime-600" },
   { tab: "employees", label: "Employees", icon: Users, iconClass: "text-fuchsia-600" },
-  { tab: "clients", label: "Clients", icon: UserRound, iconClass: "text-orange-600" },
+  { tab: "billto", label: "Bill To", icon: Receipt, iconClass: "text-teal-600" },
 ] as const;
 
 const AppShell = ({ children }: { children: ReactNode }) => {

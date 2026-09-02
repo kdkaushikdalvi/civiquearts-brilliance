@@ -101,7 +101,6 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     }
     setLoading(true);
     const [cRes, pRes, sRes, eRes, aRes, iRes, scRes, btRes] = await Promise.all([
-      supabase.from("bill_to").select("*").eq("user_id", userId).order("name"),
       supabase.from("clients").select("*").eq("user_id", userId).order("name"),
       supabase.from("projects").select("*").eq("user_id", userId).order("name"),
       supabase.from("sites").select("*").eq("user_id", userId).order("name"),
@@ -109,6 +108,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       supabase.from("assignments").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
       supabase.from("invoices").select("*").eq("user_id", userId).order("generated_date", { ascending: false }),
       supabase.from("site_codes").select("*").eq("user_id", userId),
+      supabase.from("bill_to").select("*").eq("user_id", userId).order("name"),
     ]);
     if (cRes.data) setClients(cRes.data.map((r: any) => ({ id: r.id, name: r.name })));
     if (pRes.data)

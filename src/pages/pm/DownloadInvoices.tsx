@@ -81,7 +81,12 @@ const DownloadInvoices = () => {
 
   const othersTotal = otherItems.reduce((s, item) => s + item.quantity * item.rate, 0);
   const totalQty = filtered.reduce((s, a) => s + (a.quantity || 0), 0) + otherItems.reduce((s, item) => s + item.quantity, 0);
-  const grandTotal = filtered.reduce((s, a) => s + (a.amount ?? 0), 0) + othersTotal;
+  const calculatedGrandTotal = filtered.reduce((s, a) => s + (a.amount ?? 0), 0) + othersTotal;
+  // Payment slips may differ by up to ₹1 because of line-item decimal precision.
+  // Normalize those near-whole totals while keeping larger fractional values intact.
+  const grandTotal = Math.abs(calculatedGrandTotal - Math.round(calculatedGrandTotal)) <= 1
+    ? Math.round(calculatedGrandTotal)
+    : calculatedGrandTotal;
   const invoiceNumber = `PS-${year}${String(month + 1).padStart(2, "0")}-${assigneeId.slice(-4).toUpperCase() || "----"}`;
   const invoiceDate = slipDate
     ? new Date(`${slipDate}T00:00:00`).toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" })
@@ -374,7 +379,7 @@ const DownloadInvoices = () => {
                         {filtered.map((a, i) => (
                           <tr key={a.id}>
                             <td style={{ border: "1px solid #666", padding: 6, fontSize: 13 }}>{i + 1}</td>
-                            <td style={{ border: "1px solid #666", padding: 6, fontSize: 13 }}>{a.siteName} ({a.projectName})</td>
+                            <td style={{ border: "1px solid #666", padding: 6, fontSize: 13 }}>{a.siteName} - ({a.projectName})</td>
                             <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right" }}>{formatNumber(a.quantity || 0)}</td>
                             <td style={{ border: "1px solid #666", padding: 6, fontSize: 13 }}>{a.unitType}</td>
                             <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right" }}>{a.rate?.toFixed(2)}</td>
@@ -390,7 +395,7 @@ const DownloadInvoices = () => {
                           {otherItems.map((item, i) => (
                             <tr key={item.id}>
                               <td style={{ border: "1px solid #666", padding: 6, fontSize: 13 }}>{filtered.length + i + 1}</td>
-                              <td style={{ border: "1px solid #666", padding: 6, fontSize: 13 }}>{item.site} ({item.project})</td>
+                              <td style={{ border: "1px solid #666", padding: 6, fontSize: 13 }}>{item.site} - ({item.project})</td>
                               <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right" }}>{formatNumber(item.quantity)}</td>
                               <td style={{ border: "1px solid #666", padding: 6, fontSize: 13 }}>{item.unit}</td>
                               <td style={{ border: "1px solid #666", padding: 6, fontSize: 13, textAlign: "right" }}>{item.rate.toFixed(2)}</td>

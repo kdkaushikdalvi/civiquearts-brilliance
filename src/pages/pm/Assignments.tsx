@@ -29,6 +29,7 @@ const Assignments = () => {
   const {
     clients,
     projects,
+    sites: availableSites,
     employees,
     assignments,
     addAssignments,
@@ -329,7 +330,7 @@ const Assignments = () => {
                   persistDraft({ projectId: id });
                 }}
                 options={projects
-                  .filter((p) => !clientId || p.clientId === clientId)
+                  .filter((p) => !clientId || !p.clientId || p.clientId === clientId)
                   .map((p) => ({ id: p.id, label: p.name }))}
                 placeholder="Select Project"
                 emptyActionLabel="Add Project"
@@ -380,10 +381,29 @@ const Assignments = () => {
               {sites.map((s) => (
                 <div key={s.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 items-start">
                   <div>
-                    <Input
-                      placeholder="Site Name *"
-                      value={s.siteName}
-                      onChange={(e) => updateSite(s.id, { siteName: e.target.value })}
+                    <SearchableSelect
+                      value={availableSites.find((site) => site.name === s.siteName && site.projectId === projectId)?.id ?? ""}
+                      onChange={(siteId) => {
+                        const site = availableSites.find((item) => item.id === siteId);
+                        if (site) updateSite(s.id, { siteName: site.name });
+                      }}
+                      options={availableSites.filter((site) => site.projectId === projectId).map((site) => ({ id: site.id, label: site.name }))}
+                      placeholder="Select Site *"
+                      emptyActionLabel="Add Site Name"
+                      onEmptyAction={async (query) => {
+                        if (!query) {
+                          toast.error("Site name required");
+                          return;
+                        }
+                        if (!projectId) {
+                          toast.error("Select a project first");
+                          return;
+                        }
+                        const site = await upsertSite(projectId, query);
+                        if (!site) return;
+                        updateSite(s.id, { siteName: site.name });
+                        toast.success("Site added");
+                      }}
                     />
                     {errors.sites?.[`${s.id}-name`] && (
                       <p className="text-xs text-destructive mt-1">{errors.sites?.[`${s.id}-name`]}</p>
@@ -447,18 +467,31 @@ const Assignments = () => {
                 ) : (
                   grouped.map((rows, index) => {
                     const a = rows[0];
-                    const totalQuantity = rows.reduce((sum, row) => sum + (row.quantity ?? 0), 0);
-                    const totalAmount = rows.reduce((sum, row) => sum + (row.amount ?? 0), 0);
-                    const unitTypes = [...new Set(rows.map((row) => row.unitType).filter(Boolean))].join(" / ");
                     return <tr key={a.id} className={`border-t border-slate-200 transition-colors hover:bg-blue-50 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`}>
                       <td className="px-4 py-3 max-w-[180px] truncate whitespace-nowrap" title={a.projectName}>{a.projectName}</td>
                       <td className="px-4 py-3 whitespace-normal break-words" title={a.siteName}>{a.siteName}</td>
-                      <td className="px-4 py-3 align-middle text-center">{rows.map((row) => <div key={row.id} className="border-b border-slate-200 py-2 last:border-b-0 whitespace-nowrap">{row.assigneeName}</div>)}</td>
-                      <td className="px-4 py-3 max-w-[160px] whitespace-nowrap text-center" title={`${unitTypes} · ${formatNumber(totalQuantity)}`}>
-                        {unitTypes ? `${unitTypes} · ${formatNumber(totalQuantity)}` : "-"}
+                      <td className="px-4 py-3 align-middle text-center">{rows.map((row) => <div key={row.id} className="border-b border-slate-200 py-2 last:border-b-0 whitespace-nowrap">
+                        <select
+                          value={row.assigneeId}
+                          onChange={(e) => {
+                            const employee = employees.find((item) => item.id === e.target.value);
+                            if (employee) updateAssignment(row.id, { assigneeId: employee.id, assigneeName: employee.name });
+                          }}
+                          className="rounded-md border border-input bg-background px-2 py-1 text-xs"
+                          aria-label={`Assigned To for ${row.siteName}`}
+                        >
+                          {employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.name}</option>)}
+                        </select>
+                      </div>)}</td>
+                      <td className="px-4 py-3 max-w-[160px] whitespace-nowrap text-center">
+                        {rows.map((row) => <div key={row.id} className="border-b border-slate-200 py-2 last:border-b-0 whitespace-nowrap">
+                          {row.unitType ? `${row.unitType} · ${formatNumber(row.quantity ?? 0)}` : "-"}
+                        </div>)}
                       </td>
                       <td className="px-4 py-3 font-medium whitespace-nowrap text-center">
-                        {formatINR(totalAmount)}
+                        {rows.map((row) => <div key={row.id} className="border-b border-slate-200 py-2 last:border-b-0 whitespace-nowrap">
+                          {formatINR(row.amount ?? 0)}
+                        </div>)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         {rows.map((row) => <div key={row.id} className="flex justify-center border-b border-slate-200 py-2 last:border-b-0">

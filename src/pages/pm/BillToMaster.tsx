@@ -24,8 +24,9 @@ const BillToMaster = ({ embedded = false }: { embedded?: boolean }) => {
 
   const filtered = billTos.filter(
     (b) =>
-      (b.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
-      (b.details ?? "").toLowerCase().includes(search.toLowerCase())
+      (b.name ?? "").trim() !== "" &&
+      ((b.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+        (b.details ?? "").toLowerCase().includes(search.toLowerCase()))
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -69,17 +70,10 @@ const BillToMaster = ({ embedded = false }: { embedded?: boolean }) => {
             onChange={(e) => setForm((f) => ({ ...f, details: e.target.value }))}
             rows={3}
           />
-          <div className="flex gap-2">
-            <Input
-              placeholder="GSTIN (optional)"
-              value={form.gstin}
-              onChange={(e) => setForm((f) => ({ ...f, gstin: e.target.value }))}
-            />
-            <Button onClick={handleAdd} className="gradient-saffron text-saffron-foreground">
-              <Plus className="h-4 w-4 mr-2" />
-              Add
-            </Button>
-          </div>
+          <Button onClick={handleAdd} className="gradient-saffron text-saffron-foreground">
+            <Plus className="h-4 w-4 mr-2" />
+            Add
+          </Button>
         </Card>
 
         <Card className="overflow-hidden">
@@ -104,14 +98,13 @@ const BillToMaster = ({ embedded = false }: { embedded?: boolean }) => {
                 <th className="px-4 py-3">#</th>
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Address</th>
-                <th className="px-4 py-3">GSTIN</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {pageItems.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
                     No Bill To entries found.
                   </td>
                 </tr>
@@ -140,16 +133,6 @@ const BillToMaster = ({ embedded = false }: { embedded?: boolean }) => {
                         />
                       ) : (
                         b.details
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {editingId === b.id ? (
-                        <Input
-                          value={editForm.gstin}
-                          onChange={(e) => setEditForm((f) => ({ ...f, gstin: e.target.value }))}
-                        />
-                      ) : (
-                        b.gstin || "-"
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">

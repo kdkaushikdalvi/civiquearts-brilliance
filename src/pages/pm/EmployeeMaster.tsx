@@ -19,9 +19,9 @@ const EmployeeMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
   const returnTo = (location.state as any)?.returnTo;
   const forSiteId = (location.state as any)?.forSiteId;
 
-  const [form, setForm] = useState({ name: "", mobile: "" });
+  const [form, setForm] = useState({ name: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState({ name: "", mobile: "" });
+  const [editValue, setEditValue] = useState({ name: "" });
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
@@ -33,8 +33,8 @@ const EmployeeMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
 
   const handleAdd = async () => {
     if (!form.name.trim()) return toast.error("Employee name required");
-    const e = await addEmployee({ name: form.name, mobile: form.mobile || undefined });
-    setForm({ name: "", mobile: "" });
+    const e = await addEmployee({ name: form.name });
+    setForm({ name: "" });
     if (!e) return;
     toast.success("Employee added");
     if (returnTo) navigate(returnTo, { state: { newEmployeeId: e.id, forSiteId } });
@@ -42,13 +42,12 @@ const EmployeeMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
 
   const startEdit = (id: string, e: typeof editValue) => {
     setEditingId(id);
-    setEditValue({ name: e.name, mobile: e.mobile || "" });
+    setEditValue({ name: e.name });
   };
   const saveEdit = () => {
     if (!editValue.name.trim()) return toast.error("Name required");
     updateEmployee(editingId!, {
       name: editValue.name.trim(),
-      mobile: editValue.mobile || undefined,
     });
     setEditingId(null);
     toast.success("Updated");
@@ -70,9 +69,8 @@ const EmployeeMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
 
         <Card className="p-5 space-y-3">
           <label className="block text-sm font-semibold text-fuchsia-800">Add Employee</label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2">
             <Input placeholder="Employee Name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            <Input placeholder="Mobile (optional)" value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} />
           </div>
           <div className="flex justify-end">
             <Button onClick={handleAdd} className="gradient-saffron text-saffron-foreground">
@@ -95,14 +93,13 @@ const EmployeeMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
                 <tr>
                   <th className="px-4 py-3 font-semibold">#</th>
                   <th className="px-4 py-3 font-semibold">Name</th>
-                  <th className="px-4 py-3 font-semibold">Mobile</th>
                   <th className="px-4 py-3 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {pageItems.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">
                       No employees found.
                     </td>
                   </tr>
@@ -113,7 +110,6 @@ const EmployeeMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
                       {editingId === e.id ? (
                         <>
                           <td className="px-4 py-3"><Input value={editValue.name} onChange={(ev) => setEditValue({ ...editValue, name: ev.target.value })} onKeyDown={(ev) => { if (ev.key === "Enter") { ev.preventDefault(); saveEdit(); } }} /></td>
-                          <td className="px-4 py-3"><Input value={editValue.mobile} onChange={(ev) => setEditValue({ ...editValue, mobile: ev.target.value })} onKeyDown={(ev) => { if (ev.key === "Enter") { ev.preventDefault(); saveEdit(); } }} /></td>
                           <td className="px-4 py-3 text-right space-x-1">
                             <Button size="icon" variant="ghost" onClick={saveEdit}><Save className="h-4 w-4" /></Button>
                             <Button size="icon" variant="ghost" onClick={() => setEditingId(null)}><X className="h-4 w-4" /></Button>
@@ -122,9 +118,8 @@ const EmployeeMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
                       ) : (
                         <>
                           <td className="px-4 py-3">{e.name}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{e.mobile || "-"}</td>
                           <td className="px-4 py-3 text-right space-x-1">
-                            <Button size="icon" variant="ghost" onClick={() => startEdit(e.id, { name: e.name, mobile: e.mobile || "" })}><Pencil className="h-4 w-4" /></Button>
+                            <Button size="icon" variant="ghost" onClick={() => startEdit(e.id, { name: e.name })}><Pencil className="h-4 w-4" /></Button>
                             <Button size="icon" variant="ghost" onClick={() => {
                               if (confirm(`Delete "${e.name}"?`)) { deleteEmployee(e.id); toast.success("Deleted"); }
                             }}>
