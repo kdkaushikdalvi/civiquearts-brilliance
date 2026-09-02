@@ -129,6 +129,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       scRes.data.forEach((r: any) => { map[normalizeSiteName(r.site_name)] = r.accounting_code; });
       setSiteCodes(map);
     }
+    if (btRes.data)
+      setBillTos(btRes.data.map((r: any) => ({ id: r.id, name: r.name, details: r.details, gstin: r.gstin ?? undefined })));
     setLoading(false);
   }, [isAuthenticated, userId]);
 
@@ -301,6 +303,31 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data) setInvoices((prev) => [mapInvoice(data), ...prev]);
   };
 
+  const addBillTo = async (data: Omit<BillTo, "id">) => {
+    if (!requireUser()) return null;
+    const { data: row, error } = await supabase
+      .from("bill_to")
+      .insert({ user_id: userId, name: data.name.trim(), details: data.details.trim(), gstin: data.gstin?.trim() || null })
+      .select().single();
+    if (error || !row) { toast.error(error?.message || "Failed to add Bill To"); return null; }
+    const b = { id: row.id, name: row.name, details: row.details, gstin: row.gstin ?? undefined };
+    setBillTos((prev) => [...prev, b].sort((a, b2) => a.name.localeCompare(b2.name)));
+    return b;
+  };
+  const updateBillTo = async (id: string, data: Omit<BillTo, "id">) => {
+    const { error } = await supabase
+      .from("bill_to")
+      .update({ name: data.name.trim(), details: data.details.trim(), gstin: data.gstin?.trim() || null })
+      .eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    setBillTos((prev) => prev.map((b) => (b.id === id ? { ...b, ...data } : b)));
+  };
+  const deleteBillTo = async (id: string) => {
+    const { error } = await supabase.from("bill_to").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    setBillTos((prev) => prev.filter((b) => b.id !== id));
+  };
+
   const saveSiteCodes = async (pairs: { siteName: string; code: string }[]) => {
     if (!requireUser()) return;
     const seen = new Set<string>();
@@ -339,6 +366,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         addEmployee, updateEmployee, deleteEmployee,
         addAssignments, updateAssignment, deleteAssignment,
         addInvoice,
+        billTos, addBillTo, updateBillTo, deleteBillTo,
         siteCodes, saveSiteCodes,
       }}
     >
