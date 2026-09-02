@@ -119,7 +119,7 @@ const headCell: React.CSSProperties = {
 };
 
 const ClientInvoice = () => {
-  const { clients, projects, assignments, siteCodes } = useData();
+  const { clients, projects, assignments, siteCodes, billTos } = useData();
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
@@ -137,6 +137,16 @@ const ClientInvoice = () => {
     )}-${String(d.getDate()).padStart(2, "0")}`;
   });
   const [billTo, setBillTo] = useState("");
+  const [billToId, setBillToId] = useState("");
+
+  const applyBillTo = (id: string) => {
+    setBillToId(id);
+    const entry = billTos.find((b) => b.id === id);
+    if (!entry) return;
+    const parts = [entry.name, ...entry.details.split("\n").map((l) => l.trim()).filter(Boolean)];
+    if (entry.gstin) parts.push(`GSTIN: ${entry.gstin}`);
+    setBillTo(parts.join(" | "));
+  };
   const [lines, setLines] = useState<Line[]>([]);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
@@ -301,10 +311,24 @@ const ClientInvoice = () => {
             >
               Bill To
             </label>
+            {billTos.length > 0 && (
+              <div className="mb-2">
+                <SearchableSelect
+                  value={billToId}
+                  onChange={applyBillTo}
+                  options={billTos.map((b) => ({ id: b.id, label: b.name }))}
+                  placeholder="Pick saved Bill To..."
+                  title="Saved Bill To"
+                />
+              </div>
+            )}
             <Input
               id="bill-to"
               value={billTo}
-              onChange={(e) => setBillTo(e.target.value)}
+              onChange={(e) => {
+                setBillTo(e.target.value);
+                setBillToId("");
+              }}
               placeholder="Client name | address | city"
             />
           </div>
