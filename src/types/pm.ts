@@ -23,6 +23,13 @@ export interface Client {
   name: string;
 }
 
+export interface BillTo {
+  id: string;
+  name: string;
+  details: string;
+  gstin?: string;
+}
+
 export interface Project {
   id: string;
   name: string;
