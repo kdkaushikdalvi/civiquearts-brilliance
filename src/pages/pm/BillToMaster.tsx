@@ -24,8 +24,8 @@ const BillToMaster = ({ embedded = false }: { embedded?: boolean }) => {
 
   const filtered = billTos.filter(
     (b) =>
-      b.name.toLowerCase().includes(search.toLowerCase()) ||
-      b.details.toLowerCase().includes(search.toLowerCase())
+      (b.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (b.details ?? "").toLowerCase().includes(search.toLowerCase())
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);

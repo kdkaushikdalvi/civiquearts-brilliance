@@ -130,7 +130,14 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       setSiteCodes(map);
     }
     if (btRes.data)
-      setBillTos(btRes.data.map((r: any) => ({ id: r.id, name: r.name, details: r.details, gstin: r.gstin ?? undefined })));
+      setBillTos(
+        btRes.data.map((r: any) => ({
+          id: r.id,
+          name: typeof r.name === "string" ? r.name : "",
+          details: typeof r.details === "string" ? r.details : "",
+          gstin: typeof r.gstin === "string" ? r.gstin : undefined,
+        }))
+      );
     setLoading(false);
   }, [isAuthenticated, userId]);
 
