@@ -81,6 +81,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
   const [siteCodes, setSiteCodes] = useState<Record<string, string>>({});
+  const [billTos, setBillTos] = useState<BillTo[]>([]);
   const [loading, setLoading] = useState(false);
 
   const requireUser = () => {
@@ -95,10 +96,12 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (!isAuthenticated || !userId) {
       setClients([]); setProjects([]); setSites([]);
       setEmployees([]); setAssignments([]); setInvoices([]); setSiteCodes({});
+      setBillTos([]);
       return;
     }
     setLoading(true);
-    const [cRes, pRes, sRes, eRes, aRes, iRes, scRes] = await Promise.all([
+    const [cRes, pRes, sRes, eRes, aRes, iRes, scRes, btRes] = await Promise.all([
+      supabase.from("bill_to").select("*").eq("user_id", userId).order("name"),
       supabase.from("clients").select("*").eq("user_id", userId).order("name"),
       supabase.from("projects").select("*").eq("user_id", userId).order("name"),
       supabase.from("sites").select("*").eq("user_id", userId).order("name"),
