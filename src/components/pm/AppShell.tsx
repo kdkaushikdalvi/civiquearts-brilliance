@@ -4,6 +4,8 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   ClipboardList,
   ChevronDown,
+  ChevronsLeft,
+  ChevronsRight,
   Layers,
   Download,
   LogOut,
@@ -57,6 +59,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(() =>
     invoiceNav.some((n) => location.pathname === n.to),
@@ -98,7 +101,8 @@ const AppShell = ({ children }: { children: ReactNode }) => {
 
   const topLevel = (isActive: boolean) =>
     cn(
-      "flex w-full items-center gap-3 px-5 py-2.5 text-sm font-semibold transition-colors border-l-2",
+      "flex w-full items-center gap-3 py-2.5 text-sm font-semibold transition-all border-l-2",
+      sidebarCollapsed ? "justify-center px-2" : "px-5",
       isActive
         ? "border-saffron text-saffron bg-saffron/5"
         : "border-transparent text-foreground/80 hover:bg-secondary",
@@ -113,17 +117,18 @@ const AppShell = ({ children }: { children: ReactNode }) => {
         initial="hidden"
         animate="visible"
         variants={{ visible: { transition: { staggerChildren: 0.12 } } }}
-        className="p-5 border-b border-border flex items-center gap-3"
+        className={cn("border-b border-border flex items-center gap-3 transition-all", sidebarCollapsed ? "p-3 justify-center" : "p-5")}
       >
         <motion.img
           src={logo}
           alt="CiviqueArts"
-          className="h-10 w-auto animate-pulse"
+          className={cn("object-contain transition-all duration-200", sidebarCollapsed ? "h-10 w-10" : "h-10 w-auto")}
           variants={{ hidden: { opacity: 0, x: -12, scale: 0.9 }, visible: { opacity: 1, x: 0, scale: 1 } }}
           transition={{ type: "spring", stiffness: 260, damping: 20 }}
         />
         <motion.div
-          className="leading-tight animate-pulse"
+          animate={{ width: sidebarCollapsed ? 0 : "auto", opacity: sidebarCollapsed ? 0 : 1 }}
+          className="leading-tight overflow-hidden whitespace-nowrap"
           variants={{ hidden: { opacity: 0, x: 12 }, visible: { opacity: 1, x: 0 } }}
           transition={{ duration: 0.35 }}
         >
@@ -141,7 +146,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
             className={({ isActive }) => topLevel(isActive)}
           >
             <n.icon className={iconBox(n.iconClass)} />
-            {n.label}
+            <span className={cn("transition-all duration-200", sidebarCollapsed ? "w-0 opacity-0 overflow-hidden" : "opacity-100")}>{n.label}</span>
           </NavLink>
         ))}
 
@@ -154,8 +159,8 @@ const AppShell = ({ children }: { children: ReactNode }) => {
             aria-expanded={invoiceOpen}
           >
             <Receipt className={iconBox("text-purple-700")} />
-            <span className="flex-1 text-left">Invoice</span>
-            <ChevronDown className={cn("h-4 w-4 transition-transform", invoiceOpen && "rotate-180")} />
+            <span className={cn("flex-1 text-left transition-all", sidebarCollapsed ? "w-0 opacity-0 overflow-hidden" : "opacity-100")}>Invoice</span>
+            {!sidebarCollapsed && <ChevronDown className={cn("h-4 w-4 transition-transform", invoiceOpen && "rotate-180")} />}
           </button>
           {invoiceOpen && (
             <div className="ml-8 border-l border-border py-1">
@@ -175,7 +180,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
                   }
                 >
                   <n.icon className={iconBox(n.iconClass)} />
-                  {n.label}
+                  {!sidebarCollapsed && n.label}
                 </NavLink>
               ))}
             </div>
@@ -191,8 +196,8 @@ const AppShell = ({ children }: { children: ReactNode }) => {
             aria-expanded={processExcelOpen}
           >
             <FileSpreadsheet className={iconBox("text-emerald-700")} />
-            <span className="flex-1 text-left">Process Excel</span>
-            <ChevronDown className={cn("h-4 w-4 transition-transform", processExcelOpen && "rotate-180")} />
+            <span className={cn("flex-1 text-left transition-all", sidebarCollapsed ? "w-0 opacity-0 overflow-hidden" : "opacity-100")}>Process Excel</span>
+            {!sidebarCollapsed && <ChevronDown className={cn("h-4 w-4 transition-transform", processExcelOpen && "rotate-180")} />}
           </button>
           {processExcelOpen && (
             <div className="ml-8 border-l border-border py-1">
@@ -212,7 +217,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
                   }
                 >
                   <n.icon className={iconBox(n.iconClass)} />
-                  {n.label}
+                  {!sidebarCollapsed && n.label}
                 </NavLink>
               ))}
             </div>
@@ -228,8 +233,8 @@ const AppShell = ({ children }: { children: ReactNode }) => {
             aria-expanded={masterDataOpen}
           >
             <Layers className={iconBox("text-indigo-700")} />
-            <span className="flex-1 text-left">Master Data</span>
-            <ChevronDown className={cn("h-4 w-4 transition-transform", masterDataOpen && "rotate-180")} />
+            <span className={cn("flex-1 text-left transition-all", sidebarCollapsed ? "w-0 opacity-0 overflow-hidden" : "opacity-100")}>Master Data</span>
+            {!sidebarCollapsed && <ChevronDown className={cn("h-4 w-4 transition-transform", masterDataOpen && "rotate-180")} />}
           </button>
           {masterDataOpen && (
             <div className="ml-8 border-l border-border py-1">
@@ -247,32 +252,32 @@ const AppShell = ({ children }: { children: ReactNode }) => {
                   )}
                 >
                   <item.icon className={iconBox(item.iconClass)} />
-                  {item.label}
+                  {!sidebarCollapsed && item.label}
                 </NavLink>
               ))}
             </div>
           )}
         </div>
       </nav>
-      <div className="border-t border-border p-3 text-xs text-muted-foreground truncate">
-        Signed in as <span className="font-medium text-foreground">{user}</span>
+      <div className={cn("border-t border-border p-3 text-xs text-muted-foreground truncate", sidebarCollapsed && "text-center")} title={sidebarCollapsed ? `Signed in as ${user}` : undefined}>
+        {!sidebarCollapsed && <>Signed in as <span className="font-medium text-foreground">{user}</span></>}
       </div>
       <button
         type="button"
         onClick={handleRefreshApp}
         disabled={refreshing}
         title="Clear cached data and reload the app"
-        className="border-t border-border w-full px-5 py-3 text-sm font-medium text-foreground/80 hover:bg-secondary disabled:opacity-60 flex items-center gap-2"
+        className={cn("border-t border-border w-full py-3 text-sm font-medium text-foreground/80 hover:bg-secondary disabled:opacity-60 flex items-center gap-2", sidebarCollapsed ? "justify-center px-2" : "px-5")}
       >
         <RefreshCw className={cn("h-5 w-5 text-sky-700 stroke-[2.5]", refreshing && "animate-spin")} />
-        {refreshing ? "Refreshing…" : "Refresh App"}
+        {!sidebarCollapsed && (refreshing ? "Refreshing…" : "Refresh App")}
       </button>
       <button
         onClick={handleLogout}
         title="Sign out of your account"
-        className="border-t border-border w-full px-5 py-3 text-sm font-medium text-destructive hover:bg-destructive/10 flex items-center gap-2"
+        className={cn("border-t border-border w-full py-3 text-sm font-medium text-destructive hover:bg-destructive/10 flex items-center gap-2", sidebarCollapsed ? "justify-center px-2" : "px-5")}
       >
-        <LogOut className="h-5 w-5 text-red-700 stroke-[2.5]" /> Logout
+        <LogOut className="h-5 w-5 text-red-700 stroke-[2.5]" /> {!sidebarCollapsed && "Logout"}
       </button>
     </>
   );
@@ -287,9 +292,18 @@ const AppShell = ({ children }: { children: ReactNode }) => {
 
   return (
     <div className="h-screen overflow-hidden flex bg-secondary/20">
-      <aside className="hidden lg:flex h-screen w-64 bg-card border-r border-border flex-col shrink-0">
+      <motion.aside animate={{ width: sidebarCollapsed ? 72 : 256 }} transition={{ duration: 0.25, ease: "easeInOut" }} className="relative hidden lg:flex h-screen bg-card border-r border-border flex-col shrink-0 overflow-visible">
         {SidebarInner}
-      </aside>
+        <button
+          type="button"
+          onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
+          className="absolute right-0 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border-2 border-slate-300 bg-white text-slate-800 shadow-md transition-all hover:border-slate-500 hover:bg-slate-100"
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {sidebarCollapsed ? <ChevronsRight className="h-5 w-5" /> : <ChevronsLeft className="h-5 w-5" />}
+        </button>
+      </motion.aside>
 
       {mobileOpen && (
         <>

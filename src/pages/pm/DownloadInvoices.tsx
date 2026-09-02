@@ -6,7 +6,7 @@ import { useData } from "@/contexts/DataContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Download, Printer, FileText, Plus, Trash2, Pencil, Loader2 } from "lucide-react";
+import { Download, Printer, FileText, Plus, Minus, Save, Trash2, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, formatNumber } from "@/lib/pmFormat";
 import jsPDF from "jspdf";
@@ -79,9 +79,10 @@ const DownloadInvoices = () => {
     [assignments, month, year, assigneeId]
   );
 
-  const othersTotal = otherItems.reduce((s, item) => s + item.quantity * item.rate, 0);
-  const totalQty = filtered.reduce((s, a) => s + (a.quantity || 0), 0) + otherItems.reduce((s, item) => s + item.quantity, 0);
-  const calculatedGrandTotal = filtered.reduce((s, a) => s + (a.amount ?? 0), 0) + othersTotal;
+  const addedOthers = otherItems.filter((item) => addedOtherIds.includes(item.id));
+  const addedOthersTotal = addedOthers.reduce((s, item) => s + item.quantity * item.rate, 0);
+  const totalQty = filtered.reduce((s, a) => s + (a.quantity || 0), 0) + addedOthers.reduce((s, item) => s + item.quantity, 0);
+  const calculatedGrandTotal = filtered.reduce((s, a) => s + (a.amount ?? 0), 0) + addedOthersTotal;
   // Payment slips may differ by up to ₹1 because of line-item decimal precision.
   // Normalize those near-whole totals while keeping larger fractional values intact.
   const grandTotal = Math.abs(calculatedGrandTotal - Math.round(calculatedGrandTotal)) <= 1
@@ -98,8 +99,11 @@ const DownloadInvoices = () => {
   const updateOther = (id: string, patch: Partial<OtherItem>) =>
     setOtherItems((items) => items.map((item) => item.id === id ? { ...item, ...patch } : item));
 
+  const isOtherComplete = (item: OtherItem) =>
+    Boolean(item.project.trim() && item.site.trim() && item.unit.trim() && item.quantity > 0 && item.rate > 0);
+
   const download = async () => {
-    if (!invoiceRef.current || (filtered.length === 0 && otherItems.length === 0)) return;
+    if (!invoiceRef.current || (filtered.length === 0 && addedOthers.length === 0)) return;
     setIsDownloading(true);
     try {
       toast.info("Generating PDF...");
@@ -260,7 +264,7 @@ const DownloadInvoices = () => {
 
         {assigneeId && (
           <>
-            {filtered.length === 0 && otherItems.length === 0 ? (
+            {filtered.length === 0 && addedOthers.length === 0 ? (
               <Card className="p-10 text-center">
                 <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                 <p className="text-muted-foreground">
@@ -269,7 +273,7 @@ const DownloadInvoices = () => {
               </Card>
             ) : (
               <>
-                <Card className="p-4 space-y-4">
+                <Card className="overflow-x-auto p-4 space-y-4">
                   <div className="flex items-center justify-start gap-5">
                     <h4 className="text-lg font-semibold text-yellow-800">Others</h4>
                     <Button type="button" onClick={addOther} aria-label="Add other item" className="h-8 w-8 rounded-full bg-green-600 p-0 text-white hover:bg-green-700">
@@ -277,14 +281,43 @@ const DownloadInvoices = () => {
                     </Button>
                   </div>
                   {otherItems.map((item) => (
-                    <div key={item.id} className="grid min-w-0 items-center gap-2 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto]">
+                    <div key={item.id} className="grid min-w-[980px] grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto_auto] items-center gap-2">
                       {(["project", "site", "unit"] as const).map((field) => (
                         <input key={field} value={item[field]} placeholder={field[0].toUpperCase() + field.slice(1)} onChange={(e) => updateOther(item.id, { [field]: e.target.value })} className="h-10 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm" />
                       ))}
                       <input type="number" min="0" value={item.quantity} placeholder="Qty" onChange={(e) => updateOther(item.id, { quantity: Math.max(0, Number(e.target.value) || 0) })} className="h-10 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm" />
                       <input type="number" min="0" step="0.01" value={item.rate} placeholder="Rate (₹)" onChange={(e) => updateOther(item.id, { rate: Math.max(0, Number(e.target.value) || 0) })} className="h-10 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm" />
                       <div className="flex h-10 min-w-0 items-center justify-end overflow-hidden rounded-lg border bg-muted px-3 text-sm" aria-label="Amount (₹)">{formatINR(item.quantity * item.rate)}</div>
-                      <Button type="button" onClick={() => setAddedOtherIds((ids) => ids.includes(item.id) ? ids : [...ids, item.id])} className="h-10 px-4">Add</Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setOtherItems((items) => items.filter((current) => current.id !== item.id));
+                          setAddedOtherIds((ids) => ids.filter((id) => id !== item.id));
+                        }}
+                        aria-label="Delete draft other item"
+                        title="Delete"
+                        className="h-10 w-10 rounded-full bg-red-600 p-0 text-white hover:bg-red-700"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        disabled={!isOtherComplete(item)}
+                        onClick={() => {
+                          if (!isOtherComplete(item)) {
+                            toast.error("Please complete all Other fields before adding.");
+                            return;
+                          }
+                          setAddedOtherIds((ids) => ids.includes(item.id) ? ids : [...ids, item.id]);
+                        }}
+                        className="h-10 w-10 p-0"
+                        aria-label="Save other item"
+                        title="Save"
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
                     </div>
                   ))}
                 </Card>
@@ -387,12 +420,12 @@ const DownloadInvoices = () => {
                           </tr>
                         ))}
                       </tbody>
-                        {otherItems.length > 0 && (
+                        {addedOthers.length > 0 && (
                         <tbody className="payment-slip-others">
                           <tr>
                             <td colSpan={6} style={{ border: "1px solid #666", padding: 6, fontSize: 13, fontWeight: "bold", background: "#f2f2f2" }}>Others</td>
                           </tr>
-                          {otherItems.map((item, i) => (
+                          {addedOthers.map((item, i) => (
                             <tr key={item.id}>
                               <td style={{ border: "1px solid #666", padding: 6, fontSize: 13 }}>{filtered.length + i + 1}</td>
                               <td style={{ border: "1px solid #666", padding: 6, fontSize: 13 }}>{item.site} - ({item.project})</td>

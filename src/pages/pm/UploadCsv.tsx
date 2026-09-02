@@ -62,8 +62,8 @@ export const extractCodePairs = (rows: string[][]) => {
   const { rowIndex, siteIndex, codeIndex } = findMappingColumns(rows);
   for (const r of rows.slice(rowIndex + 1)) {
     const siteName = clean(r[siteIndex] ?? "");
-    const code = clean(r[codeIndex] ?? "");
-    if (!siteName || !code) continue;
+    const code = clean(r[codeIndex] ?? "") || "N/A";
+    if (!siteName) continue;
     const ln = siteName.toLowerCase();
     const lc = code.toLowerCase();
     if (ln === "projects" || ln === "project" || ln === "site name" || ln === "sr no." ) continue;
@@ -273,18 +273,11 @@ const UploadCsv = () => {
                       <th className="text-left px-4 py-2 font-semibold">#</th>
                       <th className="text-left px-4 py-2 font-semibold">Site Name</th>
                       <th className="text-left px-4 py-2 font-semibold">Accounting Code</th>
-                      <th className="text-left px-4 py-2 font-semibold">Status</th>
                       <th className="px-4 py-2" />
                     </tr>
                   </thead>
                   <tbody>
                     {pendingPairs.map((p, i) => {
-                      const existing = getSiteCode(siteCodes, p.siteName);
-                      const status = !existing
-                        ? "New"
-                        : existing === p.code.trim()
-                        ? "Unchanged"
-                        : `Updates ${existing}`;
                       return (
                         <tr key={`${p.siteName}-${i}`} className="border-t border-border">
                           <td className="px-4 py-2 text-muted-foreground">{i + 1}</td>
@@ -308,7 +301,6 @@ const UploadCsv = () => {
                               }
                             />
                           </td>
-                          <td className="px-4 py-2 text-muted-foreground whitespace-nowrap">{status}</td>
                           <td className="px-4 py-2">
                             <button
                               onClick={() =>

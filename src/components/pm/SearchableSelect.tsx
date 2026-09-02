@@ -15,6 +15,7 @@ interface Props {
   onEmptyAction?: (query: string) => void;
   disabled?: boolean;
   title?: string;
+  openUp?: boolean;
 }
 
 const SearchableSelect = ({
@@ -26,6 +27,7 @@ const SearchableSelect = ({
   onEmptyAction,
   disabled,
   title,
+  openUp = false,
 }: Props) => {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -66,7 +68,10 @@ const SearchableSelect = ({
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg overflow-hidden">
+        <div className={cn(
+          "absolute z-50 w-full rounded-md border border-border bg-popover shadow-lg overflow-hidden",
+          openUp ? "bottom-full mb-1" : "mt-1"
+        )}>
           {title && (
             <div className="border-b border-border bg-secondary/60 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-foreground">
               {title}

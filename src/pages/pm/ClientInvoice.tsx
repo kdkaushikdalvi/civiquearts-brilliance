@@ -7,7 +7,7 @@ import { getSiteCode } from "@/lib/siteCodeMatching";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Printer, FileText } from "lucide-react";
+import { ChevronDown, Printer, FileText, Pencil, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
@@ -148,6 +148,8 @@ const ClientInvoice = () => {
     setBillTo(parts.join(" | "));
   };
   const [lines, setLines] = useState<Line[]>([]);
+  const [editingLineId, setEditingLineId] = useState<string | null>(null);
+  const [allocationTableOpen, setAllocationTableOpen] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   const client = clients.find((c) => c.id === clientId);
@@ -173,8 +175,8 @@ const ClientInvoice = () => {
     setLines(
       sites.map((s) => ({
         id: s.id,
-        name: `${s.siteName} (${s.projectName})`,
-        code: getSiteCode(siteCodes, s.siteName),
+        name: `${s.siteName} - (${s.projectName})`,
+        code: getSiteCode(siteCodes, s.siteName) || "N/A",
         quantity: s.quantity ?? 0,
         unit: s.unitType ?? "-",
         price: Number.isFinite(s.rate) ? s.rate ?? 0 : 0,
@@ -319,6 +321,7 @@ const ClientInvoice = () => {
                   options={billTos.map((b) => ({ id: b.id, label: b.name }))}
                   placeholder="Pick saved Bill To..."
                   title="Saved Bill To"
+                  openUp
                 />
               </div>
             )}
@@ -344,8 +347,21 @@ const ClientInvoice = () => {
             </Card>
           ) : (
             <>
-              <h4 className="bg-slate-50 py-2 text-center text-lg font-semibold text-slate-800">Allocate Accounting Code</h4>
-              <Card className="overflow-x-auto rounded-2xl border-slate-200 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setAllocationTableOpen((open) => !open)}
+                className="flex w-full items-center justify-between rounded-lg bg-slate-50 px-4 py-2 text-lg font-semibold text-slate-800 hover:bg-slate-100"
+                aria-expanded={allocationTableOpen}
+              >
+                <span>Allocate Accounting Code</span>
+                <ChevronDown
+                  className={`h-5 w-5 text-muted-foreground transition-transform ${
+                    allocationTableOpen ? "rotate-180" : ""
+                  }`}
+                  aria-hidden="true"
+                />
+              </button>
+              {allocationTableOpen && <Card className="overflow-x-auto rounded-2xl border-slate-200 shadow-sm">
                 <table className="w-full table-fixed text-sm">
                   <colgroup>
                     <col style={{ width: "5%" }} />
@@ -379,6 +395,9 @@ const ClientInvoice = () => {
                       <th className="text-right font-semibold px-4 py-3 w-32">
                         Amount ($)
                       </th>
+                      <th className="text-center font-semibold px-4 py-3 w-32">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -389,11 +408,11 @@ const ClientInvoice = () => {
                         </td>
                         <td className="px-4 py-2 font-medium">{l.name}</td>
                         <td className="px-4 py-2">
-                          <Input
+                          {editingLineId === l.id ? <Input
                             type="text"
                             value={l.code}
                             className="m-0 h-12 rounded-xl border-2 border-indigo-200 bg-white px-4 py-2 text-base shadow-sm focus-visible:ring-2 focus-visible:ring-indigo-400"
-                            readOnly={false}
+                            readOnly={editingLineId !== l.id}
                             disabled={false}
                             aria-label={`Accounting code for ${l.name}`}
                             autoComplete="off"
@@ -401,7 +420,7 @@ const ClientInvoice = () => {
                               patch(l.id, { code: e.target.value })
                             }
                             placeholder="Code"
-                          />
+                          /> : <span className="block truncate px-1 font-medium">{l.code || "N/A"}</span>}
                         </td>
                         <td className="px-4 py-2">
                           <Input
@@ -425,16 +444,17 @@ const ClientInvoice = () => {
                           />
                         </td>
                         <td className="px-4 py-2">
-                          <Input
+                          {editingLineId === l.id ? <Input
                             type="number"
                             step="0.0001"
                             className="m-0 -mx-4 w-[calc(100%+2rem)] h-auto border-2 border-indigo-200 bg-white px-2 py-1 text-right shadow-sm focus-visible:ring-2 focus-visible:ring-indigo-400"
                             value={l.price}
+                            readOnly={editingLineId !== l.id}
                             onChange={(e) =>
                               patch(l.id, { price: Number(e.target.value) })
                             }
                             aria-label={`Price for ${l.name}`}
-                          />
+                          /> : <span className="block text-right">{plainUsd(l.price)}</span>}
                         </td>
                         <td className="px-4 py-2">
                           <Input
@@ -447,6 +467,43 @@ const ClientInvoice = () => {
                               patch(l.id, { amount: Number(e.target.value) })
                             }
                           />
+                        </td>
+                        <td className="px-4 py-2">
+                          <div className="flex items-center justify-center gap-1">
+                            {editingLineId === l.id ? (
+                              <button
+                                type="button"
+                                onClick={() => setEditingLineId(null)}
+                                className="rounded p-1.5 text-emerald-600 hover:bg-emerald-100"
+                                aria-label={`Save row for ${l.name}`}
+                                title="Save"
+                              >
+                                <Save className="h-4 w-4" />
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setEditingLineId(l.id)}
+                                className="rounded p-1.5 text-indigo-600 hover:bg-indigo-100"
+                                aria-label={`Edit row for ${l.name}`}
+                                title="Edit"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setLines((prev) => prev.filter((line) => line.id !== l.id));
+                                setEditingLineId(null);
+                              }}
+                              className="rounded p-1.5 text-red-600 hover:bg-red-100"
+                              aria-label={`Delete row for ${l.name}`}
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -464,7 +521,7 @@ const ClientInvoice = () => {
                     </tr>
                   </tfoot>
                 </table>
-              </Card>
+              </Card>}
 
               <div className="flex flex-wrap justify-center gap-2">
                 <Button onClick={printInvoice} className="lg:fixed lg:bottom-6 lg:right-6 lg:z-50 lg:shadow-lg">
@@ -520,8 +577,8 @@ const ClientInvoice = () => {
                             style={{
                               display: "flex",
                               alignItems: "center",
-                              padding: "10px 20px",
-                              minHeight: 145,
+                              padding: "8px 20px",
+                              minHeight: 125,
                               boxSizing: "border-box",
                             }}
                           >
@@ -541,7 +598,8 @@ const ClientInvoice = () => {
                                 src={logo}
                                 alt="Civique Arts logo"
                                 style={{
-                                  width: 165,
+                                  width: 145,
+                                  maxHeight: 105,
                                   height: "auto",
                                   objectFit: "contain",
                                 }}
@@ -571,7 +629,8 @@ const ClientInvoice = () => {
 
                               <div
                                 style={{
-                                  fontSize: 12.5,
+                                  fontSize: 11.5,
+                                  whiteSpace: "nowrap",
                                   marginBottom: 8,
                                 }}
                               >
