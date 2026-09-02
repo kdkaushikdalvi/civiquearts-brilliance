@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
-import { Assignment, Project, Employee, InvoiceRecord, Client, Site } from "@/types/pm";
+import { Assignment, Project, Employee, InvoiceRecord, Client, Site, BillTo } from "@/types/pm";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -16,6 +16,10 @@ interface DataContextValue {
   addClient: (name: string) => Promise<Client | null>;
   updateClient: (id: string, name: string) => Promise<void>;
   deleteClient: (id: string) => Promise<void>;
+  billTos: BillTo[];
+  addBillTo: (data: Omit<BillTo, "id">) => Promise<BillTo | null>;
+  updateBillTo: (id: string, data: Omit<BillTo, "id">) => Promise<void>;
+  deleteBillTo: (id: string) => Promise<void>;
   addProject: (name: string, clientId?: string, clientName?: string) => Promise<Project | null>;
   updateProject: (id: string, name: string) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
