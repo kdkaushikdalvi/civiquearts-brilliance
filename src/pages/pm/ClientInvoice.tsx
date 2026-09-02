@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AppShell from "@/components/pm/AppShell";
 import MonthNavigator, { MONTH_NAMES } from "@/components/pm/MonthNavigator";
 import SearchableSelect from "@/components/pm/SearchableSelect";
@@ -120,6 +121,7 @@ const headCell: React.CSSProperties = {
 
 const ClientInvoice = () => {
   const { clients, projects, assignments, siteCodes, billTos } = useData();
+  const navigate = useNavigate();
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
@@ -145,7 +147,7 @@ const ClientInvoice = () => {
     if (!entry) return;
     const parts = [entry.name, ...entry.details.split("\n").map((l) => l.trim()).filter(Boolean)];
     if (entry.gstin) parts.push(`GSTIN: ${entry.gstin}`);
-    setBillTo(parts.join(" | "));
+    setBillTo(parts.join(" "));
   };
   const [lines, setLines] = useState<Line[]>([]);
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
@@ -266,8 +268,8 @@ const ClientInvoice = () => {
           />
         </div>
 
-        <Card className="p-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
+        <Card className="p-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="order-4">
             <label
               htmlFor="invoice-number"
               className="mb-1.5 block text-sm font-semibold text-pink-800"
@@ -281,7 +283,7 @@ const ClientInvoice = () => {
               placeholder="CAPL-INV-25-26-08"
             />
           </div>
-          <div>
+          <div className="order-1">
             <label className="mb-1.5 block text-sm font-semibold text-pink-800">
               Client Name
             </label>
@@ -292,7 +294,7 @@ const ClientInvoice = () => {
               placeholder="Select Client"
             />
           </div>
-          <div>
+          <div className="order-2">
             <label
               htmlFor="inv-date"
               className="mb-1.5 block text-sm font-semibold text-rose-800"
@@ -306,9 +308,8 @@ const ClientInvoice = () => {
               onChange={(e) => setInvoiceDate(e.target.value)}
             />
           </div>
-          <div>
+          <div className="order-3">
             <label
-              htmlFor="bill-to"
               className="mb-1.5 block text-sm font-semibold text-fuchsia-800"
             >
               Bill To
@@ -325,15 +326,20 @@ const ClientInvoice = () => {
                 />
               </div>
             )}
-            <Input
-              id="bill-to"
-              value={billTo}
-              onChange={(e) => {
-                setBillTo(e.target.value);
-                setBillToId("");
-              }}
-              placeholder="Client name | address | city"
-            />
+            {billTo.trim() && billToId && (
+              <div className="flex items-start gap-2 px-1 py-3 text-sm text-slate-800">
+                <span>{billTo.replace(/\s*\|\s*/g, ", ")}</span>
+                <button
+                  type="button"
+                  onClick={() => navigate("/app/master/all", { state: { tab: "billto" } })}
+                  className="shrink-0 rounded p-1 pt-0.5 text-fuchsia-800 hover:bg-fuchsia-50"
+                  aria-label="Edit Bill To master data"
+                  title="Edit Bill To master data"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
         </Card>
 
