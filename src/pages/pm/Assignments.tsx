@@ -169,7 +169,6 @@ const Assignments = () => {
     if (!projectId) errs.project = "Project is required";
     sites.forEach((s) => {
       if (!s.siteName.trim()) errs.sites![`${s.id}-name`] = "Required";
-      if (!(s.assigneeIds ?? []).length) errs.sites![`${s.id}-assignee`] = "Required";
     });
     setErrors(errs);
     return !errs.client && !errs.project && Object.keys(errs.sites!).length === 0;
@@ -177,27 +176,34 @@ const Assignments = () => {
 
   const saveAssignments = async () => {
     if (!validate()) return;
-    const project = projects.find((p) => p.id === projectId)!;
-    const client = clients.find((c) => c.id === clientId)!;
-    const records = (await Promise.all(sites.flatMap((s) => (s.assigneeIds ?? []).map(async (assigneeId) => {
-      const emp = employees.find((e) => e.id === assigneeId)!;
-      const site = await upsertSite(project.id, s.siteName.trim());
-      return {
-        clientId: client.id,
-        clientName: client.name,
-        siteId: site?.id,
-        projectId: project.id,
-        projectName: project.name,
-        siteName: s.siteName.trim(),
-        assigneeId: emp.id,
-        assigneeName: emp.name,
-        month,
-        year,
-        status: "In Progress" as const,
-      };
-    })))).flat();
+    const project = projects.find((p) => p.id === projectId);
+    const client = clients.find((c) => c.id === clientId);
+    if (!project || !client) {
+      toast.error("Please reselect the client and project");
+      return;
+    }
+    const records = (await Promise.all(sites.flatMap((s) => {
+      const assigneeIds = s.assigneeIds?.length ? s.assigneeIds : [null];
+      return assigneeIds.map(async (assigneeId) => {
+        const emp = assigneeId ? employees.find((e) => e.id === assigneeId) : undefined;
+        const site = await upsertSite(project.id, s.siteName.trim());
+        return {
+          clientId: client.id,
+          clientName: client.name,
+          siteId: site?.id,
+          projectId: project.id,
+          projectName: project.name,
+          siteName: s.siteName.trim(),
+          assigneeId: emp?.id,
+          assigneeName: emp?.name,
+          month,
+          year,
+          status: "In Progress" as const,
+        };
+      });
+    }))).flat();
     await addAssignments(records);
-    toast.success(`${records.length} project${records.length > 1 ? "s" : ""} saved`);
+    toast.success(`${records.length} site allocation${records.length > 1 ? "s" : ""} saved`);
     const emptySites = [{ id: crypto.randomUUID(), siteName: "", assigneeIds: [] }];
     setSites(emptySites);
     persistDraft({ sites: emptySites });
@@ -374,7 +380,7 @@ const Assignments = () => {
 
             <div className="mb-2 hidden grid-cols-[1fr_1fr_auto] gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:grid">
               <span className="text-cyan-800">Site Name</span>
-              <span className="text-pink-800">Select Assignee</span>
+              <span className="text-pink-800">Select Assignee (optional)</span>
               <span className="w-10" />
             </div>
             <div className="space-y-2">
@@ -472,14 +478,19 @@ const Assignments = () => {
                       <td className="px-4 py-3 whitespace-normal break-words" title={a.siteName}>{a.siteName}</td>
                       <td className="px-4 py-3 align-middle text-center">{rows.map((row) => <div key={row.id} className="border-b border-slate-200 py-2 last:border-b-0 whitespace-nowrap">
                         <select
-                          value={row.assigneeId}
+                           value={row.assigneeId ?? ""}
                           onChange={(e) => {
+                             if (!e.target.value) {
+                               updateAssignment(row.id, { assigneeId: undefined, assigneeName: undefined });
+                               return;
+                             }
                             const employee = employees.find((item) => item.id === e.target.value);
                             if (employee) updateAssignment(row.id, { assigneeId: employee.id, assigneeName: employee.name });
                           }}
                           className="rounded-md border border-input bg-background px-2 py-1 text-xs"
                           aria-label={`Assigned To for ${row.siteName}`}
                         >
+                          <option value="">Unassigned</option>
                           {employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.name}</option>)}
                         </select>
                       </div>)}</td>

@@ -1,0 +1,1 @@
+ALTER TABLE public.assignments ALTER COLUMN assignee_name DROP NOT NULL;
