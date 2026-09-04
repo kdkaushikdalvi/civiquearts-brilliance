@@ -10,7 +10,9 @@ import { Assignment } from "@/types/pm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Plus, Trash2, Pencil, Save, ChevronDown, ArrowUpDown, Download, Upload } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Trash2, Save, ChevronDown, ArrowUpDown, Download, Upload, MoreHorizontal, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, formatNumber } from "@/lib/pmFormat";
 import ExcelJS from "exceljs";
@@ -107,7 +109,9 @@ const Assignments = () => {
       const key = `${assignment.projectId}-${assignment.siteName}`;
       groups.set(key, [...(groups.get(key) ?? []), assignment]);
     });
-    return Array.from(groups.values());
+    return Array.from(groups.values()).map((rows) =>
+      [...rows].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    );
   }, [filtered]);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -121,6 +125,21 @@ const Assignments = () => {
   const handleStatusChange = (a: Assignment, next: Assignment["status"]) => {
     if (next === "Completed") openComplete(a);
     else updateAssignment(a.id, { status: next });
+  };
+
+  const addAssigneeToGroup = async (row: Assignment) => {
+    await addAssignments([{
+      clientId: row.clientId,
+      clientName: row.clientName,
+      siteId: row.siteId,
+      projectId: row.projectId,
+      projectName: row.projectName,
+      siteName: row.siteName,
+      month: row.month,
+      year: row.year,
+      status: "In Progress",
+    }]);
+    toast.success("Assignee row added");
   };
 
   const handleSaveModal = (data: { unitType: Assignment["unitType"]; quantity: number; rate: number; amount: number }) => {
@@ -442,25 +461,25 @@ const Assignments = () => {
         </Card>
 
         {/* Table */}
+        <div className="mb-3 px-1">
+          <h2 className="text-xl font-bold text-slate-800">{MONTH_NAMES[month]} {year} — Site Allocation ({filtered.length})</h2>
+        </div>
         <Card className="overflow-hidden">
-          <div className="px-5 py-3 bg-gradient-to-r from-[#24105c] via-[#5c24ff] to-[#e91e9b] text-white">
-            <h2 className="font-semibold">{MONTH_NAMES[month]} {year} — Site Allocation ({filtered.length})</h2>
-          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gradient-to-r from-[#24105c] via-[#5c24ff] to-[#e91e9b] text-left text-white">
+              <thead className="bg-gradient-to-r from-[#24105c] via-[#5c24ff] to-[#e91e9b] text-center text-white">
                 <tr>
-                  <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Project">Project</th>
-                  <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Site">Site</th>
-                  <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Assigned To">Assigned To</th>
-                  <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Unit / Qty">Unit / Qty</th>
-                  <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Amount">Amount</th>
-                  <th className="px-4 py-3 font-semibold whitespace-nowrap truncate max-w-[160px]" title="Sort by status">
-                    <button type="button" onClick={() => setStatusSortAsc((current) => !current)} className="inline-flex items-center gap-1 hover:text-sky-200">
+                  <th className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]" title="Project">Project</th>
+                  <th className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]" title="Site">Site</th>
+                  <th className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]" title="Assigned To">Assigned To</th>
+                  <th className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]" title="Unit / Qty">Unit / Qty</th>
+                  <th className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]" title="Amount">Amount</th>
+                  <th className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]" title="Sort by status">
+                    <button type="button" onClick={() => setStatusSortAsc((current) => !current)} className="inline-flex items-center justify-center gap-1 hover:text-sky-200">
                       Status <ArrowUpDown className="h-3.5 w-3.5" />
                     </button>
                   </th>
-                  <th className="px-4 py-3 font-semibold text-right whitespace-nowrap">Action</th>
+                  <th className="w-[52px] px-0.5 py-3 text-center font-semibold whitespace-nowrap" aria-label="Actions" />
                 </tr>
               </thead>
               <tbody>
@@ -473,71 +492,89 @@ const Assignments = () => {
                 ) : (
                   grouped.map((rows, index) => {
                     const a = rows[0];
-                    return <tr key={a.id} className={`border-t border-slate-200 transition-colors hover:bg-blue-50 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`}>
+                    return <tr key={a.id} className={`transition-colors hover:bg-blue-50 [&>td]:border-y [&>td]:border-slate-200 [&>td:first-child]:border-l [&>td:last-child]:border-r ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`}>
                       <td className="px-4 py-3 max-w-[180px] truncate whitespace-nowrap" title={a.projectName}>{a.projectName}</td>
                       <td className="px-4 py-3 whitespace-normal break-words" title={a.siteName}>{a.siteName}</td>
-                      <td className="px-4 py-3 align-middle text-center">{rows.map((row) => <div key={row.id} className="border-b border-slate-200 py-2 last:border-b-0 whitespace-nowrap">
-                        <select
-                           value={row.assigneeId ?? ""}
-                          onChange={(e) => {
-                             if (!e.target.value) {
+                      <td className="px-4 py-3 align-middle text-center">{rows.map((row, rowIndex) => <div key={row.id} className={`relative flex h-14 items-center justify-center whitespace-nowrap ${rowIndex === 0 ? "mt-[30px]" : ""}`}>
+                        <Select value={row.assigneeId ?? "__unassigned__"} onValueChange={(value) => {
+                             if (value === "__unassigned__" || value === "__remove__") {
                                updateAssignment(row.id, { assigneeId: undefined, assigneeName: undefined });
                                return;
                              }
-                            const employee = employees.find((item) => item.id === e.target.value);
-                            if (employee) updateAssignment(row.id, { assigneeId: employee.id, assigneeName: employee.name });
-                          }}
-                          className="rounded-md border border-input bg-background px-2 py-1 text-xs"
-                          aria-label={`Assigned To for ${row.siteName}`}
-                        >
-                          <option value="">Unassigned</option>
-                          {employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.name}</option>)}
-                        </select>
-                      </div>)}</td>
+                            const employee = employees.find((item) => item.id === value);
+                            if (employee) {
+                              const alreadyAssigned = rows.some((otherRow) => otherRow.id !== row.id && otherRow.assigneeId === employee.id);
+                              if (alreadyAssigned) {
+                                toast.error(`${employee.name} is already assigned to this allocation.`);
+                                return;
+                              }
+                              updateAssignment(row.id, { assigneeId: employee.id, assigneeName: employee.name });
+                            }
+                          }}>
+                          <SelectTrigger aria-label={`Assigned To for ${row.siteName}`} className={`h-9 w-[150px] rounded-full py-0 px-3 text-xs font-semibold shadow-sm focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:opacity-70 ${
+                            row.assigneeId ? "border-violet-200 bg-violet-50 text-violet-700" : "border-slate-200 bg-slate-100 text-slate-500"
+                          }`}>
+                            <SelectValue placeholder="Unassigned" />
+                          </SelectTrigger>
+                          <SelectContent className="min-w-[170px] rounded-xl border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 data-[state=open]:animate-none data-[state=closed]:animate-none">
+                            <SelectItem value="__unassigned__" className="cursor-pointer rounded-lg py-2 text-xs font-semibold text-slate-600 focus:bg-transparent focus:text-slate-600">Unassigned</SelectItem>
+                            {employees.map((employee) => <SelectItem key={employee.id} value={employee.id} className="cursor-pointer rounded-lg py-2 text-xs font-semibold text-slate-700 focus:bg-transparent focus:text-slate-700">{employee.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>)}
+                        <Button variant="ghost" className="mt-1 h-8 rounded-full bg-green-600 px-3 text-xs font-semibold text-white shadow-sm hover:bg-green-700 hover:text-white" onClick={() => addAssigneeToGroup(a)} aria-label="Add another assignee" title="Add another assignee">
+                          <Plus className="h-4 w-4" strokeWidth={2.5} />
+                          <span className="ml-1">Add Assignee</span>
+                        </Button>
+                      </td>
                       <td className="px-4 py-3 max-w-[160px] whitespace-nowrap text-center">
-                        {rows.map((row) => <div key={row.id} className="border-b border-slate-200 py-2 last:border-b-0 whitespace-nowrap">
+                        {rows.map((row) => <div key={row.id} className="flex h-14 items-center justify-center whitespace-nowrap">
                           {row.unitType ? `${row.unitType} · ${formatNumber(row.quantity ?? 0)}` : "-"}
                         </div>)}
                       </td>
                       <td className="px-4 py-3 font-medium whitespace-nowrap text-center">
-                        {rows.map((row) => <div key={row.id} className="border-b border-slate-200 py-2 last:border-b-0 whitespace-nowrap">
+                        {rows.map((row) => <div key={row.id} className="flex h-14 items-center justify-center whitespace-nowrap">
                           {formatINR(row.amount ?? 0)}
                         </div>)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        {rows.map((row) => <div key={row.id} className="flex justify-center border-b border-slate-200 py-2 last:border-b-0">
-                          <select
-                            value={row.status}
-                            onChange={(e) => handleStatusChange(row, e.target.value as Assignment["status"])}
-                            className={`cursor-pointer text-xs font-medium rounded-full px-3 py-1 border ${
+                        {rows.map((row) => <div key={row.id} className="flex h-14 items-center justify-center">
+                          <div className={`relative inline-flex items-center rounded-full border px-2.5 shadow-sm ${
                             row.status === "Completed"
-                              ? "bg-green-accent/10 text-green-accent border-green-accent/30"
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                               : row.status === "Hold"
-                                ? "bg-orange-500/10 text-orange-700 border-orange-500/30"
-                              : "bg-yellow-500/10 text-yellow-700 border-yellow-500/30"
-                            }`}
-                          >
-                            <option value="In Progress">In Progress</option>
-                            <option value="Hold">Hold</option>
-                            <option value="Completed">Completed</option>
-                          </select>
+                                ? "border-amber-200 bg-amber-50 text-amber-700"
+                                : "border-violet-200 bg-violet-50 text-violet-700"
+                          }`}>
+                            <Select value={row.status} onValueChange={(value) => handleStatusChange(row, value as Assignment["status"])}>
+                              <SelectTrigger aria-label={`Status for ${row.siteName}`} className="h-auto w-[118px] border-0 bg-transparent py-2 px-1.5 text-xs font-semibold shadow-none focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:opacity-60">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="min-w-[150px] rounded-xl border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 data-[state=open]:animate-none data-[state=closed]:animate-none">
+                                <SelectItem value="In Progress" className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-violet-700 focus:bg-transparent focus:text-violet-700">
+                                  In Progress
+                                </SelectItem>
+                                <SelectItem value="Hold" className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-amber-700 focus:bg-transparent focus:text-amber-700">
+                                  Hold
+                                </SelectItem>
+                                <SelectItem value="Completed" className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-emerald-700 focus:bg-transparent focus:text-emerald-700">
+                                  Completed
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>)}
                       </td>
-                      <td className="px-4 py-3 align-middle text-center whitespace-nowrap">
-                        <div className="flex flex-col items-center">
-                          {rows.map((row) => row.status === "Completed" && (
-                            <div key={row.id} className="flex w-full justify-center border-b border-slate-200 py-1 last:border-b-0">
-                              <Button variant="ghost" size="icon" onClick={() => openComplete(row)} aria-label="Edit" title="Edit completion details">
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                          <div className="pt-1">
-                            <Button variant="ghost" size="icon" onClick={() => { deleteAssignment(a.id); toast.success("Deleted"); }} aria-label="Delete" title="Delete this allocation">
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </div>
+                      <td className="w-[52px] px-0.5 py-3 align-middle text-center">
+                        {rows.map((row) => <div key={row.id} className="flex h-14 items-center justify-center">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" aria-label="Open actions"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-32 rounded-xl p-1.5">
+                              <DropdownMenuItem onClick={() => openComplete(row)} className="cursor-pointer rounded-lg text-xs"><Pencil className="mr-2 h-3.5 w-3.5" />Edit</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => deleteAssignment(row.id)} className="cursor-pointer rounded-lg text-xs text-destructive focus:text-destructive"><Trash2 className="mr-2 h-3.5 w-3.5" />Delete</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>)}
                       </td>
                     </tr>;
                   })

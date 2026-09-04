@@ -19,7 +19,7 @@ const MultiSearchableSelect = ({ value, onChange, options, placeholder = "Select
   }, []);
   const toggle = (id: string) => onChange(selectedIds.includes(id) ? selectedIds.filter((item) => item !== id) : [...selectedIds, id]);
   return <div ref={wrap} className="relative">
-    <div className="flex min-h-10 w-full items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-left text-sm hover:border-ring focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1">
+    <div onClick={() => setOpen((current) => !current)} className="flex min-h-10 w-full cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-left text-sm hover:border-ring focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1">
       <div className={cn("flex min-w-0 flex-1 flex-wrap gap-1", !selected.length && "text-muted-foreground")}>
         {selected.length ? selected.map((option) => <span key={option.id} className="inline-flex max-w-full items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs">
           <span className="truncate">{option.label}</span>
@@ -27,7 +27,7 @@ const MultiSearchableSelect = ({ value, onChange, options, placeholder = "Select
             type="button"
             aria-label={`Remove ${option.label}`}
             title={`Remove ${option.label}`}
-            onClick={() => toggle(option.id)}
+            onClick={(event) => { event.stopPropagation(); toggle(option.id); }}
             className="rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus:outline-none focus:ring-1 focus:ring-ring"
           >
             <X className="h-3 w-3 shrink-0" />
@@ -37,7 +37,7 @@ const MultiSearchableSelect = ({ value, onChange, options, placeholder = "Select
       <button
         type="button"
         aria-label="Choose assignees"
-        onClick={() => setOpen((current) => !current)}
+        onClick={(event) => { event.stopPropagation(); setOpen((current) => !current); }}
         className="shrink-0 rounded-sm focus:outline-none focus:ring-2 focus:ring-ring"
       >
         <ChevronsUpDown className="h-4 w-4 opacity-60" />
