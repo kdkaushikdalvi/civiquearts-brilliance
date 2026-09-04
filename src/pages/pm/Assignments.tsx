@@ -47,7 +47,6 @@ const Assignments = () => {
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
   const [allocationFormOpen, setAllocationFormOpen] = useState(false);
-  const [statusSortAsc, setStatusSortAsc] = useState(true);
   const importRef = useRef<HTMLInputElement>(null);
 
   const [clientId, setClientId] = useState("");
@@ -100,8 +99,8 @@ const Assignments = () => {
   const filtered = useMemo(
     () => assignments
       .filter((a) => a.month === month && a.year === year)
-      .sort((a, b) => statusSortAsc ? a.status.localeCompare(b.status) : b.status.localeCompare(a.status)),
-    [assignments, month, year, statusSortAsc]
+      .sort((a, b) => ["In Progress", "Completed", "Hold"].indexOf(a.status) - ["In Progress", "Completed", "Hold"].indexOf(b.status)),
+    [assignments, month, year]
   );
   const grouped = useMemo(() => {
     const groups = new Map<string, Assignment[]>();
@@ -300,7 +299,7 @@ const Assignments = () => {
           <button
             type="button"
             onClick={() => setAllocationFormOpen((open) => !open)}
-            className="flex w-full items-center justify-between bg-gradient-to-r from-[#24105c] via-[#5c24ff] to-[#e91e9b] px-5 py-4 text-left text-white shadow-sm transition-colors hover:brightness-110"
+            className="flex w-full items-center justify-between bg-gradient-to-r from-[#24105c] via-[#5c24ff] to-[#e91e9b] px-4 py-3 text-left text-white shadow-sm transition-colors hover:brightness-110"
             aria-expanded={allocationFormOpen}
           >
             <span className="flex items-center gap-2 font-semibold">
@@ -312,11 +311,10 @@ const Assignments = () => {
             </span>
             <ChevronDown className={`h-5 w-5 transition-transform duration-300 ${allocationFormOpen ? "rotate-180" : "animate-bounce"}`} />
           </button>
-          {allocationFormOpen && <div className="space-y-5 border-t border-border bg-blue-50/50 p-5">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-indigo-700">Assignment details</p>
-            <div className="space-y-4">
-            <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-4">
+          {allocationFormOpen && <div className="space-y-3 border-t border-border bg-blue-50/50 p-3">
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="space-y-2">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3">
               <label className="w-32 shrink-0 pt-2 text-sm font-semibold text-blue-800">Client Name *</label>
               <div className="min-w-0 flex-1">
                 <SearchableSelect
@@ -345,7 +343,7 @@ const Assignments = () => {
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-4">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3">
               <label className="w-32 shrink-0 pt-2 text-sm font-semibold text-violet-800">Project *</label>
               <div className="min-w-0 flex-1">
                 <SearchableSelect
@@ -382,24 +380,10 @@ const Assignments = () => {
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <div><label className="text-sm font-semibold text-emerald-700">Sites</label></div>
-              <Button
-                type="button"
-                size="icon"
-                onClick={addSite}
-                title="Add another site row to this allocation"
-                aria-label="Add another site row"
-                className="h-8 w-8 rounded-full bg-green-600 text-white hover:bg-green-700"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
             <div className="mb-2 hidden grid-cols-[1fr_1fr_auto] gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:grid">
               <span className="text-cyan-800">Site Name</span>
-              <span className="text-pink-800">Select Assignee (optional)</span>
+              <span className="text-pink-800">Select Assignee</span>
               <span className="w-10" />
             </div>
             <div className="space-y-2">
@@ -439,21 +423,40 @@ const Assignments = () => {
                       value={s.assigneeIds ?? []}
                       onChange={(ids) => updateSite(s.id, { assigneeIds: ids })}
                       options={employees.map((e) => ({ id: e.id, label: e.name }))}
+                      onEmptyAction={async (name) => {
+                        const employee = await addEmployee({ name });
+                        if (employee) {
+                          updateSite(s.id, { assigneeIds: [...(s.assigneeIds ?? []), employee.id] });
+                          toast.success("Assignee added");
+                        }
+                      }}
                     />
                     {errors.sites?.[`${s.id}-assignee`] && (
                       <p className="text-xs text-destructive mt-1">{errors.sites?.[`${s.id}-assignee`]}</p>
                     )}
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => removeSite(s.id)} aria-label="Remove site" title="Remove this site row">
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" aria-label="Site actions" title="Site actions" className="h-8 w-8 rounded-full">
+                        <MoreHorizontal className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-28 rounded-xl p-1.5">
+                      <DropdownMenuItem onClick={addSite} className="cursor-pointer rounded-lg text-xs font-medium">
+                        <Plus className="mr-2 h-3.5 w-3.5" /> More
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => removeSite(s.id)} className="cursor-pointer rounded-lg text-xs font-medium text-destructive focus:text-destructive">
+                        <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="flex justify-end border-t border-slate-200 pt-1">
-            <Button onClick={saveAssignments} title="Save the site allocation" className="gradient-saffron text-saffron-foreground px-6 shadow-sm">
+            <Button onClick={saveAssignments} title="Save the site allocation" className="gradient-saffron px-6 text-saffron-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-90 active:brightness-90 active:shadow-sm">
               <Save className="h-4 w-4 mr-2" /> Save
             </Button>
           </div>
@@ -462,7 +465,7 @@ const Assignments = () => {
 
         {/* Table */}
         <div className="mb-3 px-1">
-          <h2 className="text-xl font-bold text-slate-800">{MONTH_NAMES[month]} {year} — Site Allocation ({filtered.length})</h2>
+          <h2 className="text-xl font-medium text-slate-500">{MONTH_NAMES[month]} {year} — Site Allocation ({filtered.length})</h2>
         </div>
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
@@ -474,10 +477,8 @@ const Assignments = () => {
                   <th className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]" title="Assigned To">Assigned To</th>
                   <th className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]" title="Unit / Qty">Unit / Qty</th>
                   <th className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]" title="Amount">Amount</th>
-                  <th className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]" title="Sort by status">
-                    <button type="button" onClick={() => setStatusSortAsc((current) => !current)} className="inline-flex items-center justify-center gap-1 hover:text-sky-200">
-                      Status <ArrowUpDown className="h-3.5 w-3.5" />
-                    </button>
+                  <th className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]" title="Status order: In Progress, Completed, Hold">
+                    <span className="inline-flex items-center justify-center gap-1">Status <ArrowUpDown className="h-3.5 w-3.5" /></span>
                   </th>
                   <th className="w-[52px] px-0.5 py-3 text-center font-semibold whitespace-nowrap" aria-label="Actions" />
                 </tr>
@@ -550,11 +551,11 @@ const Assignments = () => {
                                 <SelectItem value="In Progress" className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-violet-700 focus:bg-transparent focus:text-violet-700">
                                   In Progress
                                 </SelectItem>
-                                <SelectItem value="Hold" className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-amber-700 focus:bg-transparent focus:text-amber-700">
-                                  Hold
-                                </SelectItem>
                                 <SelectItem value="Completed" className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-emerald-700 focus:bg-transparent focus:text-emerald-700">
                                   Completed
+                                </SelectItem>
+                                <SelectItem value="Hold" className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-amber-700 focus:bg-transparent focus:text-amber-700">
+                                  Hold
                                 </SelectItem>
                               </SelectContent>
                             </Select>
