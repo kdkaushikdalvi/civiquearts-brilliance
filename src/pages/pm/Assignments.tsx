@@ -185,23 +185,23 @@ const Assignments = () => {
     const records = (await Promise.all(sites.flatMap((s) => {
       const assigneeIds = s.assigneeIds?.length ? s.assigneeIds : [null];
       return assigneeIds.map(async (assigneeId) => {
-      const emp = assigneeId ? employees.find((e) => e.id === assigneeId) : undefined;
-      const site = await upsertSite(project.id, s.siteName.trim());
-      return {
-        clientId: client.id,
-        clientName: client.name,
-        siteId: site?.id,
-        projectId: project.id,
-        projectName: project.name,
-        siteName: s.siteName.trim(),
-        assigneeId: emp?.id,
-        assigneeName: emp?.name,
-        month,
-        year,
-        status: "In Progress" as const,
-      };
-    });
-    })))).flat();
+        const emp = assigneeId ? employees.find((e) => e.id === assigneeId) : undefined;
+        const site = await upsertSite(project.id, s.siteName.trim());
+        return {
+          clientId: client.id,
+          clientName: client.name,
+          siteId: site?.id,
+          projectId: project.id,
+          projectName: project.name,
+          siteName: s.siteName.trim(),
+          assigneeId: emp?.id,
+          assigneeName: emp?.name,
+          month,
+          year,
+          status: "In Progress" as const,
+        };
+      });
+    }))).flat();
     await addAssignments(records);
     toast.success(`${records.length} site allocation${records.length > 1 ? "s" : ""} saved`);
     const emptySites = [{ id: crypto.randomUUID(), siteName: "", assigneeIds: [] }];
