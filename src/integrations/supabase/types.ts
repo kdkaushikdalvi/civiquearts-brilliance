@@ -18,7 +18,7 @@ export type Database = {
         Row: {
           amount: number | null
           assignee_id: string | null
-          assignee_name: string
+          assignee_name: string | null
           client_id: string | null
           client_name: string | null
           created_at: string
@@ -39,7 +39,7 @@ export type Database = {
         Insert: {
           amount?: number | null
           assignee_id?: string | null
-          assignee_name: string
+          assignee_name?: string | null
           client_id?: string | null
           client_name?: string | null
           created_at?: string
@@ -60,7 +60,7 @@ export type Database = {
         Update: {
           amount?: number | null
           assignee_id?: string | null
-          assignee_name?: string
+          assignee_name?: string | null
           client_id?: string | null
           client_name?: string | null
           created_at?: string
