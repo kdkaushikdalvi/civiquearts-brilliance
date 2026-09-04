@@ -6,8 +6,8 @@ export interface Assignment {
   projectName: string;
   siteId?: string;
   siteName: string;
-  assigneeId: string;
-  assigneeName: string;
+  assigneeId?: string;
+  assigneeName?: string;
   month: number; // 0-11
   year: number;
   status: "In Progress" | "Hold" | "Completed";

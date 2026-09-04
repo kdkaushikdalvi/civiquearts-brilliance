@@ -251,7 +251,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       site_id: r.siteId || null,
       site_name: r.siteName,
       assignee_id: r.assigneeId || null,
-      assignee_name: r.assigneeName,
+      assignee_name: r.assigneeName || null,
       month: r.month,
       year: r.year,
       status: r.status,
