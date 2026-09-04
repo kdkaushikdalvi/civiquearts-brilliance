@@ -295,23 +295,29 @@ const Assignments = () => {
         </div>
 
         {/* Create Section */}
-        <Card className="overflow-visible">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="min-w-0 truncate text-xl font-medium text-slate-500">
+            {MONTH_NAMES[month]} {year} — Site Allocation ({filtered.length})
+          </h2>
           <button
             type="button"
             onClick={() => setAllocationFormOpen((open) => !open)}
-            className="flex w-full items-center justify-between bg-gradient-to-r from-[#24105c] via-[#5c24ff] to-[#e91e9b] px-4 py-3 text-left text-white shadow-sm transition-colors hover:brightness-110"
+            className="flex shrink-0 items-center gap-2 rounded-lg border-2 border-blue-600 bg-white px-4 py-2.5 text-left text-blue-800 shadow-sm transition-colors hover:bg-blue-50"
             aria-expanded={allocationFormOpen}
           >
             <span className="flex items-center gap-2 font-semibold">
-              <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-[#5c24ff] text-white shadow-sm">
-                <span className={`absolute inset-0 rounded-full bg-[#8a68ff] opacity-60 ${!allocationFormOpen ? "animate-ping" : ""}`} />
+              <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-green-500 text-white shadow-sm">
+                <span className={`absolute inset-0 rounded-full bg-green-400 opacity-60 ${!allocationFormOpen ? "animate-ping" : ""}`} />
                 <Plus className="relative h-4 w-4" />
               </span>
-              Create Site Allocation
+              Add Sites
             </span>
-            <ChevronDown className={`h-5 w-5 transition-transform duration-300 ${allocationFormOpen ? "rotate-180" : "animate-bounce"}`} />
+            <ChevronDown className={`h-5 w-5 shrink-0 text-blue-600 transition-transform duration-300 ${allocationFormOpen ? "rotate-180" : "animate-bounce"}`} />
           </button>
-          {allocationFormOpen && <div className="space-y-3 border-t border-border bg-blue-50/50 p-3">
+        </div>
+        {allocationFormOpen && (
+        <Card className="overflow-visible">
+          <div className="space-y-3 bg-blue-50/50 p-3">
           <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
             <div className="space-y-2">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3">
@@ -460,13 +466,11 @@ const Assignments = () => {
               <Save className="h-4 w-4 mr-2" /> Save
             </Button>
           </div>
-          </div>}
+          </div>
         </Card>
+        )}
 
         {/* Table */}
-        <div className="mb-3 px-1">
-          <h2 className="text-xl font-medium text-slate-500">{MONTH_NAMES[month]} {year} — Site Allocation ({filtered.length})</h2>
-        </div>
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
