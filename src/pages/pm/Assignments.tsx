@@ -493,9 +493,9 @@ const Assignments = () => {
                   grouped.map((rows, index) => {
                     const a = rows[0];
                     return <tr key={a.id} className={`transition-colors hover:bg-blue-50 [&>td]:border-y [&>td]:border-slate-200 [&>td:first-child]:border-l [&>td:last-child]:border-r ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`}>
-                      <td className="px-4 py-3 max-w-[180px] truncate whitespace-nowrap" title={a.projectName}>{a.projectName}</td>
-                      <td className="px-4 py-3 whitespace-normal break-words" title={a.siteName}>{a.siteName}</td>
-                      <td className="px-4 py-3 align-middle text-center">{rows.map((row, rowIndex) => <div key={row.id} className={`relative flex h-14 items-center justify-center whitespace-nowrap ${rowIndex === 0 ? "mt-[30px]" : ""}`}>
+                      <td className="px-2 py-0 max-w-[180px] truncate whitespace-nowrap" title={a.projectName}>{a.projectName}</td>
+                      <td className="px-2 py-0 whitespace-normal break-words" title={a.siteName}>{a.siteName}</td>
+                      <td className="space-y-[5px] px-2 py-0 pb-[5px] align-middle text-center">{rows.map((row) => <div key={row.id} className="relative my-[5px] flex h-8 items-center justify-center whitespace-nowrap">
                         <Select value={row.assigneeId ?? "__unassigned__"} onValueChange={(value) => {
                              if (value === "__unassigned__" || value === "__remove__") {
                                updateAssignment(row.id, { assigneeId: undefined, assigneeName: undefined });
@@ -511,7 +511,7 @@ const Assignments = () => {
                               updateAssignment(row.id, { assigneeId: employee.id, assigneeName: employee.name });
                             }
                           }}>
-                          <SelectTrigger aria-label={`Assigned To for ${row.siteName}`} className={`h-9 w-[150px] rounded-full py-0 px-3 text-xs font-semibold shadow-sm focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:opacity-70 ${
+                          <SelectTrigger aria-label={`Assigned To for ${row.siteName}`} className={`h-8 w-[150px] rounded-full py-0 px-3 text-xs font-semibold shadow-sm focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:opacity-70 ${
                             row.assigneeId ? "border-violet-200 bg-violet-50 text-violet-700" : "border-slate-200 bg-slate-100 text-slate-500"
                           }`}>
                             <SelectValue placeholder="Unassigned" />
@@ -522,23 +522,19 @@ const Assignments = () => {
                           </SelectContent>
                         </Select>
                       </div>)}
-                        <Button variant="ghost" className="mt-1 h-8 rounded-full bg-green-600 px-3 text-xs font-semibold text-white shadow-sm hover:bg-green-700 hover:text-white" onClick={() => addAssigneeToGroup(a)} aria-label="Add another assignee" title="Add another assignee">
-                          <Plus className="h-4 w-4" strokeWidth={2.5} />
-                          <span className="ml-1">Add Assignee</span>
-                        </Button>
                       </td>
-                      <td className="px-4 py-3 max-w-[160px] whitespace-nowrap text-center">
-                        {rows.map((row) => <div key={row.id} className="flex h-14 items-center justify-center whitespace-nowrap">
+                      <td className="space-y-[5px] px-2 py-0 pb-[5px] max-w-[160px] whitespace-nowrap text-center">
+                        {rows.map((row) => <div key={row.id} className="my-[5px] flex h-8 items-center justify-center whitespace-nowrap">
                           {row.unitType ? `${row.unitType} · ${formatNumber(row.quantity ?? 0)}` : "-"}
                         </div>)}
                       </td>
-                      <td className="px-4 py-3 font-medium whitespace-nowrap text-center">
-                        {rows.map((row) => <div key={row.id} className="flex h-14 items-center justify-center whitespace-nowrap">
+                      <td className="space-y-[5px] px-2 py-0 pb-[5px] font-medium whitespace-nowrap text-center">
+                        {rows.map((row) => <div key={row.id} className="my-[5px] flex h-8 items-center justify-center whitespace-nowrap">
                           {formatINR(row.amount ?? 0)}
                         </div>)}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {rows.map((row) => <div key={row.id} className="flex h-14 items-center justify-center">
+                      <td className="space-y-[5px] px-2 py-0 pb-[5px] whitespace-nowrap">
+                        {rows.map((row) => <div key={row.id} className="my-[5px] flex h-8 items-center justify-center">
                           <div className={`relative inline-flex items-center rounded-full border px-2.5 shadow-sm ${
                             row.status === "Completed"
                               ? "border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -565,11 +561,12 @@ const Assignments = () => {
                           </div>
                         </div>)}
                       </td>
-                      <td className="w-[52px] px-0.5 py-3 align-middle text-center">
-                        {rows.map((row) => <div key={row.id} className="flex h-14 items-center justify-center">
+                      <td className="w-[52px] space-y-[5px] px-0.5 py-0 pb-[5px] align-middle text-center">
+                        {rows.map((row) => <div key={row.id} className="my-[5px] flex h-8 items-center justify-center">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" aria-label="Open actions"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-32 rounded-xl p-1.5">
+                              <DropdownMenuItem onClick={() => addAssigneeToGroup(row)} className="cursor-pointer rounded-lg text-xs"><Plus className="mr-2 h-3.5 w-3.5" />More</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => openComplete(row)} className="cursor-pointer rounded-lg text-xs"><Pencil className="mr-2 h-3.5 w-3.5" />Edit</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => deleteAssignment(row.id)} className="cursor-pointer rounded-lg text-xs text-destructive focus:text-destructive"><Trash2 className="mr-2 h-3.5 w-3.5" />Delete</DropdownMenuItem>
                             </DropdownMenuContent>
