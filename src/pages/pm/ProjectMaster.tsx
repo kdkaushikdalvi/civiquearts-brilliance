@@ -179,6 +179,26 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
                           </span>
                         )}
                       </td>
+                      <td className="px-4 py-3">
+                        {editingId === p.id ? (
+                          <Input
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={editPrice}
+                            onChange={(e) => setEditPrice(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                saveEdit();
+                              }
+                            }}
+                            className="w-28"
+                          />
+                        ) : (
+                          p.defaultPrice != null ? p.defaultPrice : "—"
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-right space-x-1">
                         {editingId === p.id ? (
                           <>
@@ -191,7 +211,7 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
                           </>
                         ) : (
                           <>
-                            <Button size="icon" variant="ghost" onClick={() => startEdit(p.id, p.name)}>
+                            <Button size="icon" variant="ghost" onClick={() => startEdit(p)}>
                               <Pencil className="h-4 w-4" />
                             </Button>
                             <Button
