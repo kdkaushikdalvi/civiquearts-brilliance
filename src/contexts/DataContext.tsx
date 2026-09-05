@@ -20,8 +20,8 @@ interface DataContextValue {
   addBillTo: (data: Omit<BillTo, "id">) => Promise<BillTo | null>;
   updateBillTo: (id: string, data: Omit<BillTo, "id">) => Promise<void>;
   deleteBillTo: (id: string) => Promise<void>;
-  addProject: (name: string, clientId?: string, clientName?: string) => Promise<Project | null>;
-  updateProject: (id: string, name: string) => Promise<void>;
+  addProject: (name: string, clientId?: string, clientName?: string, defaultPrice?: number) => Promise<Project | null>;
+  updateProject: (id: string, name: string, defaultPrice?: number) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   addSite: (projectId: string, name: string) => Promise<Site | null>;
   deleteSite: (id: string) => Promise<void>;
@@ -118,6 +118,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           name: r.name,
           clientId: r.client_id ?? undefined,
           clientName: r.client_name ?? undefined,
+          defaultPrice: r.default_price != null ? Number(r.default_price) : undefined,
         }))
       );
     if (sRes.data) setSites(sRes.data.map((r: any) => ({ id: r.id, projectId: r.project_id, name: r.name })));
@@ -165,11 +166,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setClients((prev) => prev.filter((c) => c.id !== id));
   };
 
-  const addProject = async (name: string, clientId?: string, clientName?: string) => {
+  const addProject = async (name: string, clientId?: string, clientName?: string, defaultPrice?: number) => {
     if (!requireUser()) return null;
     const { data, error } = await supabase
       .from("projects")
-      .insert({ name: name.trim(), user_id: userId, client_id: clientId ?? null, client_name: clientName ?? null })
+      .insert({ name: name.trim(), user_id: userId, client_id: clientId ?? null, client_name: clientName ?? null, default_price: defaultPrice ?? null })
       .select().single();
     if (error || !data) { toast.error(error?.message || "Failed to add project"); return null; }
     const p = {
@@ -177,14 +178,15 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       name: data.name,
       clientId: data.client_id ?? undefined,
       clientName: data.client_name ?? undefined,
+      defaultPrice: data.default_price != null ? Number(data.default_price) : undefined,
     };
     setProjects((prev) => [...prev, p].sort((a, b) => a.name.localeCompare(b.name)));
     return p;
   };
-  const updateProject = async (id: string, name: string) => {
-    const { error } = await supabase.from("projects").update({ name: name.trim() }).eq("id", id);
+  const updateProject = async (id: string, name: string, defaultPrice?: number) => {
+    const { error } = await supabase.from("projects").update({ name: name.trim(), default_price: defaultPrice ?? null }).eq("id", id);
     if (error) { toast.error(error.message); return; }
-    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name: name.trim() } : p)));
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name: name.trim(), defaultPrice } : p)));
   };
   const deleteProject = async (id: string) => {
     const { error } = await supabase.from("projects").delete().eq("id", id);

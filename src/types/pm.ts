@@ -35,6 +35,7 @@ export interface Project {
   name: string;
   clientId?: string;
   clientName?: string;
+  defaultPrice?: number;
 }
 
 export interface Site {
