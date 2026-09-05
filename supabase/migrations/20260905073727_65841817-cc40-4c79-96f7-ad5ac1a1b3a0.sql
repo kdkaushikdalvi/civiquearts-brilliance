@@ -1,0 +1,1 @@
+ALTER TABLE public.projects ADD COLUMN default_price numeric;
