@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, formatNumber } from "@/lib/pmFormat";
+import { getStatusRank } from "@/lib/statusSort";
 import ExcelJS from "exceljs";
 
 interface SiteRow {
@@ -47,26 +48,6 @@ interface SiteRow {
 }
 
 const DRAFT_KEY = "pm_assignment_draft";
-
-const STATUS_SORT_ORDER: Record<string, number> = {
-  "In Progress": 0,
-  "In Progress 25%": 1,
-  "In Progress – 25%": 1,
-  "In Progress 45%": 2,
-  "In Progress – 45%": 2,
-  "In Progress 80%": 3,
-  "In Progress – 80%": 3,
-  "QC Pending": 4,
-  "Completed": 5,
-  "Hold": 6,
-  "On Hold": 6,
-  "Not Started Yet": 7,
-};
-
-const getStatusRank = (status?: string): number => {
-  if (!status) return 99;
-  return STATUS_SORT_ORDER[status] ?? 99;
-};
 
 const Assignments = () => {
   const navigate = useNavigate();
@@ -177,9 +158,10 @@ const Assignments = () => {
   const filtered = useMemo(() => {
     const list = assignments.filter((a) => a.month === month && a.year === year);
     return list.sort((a, b) => {
+      const nameA = a.projectName || "";
+      const nameB = b.projectName || "";
+
       if (sortField === "project") {
-        const nameA = a.projectName || "";
-        const nameB = b.projectName || "";
         const cmp = nameA.localeCompare(nameB, undefined, { sensitivity: "base", numeric: true });
         if (cmp !== 0) return sortDirection === "asc" ? cmp : -cmp;
         const siteA = a.siteName || "";
@@ -187,14 +169,19 @@ const Assignments = () => {
         return siteA.localeCompare(siteB, undefined, { sensitivity: "base", numeric: true });
       }
 
-      // Default: Status order
-      const idxA = getStatusRank(a.status);
-      const idxB = getStatusRank(b.status);
-      const cmp = idxA - idxB;
-      if (cmp !== 0) return sortDirection === "asc" ? cmp : -cmp;
-      const nameA = a.projectName || "";
-      const nameB = b.projectName || "";
-      return nameA.localeCompare(nameB, undefined, { sensitivity: "base", numeric: true });
+      // sortField === "status":
+      // Keep project order unchanged:
+      const pCmp = nameA.localeCompare(nameB, undefined, { sensitivity: "base", numeric: true });
+      if (pCmp !== 0) return pCmp;
+
+      // Within each project group, sort by status:
+      const rankA = getStatusRank(a.status, sortDirection);
+      const rankB = getStatusRank(b.status, sortDirection);
+      if (rankA !== rankB) return rankA - rankB;
+
+      const siteA = a.siteName || "";
+      const siteB = b.siteName || "";
+      return siteA.localeCompare(siteB, undefined, { sensitivity: "base", numeric: true });
     });
   }, [assignments, month, year, sortField, sortDirection]);
 
@@ -204,17 +191,27 @@ const Assignments = () => {
       const key = `${assignment.projectId}-${assignment.siteName}`;
       groups.set(key, [...(groups.get(key) ?? []), assignment]);
     });
-    const result = Array.from(groups.values()).map((rows) =>
-      [...rows].sort(
+
+    const siteGroups = Array.from(groups.values()).map((rows) => {
+      if (sortField === "status") {
+        return [...rows].sort((a, b) => {
+          const rankA = getStatusRank(a.status, sortDirection);
+          const rankB = getStatusRank(b.status, sortDirection);
+          if (rankA !== rankB) return rankA - rankB;
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
+      }
+      return [...rows].sort(
         (a, b) =>
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      )
-    );
+      );
+    });
 
-    return result.sort((rowsA, rowsB) => {
+    return siteGroups.sort((rowsA, rowsB) => {
+      const pA = rowsA[0]?.projectName || "";
+      const pB = rowsB[0]?.projectName || "";
+
       if (sortField === "project") {
-        const pA = rowsA[0]?.projectName || "";
-        const pB = rowsB[0]?.projectName || "";
         const cmp = pA.localeCompare(pB, undefined, { sensitivity: "base", numeric: true });
         if (cmp !== 0) return sortDirection === "asc" ? cmp : -cmp;
         const sA = rowsA[0]?.siteName || "";
@@ -222,22 +219,17 @@ const Assignments = () => {
         return sA.localeCompare(sB, undefined, { sensitivity: "base", numeric: true });
       }
 
-      // Status sort: sort by best/top status within the group
-      const getGroupRank = (rows: Assignment[]) => {
-        if (!rows.length) return 99;
-        const ranks = rows.map((r) => getStatusRank(r.status));
-        return Math.min(...ranks);
-      };
-      const rankA = getGroupRank(rowsA);
-      const rankB = getGroupRank(rowsB);
-      const cmp = rankA - rankB;
-      if (cmp !== 0) return sortDirection === "asc" ? cmp : -cmp;
+      // Status sort: keep project order unchanged, sort within project group
+      const projectCmp = pA.localeCompare(pB, undefined, { sensitivity: "base", numeric: true });
+      if (projectCmp !== 0) return projectCmp;
 
-      const pA = rowsA[0]?.projectName || "";
-      const pB = rowsB[0]?.projectName || "";
-      const pCmp = pA.localeCompare(pB, undefined, { sensitivity: "base", numeric: true });
-      if (pCmp !== 0) return pCmp;
-      return (rowsA[0]?.siteName || "").localeCompare(rowsB[0]?.siteName || "");
+      const rankA = getStatusRank(rowsA[0]?.status, sortDirection);
+      const rankB = getStatusRank(rowsB[0]?.status, sortDirection);
+      if (rankA !== rankB) return rankA - rankB;
+
+      const sA = rowsA[0]?.siteName || "";
+      const sB = rowsB[0]?.siteName || "";
+      return sA.localeCompare(sB, undefined, { sensitivity: "base", numeric: true });
     });
   }, [filtered, sortField, sortDirection]);
 
@@ -523,14 +515,14 @@ const Assignments = () => {
 
   return (
     <AppShell>
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <div className="relative flex flex-wrap items-center justify-between gap-4 bg-slate-50 pb-4 before:absolute before:bottom-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-b before:border-slate-200 before:content-['']">
+      <div className="p-4 sm:p-5 max-w-7xl mx-auto space-y-3">
+        <div className="relative flex flex-wrap items-center justify-between gap-3 bg-slate-50 pb-2.5 before:absolute before:bottom-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-b before:border-slate-200 before:content-['']">
           <div>
-            <h3 className="text-xl font-semibold text-blue-800">
+            <h3 className="text-lg font-semibold text-blue-800">
               Site Allocation
             </h3>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <input
               ref={importRef}
               type="file"
@@ -574,29 +566,29 @@ const Assignments = () => {
         </div>
 
         {/* Create Section */}
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="min-w-0 truncate text-xl font-medium text-slate-500">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="min-w-0 truncate text-sm font-semibold text-slate-600">
             {MONTH_NAMES[month]} {year} — Site Allocation ({filtered.length})
           </h2>
           <button
             type="button"
             onClick={() => setAllocationFormOpen((open) => !open)}
-            className="flex shrink-0 items-center gap-2 rounded-lg border-2 border-blue-600 bg-white px-4 py-2.5 text-left text-blue-800 shadow-sm transition-colors hover:bg-blue-50"
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-blue-600 bg-white px-2.5 py-1 text-left text-xs font-semibold text-blue-800 shadow-sm transition-colors hover:bg-blue-50"
             aria-expanded={allocationFormOpen}
           >
-            <span className="flex items-center gap-2 font-semibold">
-              <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-green-500 text-white shadow-sm">
+            <span className="flex items-center gap-1.5 font-semibold">
+              <span className="relative flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white shadow-sm">
                 <span
                   className={`absolute inset-0 rounded-full bg-green-400 opacity-60 ${
                     !allocationFormOpen ? "animate-ping" : ""
                   }`}
                 />
-                <Plus className="relative h-4 w-4" />
+                <Plus className="relative h-3 w-3" />
               </span>
               Add Sites
             </span>
             <ChevronDown
-              className={`h-5 w-5 shrink-0 text-blue-600 transition-transform duration-300 ${
+              className={`h-3.5 w-3.5 shrink-0 text-blue-600 transition-transform duration-300 ${
                 allocationFormOpen ? "rotate-180" : "animate-bounce"
               }`}
             />
@@ -887,7 +879,7 @@ const Assignments = () => {
                     className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]"
                     title={
                       sortField === "status"
-                        ? `Sorted by Status (${sortDirection === "asc" ? "In Progress → Completed → Hold" : "Hold → Completed → In Progress"}) - click to reverse`
+                        ? `Sorted by Status (${sortDirection === "asc" ? "In Progress → Not Yet Started → Completed" : "Completed → Not Yet Started → In Progress"}) - click to reverse`
                         : "Click to sort by Status"
                     }
                   >

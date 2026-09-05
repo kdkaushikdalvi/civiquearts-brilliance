@@ -371,29 +371,29 @@ const ClientInvoice = () => {
             </Card>
           ) : (
             <>
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <h2 className="min-w-0 truncate text-xl font-medium text-slate-500">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="min-w-0 truncate text-sm font-semibold text-slate-600">
                   {MONTH_NAMES[month]} {year} — Sites
                 </h2>
                 <button
                   type="button"
                   onClick={() => setAllocationTableOpen((open) => !open)}
-                  className="flex shrink-0 items-center gap-2 rounded-lg border-2 border-blue-600 bg-white px-4 py-2.5 text-left text-blue-800 shadow-sm transition-colors hover:bg-blue-50"
+                  className="flex shrink-0 items-center gap-1.5 rounded-md border border-blue-600 bg-white px-2.5 py-1 text-left text-xs font-semibold text-blue-800 shadow-sm transition-colors hover:bg-blue-50"
                   aria-expanded={allocationTableOpen}
                 >
-                  <span className="flex items-center gap-2 font-semibold">
-                    <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-green-500 text-white shadow-sm">
+                  <span className="flex items-center gap-1.5 font-semibold">
+                    <span className="relative flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white shadow-sm">
                       <span
                         className={`absolute inset-0 rounded-full bg-green-400 opacity-60 ${
                           !allocationTableOpen ? "animate-ping" : ""
                         }`}
                       />
-                      <Plus className="relative h-4 w-4" />
+                      <Plus className="relative h-3 w-3" />
                     </span>
                     Allocate Accounting Code
                   </span>
                   <ChevronDown
-                    className={`h-5 w-5 shrink-0 text-blue-600 transition-transform duration-300 ${
+                    className={`h-3.5 w-3.5 shrink-0 text-blue-600 transition-transform duration-300 ${
                       allocationTableOpen ? "rotate-180" : "animate-bounce"
                     }`}
                   />

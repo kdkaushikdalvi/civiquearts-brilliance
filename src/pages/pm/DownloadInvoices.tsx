@@ -281,13 +281,50 @@ const DownloadInvoices = () => {
                     </Button>
                   </div>
                   {otherItems.map((item) => (
-                    <div key={item.id} className="grid min-w-[980px] grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto_auto] items-center gap-2">
-                      {(["project", "site", "unit"] as const).map((field) => (
-                        <input key={field} value={item[field]} placeholder={field[0].toUpperCase() + field.slice(1)} onChange={(e) => updateOther(item.id, { [field]: e.target.value })} className="h-10 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm" />
-                      ))}
-                      <input type="number" min="0" value={item.quantity} placeholder="Qty" onChange={(e) => updateOther(item.id, { quantity: Math.max(0, Number(e.target.value) || 0) })} className="h-10 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm" />
-                      <input type="number" min="0" step="0.01" value={item.rate} placeholder="Rate (₹)" onChange={(e) => updateOther(item.id, { rate: Math.max(0, Number(e.target.value) || 0) })} className="h-10 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm" />
-                      <div className="flex h-10 min-w-0 items-center justify-end overflow-hidden rounded-lg border bg-muted px-3 text-sm" aria-label="Amount (₹)">{formatINR(item.quantity * item.rate)}</div>
+                    <div key={item.id} className="grid min-w-[620px] max-w-4xl grid-cols-[minmax(120px,1.5fr)_minmax(120px,1.5fr)_72px_60px_82px_96px_auto_auto] items-center gap-2">
+                      <input
+                        value={item.project}
+                        placeholder="Project"
+                        onChange={(e) => updateOther(item.id, { project: e.target.value })}
+                        className="h-9 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                      />
+                      <input
+                        value={item.site}
+                        placeholder="Site"
+                        onChange={(e) => updateOther(item.id, { site: e.target.value })}
+                        className="h-9 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                      />
+                      <input
+                        value={item.unit}
+                        placeholder="Unit"
+                        onChange={(e) => updateOther(item.id, { unit: e.target.value })}
+                        className="h-9 w-full rounded-lg border border-input bg-background px-2 text-center text-sm"
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        value={item.quantity}
+                        placeholder="Qty"
+                        onChange={(e) => updateOther(item.id, { quantity: Math.max(0, Number(e.target.value) || 0) })}
+                        className="h-9 w-full rounded-lg border border-input bg-background px-2 text-right text-sm"
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.rate}
+                        placeholder="Rate"
+                        title="Rate (₹)"
+                        onChange={(e) => updateOther(item.id, { rate: Math.max(0, Number(e.target.value) || 0) })}
+                        className="h-9 w-full rounded-lg border border-input bg-background px-2 text-right text-sm"
+                      />
+                      <div
+                        className="flex h-9 w-full items-center justify-end overflow-hidden rounded-lg border bg-muted px-2.5 text-sm font-medium"
+                        aria-label="Amount (₹)"
+                        title="Amount (₹)"
+                      >
+                        {formatINR(item.quantity * item.rate)}
+                      </div>
                       <Button
                         type="button"
                         variant="ghost"
@@ -298,7 +335,7 @@ const DownloadInvoices = () => {
                         }}
                         aria-label="Delete draft other item"
                         title="Delete"
-                        className="h-10 w-10 rounded-full bg-red-600 p-0 text-white hover:bg-red-700"
+                        className="h-9 w-9 shrink-0 rounded-full bg-red-600 p-0 text-white hover:bg-red-700"
                       >
                         <Minus className="h-4 w-4" />
                       </Button>
@@ -312,7 +349,7 @@ const DownloadInvoices = () => {
                           }
                           setAddedOtherIds((ids) => ids.includes(item.id) ? ids : [...ids, item.id]);
                         }}
-                        className="h-10 w-10 p-0"
+                        className="h-9 w-9 shrink-0 rounded-full p-0"
                         aria-label="Save other item"
                         title="Save"
                       >
