@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { ChevronDown, Printer, FileText, Pencil, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { formatClientInvoiceFileName } from "@/lib/clientInvoiceFormat";
 
 const ONES = [
   "",
@@ -245,11 +246,16 @@ const ClientInvoice = () => {
       })
     : "";
 
+  const computedFileName = useMemo(
+    () => formatClientInvoiceFileName(invoiceNumber, invoiceDate),
+    [invoiceNumber, invoiceDate]
+  );
+
   const printInvoice = () => {
     if (!invoiceRef.current) return;
     const w = window.open("", "", "width=900,height=1200");
     if (!w) return;
-    w.document.write(`<html><head><title>Tax Invoice</title><style>
+    w.document.write(`<html><head><title>${computedFileName}</title><style>
       @page{size:A4 portrait;margin:10mm;@bottom-right{content:"Page " counter(page) " of " counter(pages);color:#aaa;font:8pt Arial}}*{box-sizing:border-box}
       html,body{margin:0;padding:0;background:#fff}body{font-family:Arial,sans-serif}
       .client-invoice{width:190mm!important;min-height:0!important;margin:0 auto!important;padding:0!important;border:0!important;box-shadow:none!important;border-radius:0!important}

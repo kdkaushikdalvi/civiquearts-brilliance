@@ -1,0 +1,8 @@
+{
+  "name": "CiviqueArts Brilliance",
+  "description": "CiviqueArts Brilliance delivers world-class engineering design, CAD drafting, GIS mapping, BIM modeling, and project management solutions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
