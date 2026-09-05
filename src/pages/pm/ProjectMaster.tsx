@@ -21,8 +21,10 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
 
   const [name, setName] = useState("");
   const [clientId, setClientId] = useState("");
+  const [defaultPrice, setDefaultPrice] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [editPrice, setEditPrice] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
@@ -36,9 +38,12 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
     const trimmed = name.trim();
     if (!trimmed) return toast.error("Project name required");
     if (!clientId) return toast.error("Select a client");
+    const price = defaultPrice.trim() === "" ? undefined : Number(defaultPrice);
+    if (price !== undefined && (isNaN(price) || price < 0)) return toast.error("Enter a valid default price");
     const client = clients.find((c) => c.id === clientId);
-    const p = await addProject(trimmed, clientId, client?.name);
+    const p = await addProject(trimmed, clientId, client?.name, price);
     setName("");
+    setDefaultPrice("");
     if (!p) return;
     toast.success("Project added");
     if (returnTo) {
@@ -46,13 +51,16 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
     }
   };
 
-  const startEdit = (id: string, current: string) => {
-    setEditingId(id);
-    setEditValue(current);
+  const startEdit = (p: { id: string; name: string; defaultPrice?: number }) => {
+    setEditingId(p.id);
+    setEditValue(p.name);
+    setEditPrice(p.defaultPrice != null ? String(p.defaultPrice) : "");
   };
   const saveEdit = () => {
     if (!editValue.trim()) return toast.error("Name required");
-    updateProject(editingId!, editValue.trim());
+    const price = editPrice.trim() === "" ? undefined : Number(editPrice);
+    if (price !== undefined && (isNaN(price) || price < 0)) return toast.error("Enter a valid default price");
+    updateProject(editingId!, editValue.trim(), price);
     setEditingId(null);
     toast.success("Updated");
   };
@@ -97,6 +105,16 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             />
+            <Input
+              placeholder="Default Price (e.g. 0.25)"
+              type="number"
+              min="0"
+              step="any"
+              value={defaultPrice}
+              onChange={(e) => setDefaultPrice(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              className="w-56"
+            />
             <Button onClick={handleAdd} className="bg-[#5c24ff] text-white hover:bg-[#4b1ed6]">
               <Plus className="h-4 w-4 mr-2" /> Add
             </Button>
@@ -125,6 +143,7 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
                 <tr>
                   <th className="px-4 py-3 font-semibold">#</th>
                   <th className="px-4 py-3 font-semibold">Project Name</th>
+                  <th className="px-4 py-3 font-semibold">Default Price</th>
                   <th className="px-4 py-3 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
