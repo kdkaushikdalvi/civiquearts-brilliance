@@ -1,4 +1,8 @@
 export type AssignmentStatus =
+  | "In Progress"
+  | "In Progress 25%"
+  | "In Progress 45%"
+  | "In Progress 80%"
   | "In Progress – 0%"
   | "In Progress – 25%"
   | "In Progress – 45%"
@@ -6,6 +10,7 @@ export type AssignmentStatus =
   | "QC Pending"
   | "Completed"
   | "On Hold"
+  | "Hold"
   | "Not Started Yet";
 
 export interface Assignment {

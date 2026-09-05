@@ -99,7 +99,12 @@ const Assignments = () => {
   const filtered = useMemo(
     () => assignments
       .filter((a) => a.month === month && a.year === year)
-      .sort((a, b) => ["In Progress", "Completed", "Hold"].indexOf(a.status) - ["In Progress", "Completed", "Hold"].indexOf(b.status)),
+      .sort((a, b) => {
+        const order = ["In Progress", "In Progress 25%", "In Progress 45%", "In Progress 80%", "QC Pending", "Completed", "Hold", "Not Started Yet"];
+        const idxA = order.indexOf(a.status);
+        const idxB = order.indexOf(b.status);
+        return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+      }),
     [assignments, month, year]
   );
   const grouped = useMemo(() => {
@@ -136,7 +141,7 @@ const Assignments = () => {
       siteName: row.siteName,
       month: row.month,
       year: row.year,
-      status: "In Progress",
+      status: "Not Started Yet",
     }]);
     toast.success("Assignee row added");
   };
@@ -216,7 +221,7 @@ const Assignments = () => {
           assigneeName: emp?.name,
           month,
           year,
-          status: "In Progress" as const,
+          status: (emp?.id ? "In Progress" : "Not Started Yet") as const,
         };
       });
     }))).flat();
@@ -258,9 +263,14 @@ const Assignments = () => {
         const project = projects.find((p) => p.name.trim().toLowerCase() === String(projectName ?? "").trim().toLowerCase());
         const client = clients.find((c) => c.name.trim().toLowerCase() === String(clientName ?? "").trim().toLowerCase());
         const employee = employees.find((e) => e.name.trim().toLowerCase() === String(assigneeName ?? "").trim().toLowerCase());
-        if (!project || !client || !employee || !String(siteName ?? "").trim()) continue;
+        if (!project || !client || !String(siteName ?? "").trim()) continue;
         const site = await upsertSite(project.id, String(siteName).trim());
-        records.push({ clientId: client.id, clientName: client.name, siteId: site?.id, projectId: project.id, projectName: project.name, siteName: String(siteName).trim(), assigneeId: employee.id, assigneeName: employee.name, month, year, status: ["Completed", "Hold", "In Progress"].includes(String(status)) ? String(status) as Assignment["status"] : "In Progress", unitType: String(unitType ?? "-"), quantity: Number(quantity) || 0, rate: Number(rate) || 0, amount: Number(amount) || 0 });
+        const resolvedStatus = ["Completed", "Hold", "In Progress", "In Progress 25%", "In Progress 45%", "In Progress 80%", "QC Pending", "Not Started Yet"].includes(String(status))
+          ? (String(status) as Assignment["status"])
+          : employee?.id
+            ? "In Progress"
+            : "Not Started Yet";
+        records.push({ clientId: client.id, clientName: client.name, siteId: site?.id, projectId: project.id, projectName: project.name, siteName: String(siteName).trim(), assigneeId: employee?.id, assigneeName: employee?.name, month, year, status: resolvedStatus, unitType: String(unitType ?? "-"), quantity: Number(quantity) || 0, rate: Number(rate) || 0, amount: Number(amount) || 0 });
       }
       if (!records.length) return toast.error("No valid allocation rows found in the file");
       await addAssignments(records);
@@ -503,7 +513,7 @@ const Assignments = () => {
                       <td className="space-y-[5px] px-2 py-0 pb-[5px] align-middle text-center">{rows.map((row) => <div key={row.id} className="relative my-[5px] flex h-8 items-center justify-center whitespace-nowrap">
                         <Select value={row.assigneeId ?? "__unassigned__"} onValueChange={(value) => {
                              if (value === "__unassigned__" || value === "__remove__") {
-                               updateAssignment(row.id, { assigneeId: undefined, assigneeName: undefined });
+                               updateAssignment(row.id, { assigneeId: undefined, assigneeName: undefined, status: "Not Started Yet" });
                                return;
                              }
                             const employee = employees.find((item) => item.id === value);
@@ -513,7 +523,11 @@ const Assignments = () => {
                                 toast.error(`${employee.name} is already assigned to this allocation.`);
                                 return;
                               }
-                              updateAssignment(row.id, { assigneeId: employee.id, assigneeName: employee.name });
+                              updateAssignment(row.id, {
+                                assigneeId: employee.id,
+                                assigneeName: employee.name,
+                                status: row.status === "Not Started Yet" ? "In Progress" : row.status,
+                              });
                             }
                           }}>
                           <SelectTrigger aria-label={`Assigned To for ${row.siteName}`} className={`h-8 w-[150px] rounded-full py-0 px-3 text-xs font-semibold shadow-sm focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:opacity-70 ${
@@ -543,23 +557,48 @@ const Assignments = () => {
                           <div className={`relative inline-flex items-center rounded-full border px-2.5 shadow-sm ${
                             row.status === "Completed"
                               ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                              : row.status === "Hold"
+                              : row.status === "Hold" || row.status === "On Hold"
                                 ? "border-amber-200 bg-amber-50 text-amber-700"
-                                : "border-violet-200 bg-violet-50 text-violet-700"
+                                : row.status === "Not Started Yet"
+                                  ? "border-slate-200 bg-slate-100 text-slate-600"
+                                  : row.status === "QC Pending"
+                                    ? "border-teal-200 bg-teal-50 text-teal-700"
+                                    : row.status === "In Progress 25%" || row.status === "In Progress – 25%"
+                                      ? "border-blue-200 bg-blue-50 text-blue-700"
+                                      : row.status === "In Progress 45%" || row.status === "In Progress – 45%"
+                                        ? "border-indigo-200 bg-indigo-50 text-indigo-700"
+                                        : row.status === "In Progress 80%" || row.status === "In Progress – 80%"
+                                          ? "border-purple-200 bg-purple-50 text-purple-700"
+                                          : "border-violet-200 bg-violet-50 text-violet-700"
                           }`}>
                             <Select value={row.status} onValueChange={(value) => handleStatusChange(row, value as Assignment["status"])}>
-                              <SelectTrigger aria-label={`Status for ${row.siteName}`} className="h-auto w-[118px] border-0 bg-transparent py-2 px-1.5 text-xs font-semibold shadow-none focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:opacity-60">
+                              <SelectTrigger aria-label={`Status for ${row.siteName}`} className="h-auto w-auto min-w-[124px] border-0 bg-transparent py-2 px-1.5 text-xs font-semibold shadow-none focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:opacity-60">
                                 <SelectValue />
                               </SelectTrigger>
-                              <SelectContent className="min-w-[150px] rounded-xl border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 data-[state=open]:animate-none data-[state=closed]:animate-none">
+                              <SelectContent className="min-w-[170px] rounded-xl border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 data-[state=open]:animate-none data-[state=closed]:animate-none">
                                 <SelectItem value="In Progress" className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-violet-700 focus:bg-transparent focus:text-violet-700">
                                   In Progress
+                                </SelectItem>
+                                <SelectItem value="In Progress 25%" className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-blue-700 focus:bg-transparent focus:text-blue-700">
+                                  In Progress 25%
+                                </SelectItem>
+                                <SelectItem value="In Progress 45%" className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-indigo-700 focus:bg-transparent focus:text-indigo-700">
+                                  In Progress 45%
+                                </SelectItem>
+                                <SelectItem value="In Progress 80%" className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-purple-700 focus:bg-transparent focus:text-purple-700">
+                                  In Progress 80%
+                                </SelectItem>
+                                <SelectItem value="QC Pending" className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-teal-700 focus:bg-transparent focus:text-teal-700">
+                                  QC Pending
                                 </SelectItem>
                                 <SelectItem value="Completed" className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-emerald-700 focus:bg-transparent focus:text-emerald-700">
                                   Completed
                                 </SelectItem>
                                 <SelectItem value="Hold" className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-amber-700 focus:bg-transparent focus:text-amber-700">
                                   Hold
+                                </SelectItem>
+                                <SelectItem value="Not Started Yet" className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-slate-600 focus:bg-transparent focus:text-slate-600">
+                                  Not Started Yet
                                 </SelectItem>
                               </SelectContent>
                             </Select>

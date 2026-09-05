@@ -51,7 +51,7 @@ const mapAssignment = (r: any): Assignment => ({
   assigneeName: r.assignee_name,
   month: r.month,
   year: r.year,
-  status: r.status,
+  status: (!r.assignee_id || !r.assignee_name) && (!r.status || r.status === "In Progress") ? "Not Started Yet" : (r.status || "Not Started Yet"),
   unitType: r.unit_type ?? undefined,
   quantity: r.quantity ?? undefined,
   rate: r.rate ?? undefined,

@@ -16,7 +16,7 @@ const Dashboard = () => {
     [assignments, month, year],
   );
   const completed = monthlyAssignments.filter((a) => a.status === "Completed");
-  const inProgress = monthlyAssignments.filter((a) => a.status === "In Progress");
+  const inProgress = monthlyAssignments.filter((a) => a.status === "In Progress" || a.status.startsWith("In Progress"));
   const totalBilled = completed.reduce((s, a) => s + (a.amount ?? 0), 0);
 
   const cards = [
@@ -75,7 +75,23 @@ const Dashboard = () => {
                   <div className="font-medium">{a.projectName} → {a.siteName}</div>
                   <div className="text-xs text-muted-foreground">{a.assigneeName}</div>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full ${a.status === "Completed" ? "bg-green-accent/10 text-green-accent" : "bg-yellow-500/10 text-yellow-700"}`}>
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  a.status === "Completed"
+                    ? "bg-green-accent/10 text-green-accent"
+                    : a.status === "Not Started Yet"
+                      ? "bg-slate-100 text-slate-700"
+                      : a.status === "QC Pending"
+                        ? "bg-teal-500/10 text-teal-700"
+                        : a.status === "Hold" || a.status === "On Hold"
+                          ? "bg-amber-500/10 text-amber-700"
+                          : a.status === "In Progress 25%"
+                            ? "bg-blue-500/10 text-blue-700"
+                            : a.status === "In Progress 45%"
+                              ? "bg-indigo-500/10 text-indigo-700"
+                              : a.status === "In Progress 80%"
+                                ? "bg-purple-500/10 text-purple-700"
+                                : "bg-yellow-500/10 text-yellow-700"
+                }`}>
                   {a.status}
                 </span>
               </div>
