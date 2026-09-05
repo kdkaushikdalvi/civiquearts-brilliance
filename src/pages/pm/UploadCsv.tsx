@@ -24,6 +24,8 @@ type ProcessedCsv = {
 
 type Processed = ProcessedXlsx | ProcessedCsv;
 
+console.log("");
+
 const cellText = (v: unknown): string => {
   if (v == null) return "";
   if (typeof v === "object") {
