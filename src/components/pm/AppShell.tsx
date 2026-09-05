@@ -116,33 +116,25 @@ const AppShell = ({ children }: { children: ReactNode }) => {
 
   const SidebarInner = (
     <>
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.12 } } }}
-        className={cn("border-b border-border flex items-center gap-3 transition-all", sidebarCollapsed ? "p-3 justify-center" : "p-5")}
+      <div
+        className={cn("border-b border-border flex items-center gap-3", sidebarCollapsed ? "p-3 justify-center" : "p-5")}
       >
-        <motion.img
+        <img
           src={logo}
           alt="CiviqueArts"
-          className={cn("object-contain transition-all duration-200", sidebarCollapsed ? "h-10 w-10" : "h-10 w-auto")}
-          variants={{ hidden: { opacity: 0, x: -12, scale: 0.9 }, visible: { opacity: 1, x: 0, scale: 1 } }}
-          transition={{ type: "spring", stiffness: 260, damping: 20 }}
+          className={cn("object-contain", sidebarCollapsed ? "h-10 w-10" : "h-10 w-auto")}
         />
-        <motion.div
-          animate={{ width: sidebarCollapsed ? 0 : "auto", opacity: sidebarCollapsed ? 0 : 1 }}
-          className="leading-tight overflow-hidden whitespace-nowrap"
-          variants={{ hidden: { opacity: 0, x: 12 }, visible: { opacity: 1, x: 0 } }}
-          transition={{ duration: 0.35 }}
-        >
-          <div className="font-extrabold text-[15px] tracking-tight bg-gradient-to-r from-blue-700 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
-            CiviqueArts
+        {!sidebarCollapsed && (
+          <div className="leading-tight overflow-hidden whitespace-nowrap">
+            <div className="font-extrabold text-[15px] tracking-tight bg-gradient-to-r from-blue-700 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+              CiviqueArts
+            </div>
+            <div className="text-[11px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber-600 via-orange-500 to-rose-500 bg-clip-text text-transparent">
+              Billing System
+            </div>
           </div>
-          <div className="text-[11px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber-600 via-orange-500 to-rose-500 bg-clip-text text-transparent">
-            Billing System
-          </div>
-        </motion.div>
-      </motion.div>
+        )}
+      </div>
       <nav className="flex-1 py-3">
         {nav.map((n) => (
           <NavLink

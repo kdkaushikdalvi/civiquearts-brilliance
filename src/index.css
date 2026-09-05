@@ -175,3 +175,34 @@ main > div.relative.bg-slate-50::after {
   content: "";
   z-index: -1;
 }
+
+/* Gentle, slowed-down animations */
+@keyframes slowPing {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  75%, 100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+
+@keyframes slowBounce {
+  0%, 100% {
+    transform: translateY(-16%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+.animate-slow-ping {
+  animation: slowPing 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-slow-bounce {
+  animation: slowBounce 2.6s infinite;
+}

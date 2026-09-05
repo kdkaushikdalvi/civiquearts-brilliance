@@ -39,6 +39,7 @@ import {
 import { toast } from "sonner";
 import { formatINR, formatNumber } from "@/lib/pmFormat";
 import { getStatusRank } from "@/lib/statusSort";
+import { isSiteGroupCompleted } from "@/lib/projectCompletion";
 import ExcelJS from "exceljs";
 
 interface SiteRow {
@@ -232,6 +233,54 @@ const Assignments = () => {
       return sA.localeCompare(sB, undefined, { sensitivity: "base", numeric: true });
     });
   }, [filtered, sortField, sortDirection]);
+
+  const inProgressGrouped = useMemo(() => {
+    return grouped.filter((rows) => !isSiteGroupCompleted(rows));
+  }, [grouped]);
+
+  const completedGrouped = useMemo(() => {
+    return grouped.filter((rows) => isSiteGroupCompleted(rows));
+  }, [grouped]);
+
+  const inProgressAssignmentsCount = useMemo(() => {
+    return inProgressGrouped.reduce((sum, rows) => sum + rows.length, 0);
+  }, [inProgressGrouped]);
+
+  const completedAssignmentsCount = useMemo(() => {
+    return completedGrouped.reduce((sum, rows) => sum + rows.length, 0);
+  }, [completedGrouped]);
+
+  const inProgressProjectsCount = useMemo(() => {
+    const pSet = new Set<string>();
+    inProgressGrouped.forEach((rows) => {
+      const pKey = rows[0]?.projectId || rows[0]?.projectName;
+      if (pKey) pSet.add(pKey);
+    });
+    return pSet.size;
+  }, [inProgressGrouped]);
+
+  const completedProjectsCount = useMemo(() => {
+    const pSet = new Set<string>();
+    completedGrouped.forEach((rows) => {
+      const pKey = rows[0]?.projectId || rows[0]?.projectName;
+      if (pKey) pSet.add(pKey);
+    });
+    return pSet.size;
+  }, [completedGrouped]);
+
+  const [userSelectedTab, setUserSelectedTab] = useState<"all" | "in_progress" | "completed" | null>(null);
+  const [lastMonthYearKey, setLastMonthYearKey] = useState(`${month}-${year}`);
+
+  // Reset explicit tab selection when navigating to a different month/year
+  const currentMonthYearKey = `${month}-${year}`;
+  if (lastMonthYearKey !== currentMonthYearKey) {
+    setLastMonthYearKey(currentMonthYearKey);
+    setUserSelectedTab(null);
+  }
+
+  // Default selection: "in_progress" if greater than zero, else "all"
+  const activeTab: "all" | "in_progress" | "completed" =
+    userSelectedTab ?? (inProgressAssignmentsCount > 0 ? "in_progress" : "all");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Assignment | null>(null);
@@ -513,6 +562,284 @@ const Assignments = () => {
     }
   };
 
+  const renderSiteRow = (rows: Assignment[], index: number) => {
+    const a = rows[0];
+    return (
+      <tr
+        key={a.id}
+        className={`transition-colors duration-150 hover:bg-blue-50/80 [&>td]:border-y [&>td]:border-slate-200 [&>td:first-child]:border-l [&>td:last-child]:border-r ${
+          index % 2 === 0 ? "bg-white" : "bg-slate-100"
+        }`}
+      >
+        <td
+          className="px-3 py-1 max-w-[180px] truncate whitespace-nowrap font-medium text-slate-800"
+          title={a.projectName}
+        >
+          {a.projectName}
+        </td>
+        <td
+          className="px-3 py-1 whitespace-normal break-words text-slate-700"
+          title={a.siteName}
+        >
+          {a.siteName}
+        </td>
+        <td className="space-y-[5px] px-2 py-0 pb-[5px] align-middle text-center">
+          {rows.map((row) => (
+            <div
+              key={row.id}
+              className="relative my-[5px] flex h-8 items-center justify-center whitespace-nowrap"
+            >
+              <Select
+                value={row.assigneeId ?? "__unassigned__"}
+                onValueChange={(value) => {
+                  if (
+                    value === "__unassigned__" ||
+                    value === "__remove__"
+                  ) {
+                    updateAssignment(row.id, {
+                      assigneeId: undefined,
+                      assigneeName: undefined,
+                      status: "Not Started Yet",
+                    });
+                    return;
+                  }
+                  const employee = employees.find(
+                    (item) => item.id === value
+                  );
+                  if (employee) {
+                    const alreadyAssigned = rows.some(
+                      (otherRow) =>
+                        otherRow.id !== row.id &&
+                        otherRow.assigneeId === employee.id
+                    );
+                    if (alreadyAssigned) {
+                      toast.error(
+                        `${employee.name} is already assigned to this allocation.`
+                      );
+                      return;
+                    }
+                    updateAssignment(row.id, {
+                      assigneeId: employee.id,
+                      assigneeName: employee.name,
+                      status:
+                        row.status === "Not Started Yet"
+                          ? "In Progress"
+                          : row.status,
+                    });
+                  }
+                }}
+              >
+                <SelectTrigger
+                  aria-label={`Assigned To for ${row.siteName}`}
+                  className={`h-8 w-[150px] rounded-full py-0 px-3 text-xs font-semibold shadow-sm focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:opacity-70 ${
+                    row.assigneeId
+                      ? "border-violet-200 bg-violet-50 text-violet-700"
+                      : "border-slate-200 bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  <SelectValue placeholder="Unassigned" />
+                </SelectTrigger>
+                <SelectContent className="min-w-[170px] rounded-xl border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 data-[state=open]:animate-none data-[state=closed]:animate-none">
+                  <SelectItem
+                    value="__unassigned__"
+                    className="cursor-pointer rounded-lg py-2 text-xs font-semibold text-slate-600 focus:bg-transparent focus:text-slate-600"
+                  >
+                    Unassigned
+                  </SelectItem>
+                  {employees.map((employee) => (
+                    <SelectItem
+                      key={employee.id}
+                      value={employee.id}
+                      className="cursor-pointer rounded-lg py-2 text-xs font-semibold text-slate-700 focus:bg-transparent focus:text-slate-700"
+                    >
+                      {employee.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
+        </td>
+        <td className="space-y-[5px] px-2 py-0 pb-[5px] max-w-[160px] whitespace-nowrap text-center">
+          {rows.map((row) => (
+            <div
+              key={row.id}
+              className="my-[5px] flex h-8 items-center justify-center whitespace-nowrap"
+            >
+              {row.unitType
+                ? `${row.unitType} · ${formatNumber(
+                    row.quantity ?? 0
+                  )}`
+                : "-"}
+            </div>
+          ))}
+        </td>
+        <td className="space-y-[5px] px-2 py-0 pb-[5px] font-medium whitespace-nowrap text-center">
+          {rows.map((row) => (
+            <div
+              key={row.id}
+              className="my-[5px] flex h-8 items-center justify-center whitespace-nowrap"
+            >
+              {formatINR(row.amount ?? 0)}
+            </div>
+          ))}
+        </td>
+        <td className="space-y-[5px] px-2 py-0 pb-[5px] whitespace-nowrap">
+          {rows.map((row) => (
+            <div
+              key={row.id}
+              className="my-[5px] flex h-8 items-center justify-center"
+            >
+              <div
+                className={`relative inline-flex items-center rounded-full border px-2.5 shadow-sm ${
+                  row.status === "Completed"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : row.status === "Hold" ||
+                      row.status === "On Hold"
+                    ? "border-amber-200 bg-amber-50 text-amber-700"
+                    : row.status === "Not Started Yet"
+                    ? "border-slate-200 bg-slate-100 text-slate-600"
+                    : row.status === "QC Pending"
+                    ? "border-teal-200 bg-teal-50 text-teal-700"
+                    : row.status === "In Progress 25%" ||
+                      row.status === "In Progress – 25%"
+                    ? "border-blue-200 bg-blue-50 text-blue-700"
+                    : row.status === "In Progress 45%" ||
+                      row.status === "In Progress – 45%"
+                    ? "border-indigo-200 bg-indigo-50 text-indigo-700"
+                    : row.status === "In Progress 80%" ||
+                      row.status === "In Progress – 80%"
+                    ? "border-purple-200 bg-purple-50 text-purple-700"
+                    : "border-violet-200 bg-violet-50 text-violet-700"
+                }`}
+              >
+                <Select
+                  value={row.status}
+                  onValueChange={(value) =>
+                    handleStatusChange(
+                      row,
+                      value as Assignment["status"]
+                    )
+                  }
+                >
+                  <SelectTrigger
+                    aria-label={`Status for ${row.siteName}`}
+                    className="h-auto w-auto min-w-[124px] border-0 bg-transparent py-2 px-1.5 text-xs font-semibold shadow-none focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:opacity-60"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="min-w-[170px] rounded-xl border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 data-[state=open]:animate-none data-[state=closed]:animate-none">
+                    <SelectItem
+                      value="In Progress"
+                      className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-violet-700 focus:bg-transparent focus:text-violet-700"
+                    >
+                      In Progress
+                    </SelectItem>
+
+                    <SelectItem
+                      value="Completed"
+                      className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-emerald-700 focus:bg-transparent focus:text-emerald-700"
+                    >
+                      Completed
+                    </SelectItem>
+
+                    {/* Gray divider */}
+                    <div className="my-1 border-t border-gray-200" />
+
+                    <SelectItem
+                      value="In Progress 25%"
+                      className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-blue-700 focus:bg-transparent focus:text-blue-700"
+                    >
+                      In Progress 25%
+                    </SelectItem>
+                    <SelectItem
+                      value="In Progress 45%"
+                      className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-indigo-700 focus:bg-transparent focus:text-indigo-700"
+                    >
+                      In Progress 45%
+                    </SelectItem>
+                    <SelectItem
+                      value="In Progress 80%"
+                      className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-purple-700 focus:bg-transparent focus:text-purple-700"
+                    >
+                      In Progress 80%
+                    </SelectItem>
+                    <SelectItem
+                      value="QC Pending"
+                      className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-teal-700 focus:bg-transparent focus:text-teal-700"
+                    >
+                      QC Pending
+                    </SelectItem>
+
+                    <SelectItem
+                      value="Hold"
+                      className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-amber-700 focus:bg-transparent focus:text-amber-700"
+                    >
+                      Hold
+                    </SelectItem>
+                    <SelectItem
+                      value="Not Started Yet"
+                      className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-slate-600 focus:bg-transparent focus:text-slate-600"
+                    >
+                      Not Started Yet
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ))}
+        </td>
+        <td className="w-[52px] space-y-[5px] px-0.5 py-0 pb-[5px] align-middle text-center">
+          {rows.map((row) => (
+            <div
+              key={row.id}
+              className="my-[5px] flex h-8 items-center justify-center"
+            >
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 rounded-full"
+                    aria-label="Open actions"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-32 rounded-xl p-1.5"
+                >
+                  <DropdownMenuItem
+                    onClick={() => addAssigneeToGroup(row)}
+                    className="cursor-pointer rounded-lg text-xs"
+                  >
+                    <Plus className="mr-2 h-3.5 w-3.5" />
+                    More
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => openComplete(row)}
+                    className="cursor-pointer rounded-lg text-xs"
+                  >
+                    <Pencil className="mr-2 h-3.5 w-3.5" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => deleteAssignment(row.id)}
+                    className="cursor-pointer rounded-lg text-xs text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-3.5 w-3.5" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ))}
+        </td>
+      </tr>
+    );
+  };
+
   return (
     <AppShell>
       <div className="p-4 sm:p-5 max-w-7xl mx-auto space-y-3">
@@ -565,11 +892,81 @@ const Assignments = () => {
           </div>
         </div>
 
-        {/* Create Section */}
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="min-w-0 truncate text-sm font-semibold text-slate-600">
-            {MONTH_NAMES[month]} {year} — Site Allocation ({filtered.length})
-          </h2>
+        {/* Tab Filter & Actions Section */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="relative inline-flex items-center gap-1.5 rounded-xl border-2 border-slate-300 bg-slate-100/90 p-1 text-xs font-semibold shadow-xs">
+            {/* ALL Tab */}
+            <button
+              type="button"
+              onClick={() => setUserSelectedTab("all")}
+              className={`relative rounded-lg px-3 py-1.5 cursor-pointer select-none border-2 transition-colors ${
+                activeTab === "all"
+                  ? "border-blue-600 bg-white text-blue-700 font-bold shadow-xs"
+                  : "border-slate-200/90 bg-white/70 text-slate-600 hover:border-blue-300 hover:text-blue-700 hover:bg-white"
+              }`}
+            >
+              <span className="flex items-center gap-1.5">
+                <span>ALL</span>
+                <span
+                  className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold transition-colors ${
+                    activeTab === "all"
+                      ? "bg-blue-100 text-blue-700 border border-blue-200"
+                      : "bg-slate-100 text-slate-600 group-hover:bg-blue-50 group-hover:text-blue-700"
+                  }`}
+                >
+                  ({filtered.length})
+                </span>
+              </span>
+            </button>
+
+            {/* In Progress Tab */}
+            <button
+              type="button"
+              onClick={() => setUserSelectedTab("in_progress")}
+              className={`relative rounded-lg px-3 py-1.5 cursor-pointer select-none border-2 transition-colors ${
+                activeTab === "in_progress"
+                  ? "border-[#7c3aed] bg-white text-[#7c3aed] font-bold shadow-xs"
+                  : "border-slate-200/90 bg-white/70 text-slate-600 hover:border-purple-300 hover:text-[#7c3aed] hover:bg-white"
+              }`}
+            >
+              <span className="flex items-center gap-1.5">
+                <span>In Progress</span>
+                <span
+                  className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold transition-colors ${
+                    activeTab === "in_progress"
+                      ? "bg-purple-100 text-purple-700 border border-purple-200"
+                      : "bg-slate-100 text-slate-600 group-hover:bg-purple-50 group-hover:text-purple-700"
+                  }`}
+                >
+                  ({inProgressAssignmentsCount})
+                </span>
+              </span>
+            </button>
+
+            {/* Completed Tab */}
+            <button
+              type="button"
+              onClick={() => setUserSelectedTab("completed")}
+              className={`relative rounded-lg px-3 py-1.5 cursor-pointer select-none border-2 transition-colors ${
+                activeTab === "completed"
+                  ? "border-emerald-600 bg-white text-emerald-700 font-bold shadow-xs"
+                  : "border-slate-200/90 bg-white/70 text-slate-600 hover:border-emerald-300 hover:text-emerald-700 hover:bg-white"
+              }`}
+            >
+              <span className="flex items-center gap-1.5">
+                <span>Completed</span>
+                <span
+                  className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold transition-colors ${
+                    activeTab === "completed"
+                      ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                      : "bg-slate-100 text-slate-600 group-hover:bg-emerald-50 group-hover:text-emerald-700"
+                  }`}
+                >
+                  ({completedAssignmentsCount})
+                </span>
+              </span>
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => setAllocationFormOpen((open) => !open)}
@@ -580,7 +977,7 @@ const Assignments = () => {
               <span className="relative flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white shadow-sm">
                 <span
                   className={`absolute inset-0 rounded-full bg-green-400 opacity-60 ${
-                    !allocationFormOpen ? "animate-ping" : ""
+                    !allocationFormOpen ? "animate-slow-ping" : ""
                   }`}
                 />
                 <Plus className="relative h-3 w-3" />
@@ -589,7 +986,7 @@ const Assignments = () => {
             </span>
             <ChevronDown
               className={`h-3.5 w-3.5 shrink-0 text-blue-600 transition-transform duration-300 ${
-                allocationFormOpen ? "rotate-180" : "animate-bounce"
+                allocationFormOpen ? "rotate-180" : "animate-slow-bounce"
               }`}
             />
           </button>
@@ -823,7 +1220,15 @@ const Assignments = () => {
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gradient-to-r from-[#24105c] via-[#5c24ff] to-[#e91e9b] text-center text-white">
+              <thead
+                className={`text-center text-white transition-colors duration-300 ${
+                  activeTab === "in_progress"
+                    ? "bg-gradient-to-r from-purple-600 via-[#7c3aed] to-violet-600"
+                    : activeTab === "completed"
+                    ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600"
+                    : "bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700"
+                }`}
+              >
                 <tr>
                   <th
                     className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]"
@@ -908,7 +1313,7 @@ const Assignments = () => {
                 </tr>
               </thead>
               <tbody>
-                {grouped.length === 0 ? (
+                {filtered.length === 0 ? (
                   <tr>
                     <td
                       colSpan={7}
@@ -917,284 +1322,88 @@ const Assignments = () => {
                       No projects for this month.
                     </td>
                   </tr>
-                ) : (
-                  grouped.map((rows, index) => {
-                    const a = rows[0];
-                    return (
-                      <tr
-                        key={a.id}
-                        className={`transition-colors duration-150 hover:bg-blue-50/80 [&>td]:border-y [&>td]:border-slate-200 [&>td:first-child]:border-l [&>td:last-child]:border-r ${
-                          index % 2 === 0 ? "bg-white" : "bg-slate-100"
-                        }`}
-                      >
+                ) : activeTab === "all" ? (
+                  <>
+                    {/* In Progress Section Header */}
+                    <tr className="border-y border-purple-200 bg-purple-50/90 text-left font-semibold">
+                      <td colSpan={7} className="px-4 py-2">
+                        <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-purple-700">
+                          <div className="flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full bg-purple-500 shadow-xs" />
+                            <span>In Progress</span>
+                            <span className="text-[11px] font-medium text-purple-600 lowercase">
+                              ({inProgressProjectsCount} project{inProgressProjectsCount === 1 ? "" : "s"} · {inProgressGrouped.length} site{inProgressGrouped.length === 1 ? "" : "s"})
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                    {inProgressGrouped.length === 0 ? (
+                      <tr>
                         <td
-                          className="px-3 py-1 max-w-[180px] truncate whitespace-nowrap font-medium text-slate-800"
-                          title={a.projectName}
+                          colSpan={7}
+                          className="px-4 py-4 text-center text-xs text-muted-foreground italic"
                         >
-                          {a.projectName}
-                        </td>
-                        <td
-                          className="px-3 py-1 whitespace-normal break-words text-slate-700"
-                          title={a.siteName}
-                        >
-                          {a.siteName}
-                        </td>
-                        <td className="space-y-[5px] px-2 py-0 pb-[5px] align-middle text-center">
-                          {rows.map((row) => (
-                            <div
-                              key={row.id}
-                              className="relative my-[5px] flex h-8 items-center justify-center whitespace-nowrap"
-                            >
-                              <Select
-                                value={row.assigneeId ?? "__unassigned__"}
-                                onValueChange={(value) => {
-                                  if (
-                                    value === "__unassigned__" ||
-                                    value === "__remove__"
-                                  ) {
-                                    updateAssignment(row.id, {
-                                      assigneeId: undefined,
-                                      assigneeName: undefined,
-                                      status: "Not Started Yet",
-                                    });
-                                    return;
-                                  }
-                                  const employee = employees.find(
-                                    (item) => item.id === value
-                                  );
-                                  if (employee) {
-                                    const alreadyAssigned = rows.some(
-                                      (otherRow) =>
-                                        otherRow.id !== row.id &&
-                                        otherRow.assigneeId === employee.id
-                                    );
-                                    if (alreadyAssigned) {
-                                      toast.error(
-                                        `${employee.name} is already assigned to this allocation.`
-                                      );
-                                      return;
-                                    }
-                                    updateAssignment(row.id, {
-                                      assigneeId: employee.id,
-                                      assigneeName: employee.name,
-                                      status:
-                                        row.status === "Not Started Yet"
-                                          ? "In Progress"
-                                          : row.status,
-                                    });
-                                  }
-                                }}
-                              >
-                                <SelectTrigger
-                                  aria-label={`Assigned To for ${row.siteName}`}
-                                  className={`h-8 w-[150px] rounded-full py-0 px-3 text-xs font-semibold shadow-sm focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:opacity-70 ${
-                                    row.assigneeId
-                                      ? "border-violet-200 bg-violet-50 text-violet-700"
-                                      : "border-slate-200 bg-slate-100 text-slate-500"
-                                  }`}
-                                >
-                                  <SelectValue placeholder="Unassigned" />
-                                </SelectTrigger>
-                                <SelectContent className="min-w-[170px] rounded-xl border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 data-[state=open]:animate-none data-[state=closed]:animate-none">
-                                  <SelectItem
-                                    value="__unassigned__"
-                                    className="cursor-pointer rounded-lg py-2 text-xs font-semibold text-slate-600 focus:bg-transparent focus:text-slate-600"
-                                  >
-                                    Unassigned
-                                  </SelectItem>
-                                  {employees.map((employee) => (
-                                    <SelectItem
-                                      key={employee.id}
-                                      value={employee.id}
-                                      className="cursor-pointer rounded-lg py-2 text-xs font-semibold text-slate-700 focus:bg-transparent focus:text-slate-700"
-                                    >
-                                      {employee.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          ))}
-                        </td>
-                        <td className="space-y-[5px] px-2 py-0 pb-[5px] max-w-[160px] whitespace-nowrap text-center">
-                          {rows.map((row) => (
-                            <div
-                              key={row.id}
-                              className="my-[5px] flex h-8 items-center justify-center whitespace-nowrap"
-                            >
-                              {row.unitType
-                                ? `${row.unitType} · ${formatNumber(
-                                    row.quantity ?? 0
-                                  )}`
-                                : "-"}
-                            </div>
-                          ))}
-                        </td>
-                        <td className="space-y-[5px] px-2 py-0 pb-[5px] font-medium whitespace-nowrap text-center">
-                          {rows.map((row) => (
-                            <div
-                              key={row.id}
-                              className="my-[5px] flex h-8 items-center justify-center whitespace-nowrap"
-                            >
-                              {formatINR(row.amount ?? 0)}
-                            </div>
-                          ))}
-                        </td>
-                        <td className="space-y-[5px] px-2 py-0 pb-[5px] whitespace-nowrap">
-                          {rows.map((row) => (
-                            <div
-                              key={row.id}
-                              className="my-[5px] flex h-8 items-center justify-center"
-                            >
-                              <div
-                                className={`relative inline-flex items-center rounded-full border px-2.5 shadow-sm ${
-                                  row.status === "Completed"
-                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                    : row.status === "Hold" ||
-                                      row.status === "On Hold"
-                                    ? "border-amber-200 bg-amber-50 text-amber-700"
-                                    : row.status === "Not Started Yet"
-                                    ? "border-slate-200 bg-slate-100 text-slate-600"
-                                    : row.status === "QC Pending"
-                                    ? "border-teal-200 bg-teal-50 text-teal-700"
-                                    : row.status === "In Progress 25%" ||
-                                      row.status === "In Progress – 25%"
-                                    ? "border-blue-200 bg-blue-50 text-blue-700"
-                                    : row.status === "In Progress 45%" ||
-                                      row.status === "In Progress – 45%"
-                                    ? "border-indigo-200 bg-indigo-50 text-indigo-700"
-                                    : row.status === "In Progress 80%" ||
-                                      row.status === "In Progress – 80%"
-                                    ? "border-purple-200 bg-purple-50 text-purple-700"
-                                    : "border-violet-200 bg-violet-50 text-violet-700"
-                                }`}
-                              >
-                                <Select
-                                  value={row.status}
-                                  onValueChange={(value) =>
-                                    handleStatusChange(
-                                      row,
-                                      value as Assignment["status"]
-                                    )
-                                  }
-                                >
-                                  <SelectTrigger
-                                    aria-label={`Status for ${row.siteName}`}
-                                    className="h-auto w-auto min-w-[124px] border-0 bg-transparent py-2 px-1.5 text-xs font-semibold shadow-none focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:opacity-60"
-                                  >
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent className="min-w-[170px] rounded-xl border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 data-[state=open]:animate-none data-[state=closed]:animate-none">
-                                    <SelectItem
-                                      value="In Progress"
-                                      className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-violet-700 focus:bg-transparent focus:text-violet-700"
-                                    >
-                                      In Progress
-                                    </SelectItem>
-
-                                    <SelectItem
-                                      value="Completed"
-                                      className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-emerald-700 focus:bg-transparent focus:text-emerald-700"
-                                    >
-                                      Completed
-                                    </SelectItem>
-
-                                    {/* Gray divider */}
-                                    <div className="my-1 border-t border-gray-200" />
-
-                                    <SelectItem
-                                      value="In Progress 25%"
-                                      className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-blue-700 focus:bg-transparent focus:text-blue-700"
-                                    >
-                                      In Progress 25%
-                                    </SelectItem>
-                                    <SelectItem
-                                      value="In Progress 45%"
-                                      className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-indigo-700 focus:bg-transparent focus:text-indigo-700"
-                                    >
-                                      In Progress 45%
-                                    </SelectItem>
-                                    <SelectItem
-                                      value="In Progress 80%"
-                                      className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-purple-700 focus:bg-transparent focus:text-purple-700"
-                                    >
-                                      In Progress 80%
-                                    </SelectItem>
-                                    <SelectItem
-                                      value="QC Pending"
-                                      className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-teal-700 focus:bg-transparent focus:text-teal-700"
-                                    >
-                                      QC Pending
-                                    </SelectItem>
-
-                                    <SelectItem
-                                      value="Hold"
-                                      className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-amber-700 focus:bg-transparent focus:text-amber-700"
-                                    >
-                                      Hold
-                                    </SelectItem>
-                                    <SelectItem
-                                      value="Not Started Yet"
-                                      className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-slate-600 focus:bg-transparent focus:text-slate-600"
-                                    >
-                                      Not Started Yet
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                          ))}
-                        </td>
-                        <td className="w-[52px] space-y-[5px] px-0.5 py-0 pb-[5px] align-middle text-center">
-                          {rows.map((row) => (
-                            <div
-                              key={row.id}
-                              className="my-[5px] flex h-8 items-center justify-center"
-                            >
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 rounded-full"
-                                    aria-label="Open actions"
-                                  >
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  align="end"
-                                  className="w-32 rounded-xl p-1.5"
-                                >
-                                  <DropdownMenuItem
-                                    onClick={() => addAssigneeToGroup(row)}
-                                    className="cursor-pointer rounded-lg text-xs"
-                                  >
-                                    <Plus className="mr-2 h-3.5 w-3.5" />
-                                    More
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => openComplete(row)}
-                                    className="cursor-pointer rounded-lg text-xs"
-                                  >
-                                    <Pencil className="mr-2 h-3.5 w-3.5" />
-                                    Edit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => deleteAssignment(row.id)}
-                                    className="cursor-pointer rounded-lg text-xs text-destructive focus:text-destructive"
-                                  >
-                                    <Trash2 className="mr-2 h-3.5 w-3.5" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          ))}
+                          No in-progress projects for this month.
                         </td>
                       </tr>
-                    );
-                  })
+                    ) : (
+                      inProgressGrouped.map((rows, index) => renderSiteRow(rows, index))
+                    )}
+
+                    {/* Completed Section Header */}
+                    <tr className="border-y border-emerald-200 bg-emerald-50/90 text-left font-semibold">
+                      <td colSpan={7} className="px-4 py-2">
+                        <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-800">
+                          <div className="flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full bg-emerald-600 shadow-xs" />
+                            <span>Completed</span>
+                            <span className="text-[11px] font-medium text-emerald-700 lowercase">
+                              ({completedProjectsCount} project{completedProjectsCount === 1 ? "" : "s"} · {completedGrouped.length} site{completedGrouped.length === 1 ? "" : "s"})
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                    {completedGrouped.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className="px-4 py-4 text-center text-xs text-muted-foreground italic"
+                        >
+                          No completed projects for this month yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      completedGrouped.map((rows, index) => renderSiteRow(rows, index))
+                    )}
+                  </>
+                ) : activeTab === "in_progress" ? (
+                  inProgressGrouped.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-4 py-8 text-center text-muted-foreground"
+                      >
+                        No in-progress projects for this month.
+                      </td>
+                    </tr>
+                  ) : (
+                    inProgressGrouped.map((rows, index) => renderSiteRow(rows, index))
+                  )
+                ) : (
+                  completedGrouped.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-4 py-8 text-center text-muted-foreground"
+                      >
+                        No completed projects for this month yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    completedGrouped.map((rows, index) => renderSiteRow(rows, index))
+                  )
                 )}
               </tbody>
             </table>
