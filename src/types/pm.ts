@@ -1,3 +1,13 @@
+export type AssignmentStatus =
+  | "In Progress – 0%"
+  | "In Progress – 25%"
+  | "In Progress – 45%"
+  | "In Progress – 80%"
+  | "QC Pending"
+  | "Completed"
+  | "On Hold"
+  | "Not Started Yet";
+
 export interface Assignment {
   id: string;
   clientId?: string;
@@ -10,7 +20,7 @@ export interface Assignment {
   assigneeName?: string;
   month: number; // 0-11
   year: number;
-  status: "In Progress" | "Hold" | "Completed";
+  status: AssignmentStatus;
   unitType?: string;
   quantity?: number;
   rate?: number;
