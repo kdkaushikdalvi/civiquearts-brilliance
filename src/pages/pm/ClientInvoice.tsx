@@ -175,17 +175,29 @@ const ClientInvoice = () => {
 
   useEffect(() => {
     setLines(
-      sites.map((s) => ({
-        id: s.id,
-        name: `${s.siteName} - (${s.projectName})`,
-        code: getSiteCode(siteCodes, s.siteName) || "N/A",
-        quantity: s.quantity ?? 0,
-        unit: s.unitType ?? "-",
-        price: Number.isFinite(s.rate) ? s.rate ?? 0 : 0,
-        amount: Number.isFinite(s.amount) ? s.amount ?? 0 : 0,
-      }))
+      sites.map((s) => {
+        // Price is owned by Project master data (Default Price); fall back to
+        // the allocation rate only when the project has no default price.
+        const project = projects.find((p) => p.id === s.projectId);
+        const price =
+          Number.isFinite(project?.defaultPrice) && project?.defaultPrice != null
+            ? project.defaultPrice
+            : Number.isFinite(s.rate)
+              ? s.rate ?? 0
+              : 0;
+        const quantity = s.quantity ?? 0;
+        return {
+          id: s.id,
+          name: `${s.siteName} - (${s.projectName})`,
+          code: getSiteCode(siteCodes, s.siteName) || "N/A",
+          quantity,
+          unit: s.unitType ?? "-",
+          price,
+          amount: Number((quantity * price).toFixed(4)),
+        };
+      })
     );
-  }, [sites, siteCodes]);
+  }, [sites, siteCodes, projects]);
 
   const patch = (id: string, p: Partial<Line>) =>
     setLines((prev) =>
@@ -449,18 +461,13 @@ const ClientInvoice = () => {
                             }
                           />
                         </td>
-                        <td className="px-4 py-2">
-                          {editingLineId === l.id ? <Input
-                            type="number"
-                            step="0.0001"
-                            className="m-0 -mx-4 w-[calc(100%+2rem)] h-auto border-2 border-indigo-200 bg-white px-2 py-1 text-right shadow-sm focus-visible:ring-2 focus-visible:ring-indigo-400"
-                            value={l.price}
-                            readOnly={editingLineId !== l.id}
-                            onChange={(e) =>
-                              patch(l.id, { price: Number(e.target.value) })
-                            }
-                            aria-label={`Price for ${l.name}`}
-                          /> : <span className="block text-right">{plainUsd(l.price)}</span>}
+                         <td className="px-4 py-2">
+                          <span
+                            className="block cursor-not-allowed text-right text-muted-foreground"
+                            title="Price comes from the project's Default Price. Change it in Master Data → Project."
+                          >
+                            {plainUsd(l.price)}
+                          </span>
                         </td>
                         <td className="px-4 py-2">
                           <Input
