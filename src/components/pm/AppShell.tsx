@@ -8,17 +8,20 @@ import {
   ChevronsRight,
   Layers,
   Download,
+  Upload,
   LogOut,
   Menu,
   FileSpreadsheet,
-  FileDown,
-  ReceiptText,
+  Table,
   Receipt,
+  CreditCard,
   RefreshCw,
   FolderKanban,
   Building2,
   Users,
   UserRound,
+  Landmark,
+  LayoutDashboard,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -30,19 +33,19 @@ const nav = [
     to: "/app/projects",
     label: "Site Allocation",
     icon: ClipboardList,
-    iconClass: "text-red-700",
+    iconClass: "text-blue-600",
     tip: "Allocate sites to team members",
   },
 ];
 
 const processExcelNav = [
-  { to: "/app/cap-projects-list", label: "Generate Excel", icon: FileDown, iconClass: "text-emerald-700", tip: "Generate the CAP projects Excel file" },
-  { to: "/app/upload-csv", label: "Upload CSV", icon: FileSpreadsheet, iconClass: "text-violet-700", tip: "Upload a CSV/Excel and map accounting codes" },
+  { to: "/app/cap-projects-list", label: "Generate Excel", icon: FileSpreadsheet, iconClass: "text-teal-600", tip: "Generate the CAP projects Excel file" },
+  { to: "/app/upload-csv", label: "Upload CSV", icon: Upload, iconClass: "text-red-600", tip: "Upload a CSV/Excel and map accounting codes" },
 ];
 
 const invoiceNav = [
-  { to: "/app/download-invoices", label: "Payment Slip", icon: Download, iconClass: "text-yellow-700", tip: "Generate and download payment slips" },
-  { to: "/app/client-invoice", label: "Client Invoice", icon: ReceiptText, iconClass: "text-pink-700", tip: "Create a client tax invoice" },
+  { to: "/app/download-invoices", label: "Payment Slip", icon: CreditCard, iconClass: "text-amber-600", tip: "Generate and download payment slips" },
+  { to: "/app/client-invoice", label: "Client Invoice", icon: Download, iconClass: "text-emerald-600", tip: "Create a client tax invoice" },
 ];
 
 const allListRoutes = ["/app/master/all", "/app/master/project", "/app/master/employee", "/app/master/site"];
@@ -51,7 +54,7 @@ const masterDataNav = [
   { tab: "projects", label: "Projects", icon: FolderKanban, iconClass: "text-cyan-600" },
   { tab: "sites", label: "Sites", icon: Building2, iconClass: "text-lime-600" },
   { tab: "employees", label: "Employees", icon: Users, iconClass: "text-fuchsia-600" },
-  { tab: "billto", label: "Bill To", icon: Receipt, iconClass: "text-teal-600" },
+  { tab: "billto", label: "Bill To", icon: Landmark, iconClass: "text-teal-600" },
 ] as const;
 
 const AppShell = ({ children }: { children: ReactNode }) => {
@@ -132,8 +135,12 @@ const AppShell = ({ children }: { children: ReactNode }) => {
           variants={{ hidden: { opacity: 0, x: 12 }, visible: { opacity: 1, x: 0 } }}
           transition={{ duration: 0.35 }}
         >
-          <div className="font-bold text-sm">CiviqueArts</div>
-          <div className="text-xs text-muted-foreground">Billing System</div>
+          <div className="font-extrabold text-[15px] tracking-tight bg-gradient-to-r from-blue-700 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+            CiviqueArts
+          </div>
+          <div className="text-[11px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber-600 via-orange-500 to-rose-500 bg-clip-text text-transparent">
+            Billing System
+          </div>
         </motion.div>
       </motion.div>
       <nav className="flex-1 py-3">
@@ -195,7 +202,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
             className={topLevel(processExcelActive)}
             aria-expanded={processExcelOpen}
           >
-            <FileSpreadsheet className={iconBox("text-emerald-700")} />
+            <Table className={iconBox("text-teal-700")} />
             <span className={cn("flex-1 text-left transition-all", sidebarCollapsed ? "w-0 opacity-0 overflow-hidden" : "opacity-100")}>Process Excel</span>
             {!sidebarCollapsed && <ChevronDown className={cn("h-4 w-4 transition-transform", processExcelOpen && "rotate-180")} />}
           </button>
@@ -262,6 +269,23 @@ const AppShell = ({ children }: { children: ReactNode }) => {
       <div className={cn("border-t border-border p-3 text-xs text-muted-foreground truncate", sidebarCollapsed && "text-center")} title={sidebarCollapsed ? `Signed in as ${user}` : undefined}>
         {!sidebarCollapsed && <>Signed in as <span className="font-medium text-foreground">{user}</span></>}
       </div>
+      <NavLink
+        to="/app/dashboard"
+        title="Dashboard"
+        onClick={() => setMobileOpen(false)}
+        className={({ isActive }) =>
+          cn(
+            "border-t border-border w-full py-3 text-sm font-semibold transition-colors flex items-center gap-2",
+            sidebarCollapsed ? "justify-center px-2" : "px-5",
+            isActive
+              ? "bg-blue-50 text-blue-700 border-l-2 border-l-blue-600"
+              : "text-blue-600 hover:text-blue-700 hover:bg-blue-50/70",
+          )
+        }
+      >
+        <LayoutDashboard className="h-5 w-5 shrink-0 stroke-[2.5] text-blue-600" />
+        {!sidebarCollapsed && <span>Dashboard</span>}
+      </NavLink>
       <button
         type="button"
         onClick={handleRefreshApp}
@@ -283,11 +307,11 @@ const AppShell = ({ children }: { children: ReactNode }) => {
   );
 
   const footerTabs = [
-    { to: "/app/projects", label: "Allocate", icon: ClipboardList, iconClass: "text-red-700", tip: "Site Allocation" },
+    { to: "/app/projects", label: "Allocate", icon: ClipboardList, iconClass: "text-blue-600", tip: "Site Allocation" },
     { to: "/app/master/all", label: "Master Data", icon: Layers, iconClass: "text-indigo-700", tip: "Project, Site, Employee & Client lists", active: allListActive },
-    { to: "/app/download-invoices", label: "Slip", icon: Download, iconClass: "text-yellow-700", tip: "Payment Slip" },
-    { to: "/app/client-invoice", label: "Invoice", icon: ReceiptText, iconClass: "text-pink-700", tip: "Client Invoice" },
-    { to: "/app/upload-csv", label: "Mapping", icon: FileSpreadsheet, iconClass: "text-violet-700", tip: "Upload CSV & map codes" },
+    { to: "/app/download-invoices", label: "Slip", icon: CreditCard, iconClass: "text-amber-600", tip: "Payment Slip" },
+    { to: "/app/client-invoice", label: "Invoice", icon: Download, iconClass: "text-emerald-600", tip: "Client Invoice" },
+    { to: "/app/upload-csv", label: "Upload", icon: Upload, iconClass: "text-red-600", tip: "Upload CSV & map codes" },
   ];
 
   return (

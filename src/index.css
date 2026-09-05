@@ -159,13 +159,13 @@ main h1.text-2xl {
   display: none !important;
 }
 
-.bg-slate-50 {
+main > div.relative.bg-slate-50 {
   position: relative;
   z-index: 1;
   box-shadow: none;
 }
 
-.bg-slate-50::after {
+main > div.relative.bg-slate-50::after {
   position: absolute;
   inset: 0 auto 0 50%;
   width: 100vw;

@@ -25,7 +25,7 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const from = (location.state as any)?.from?.pathname || "/app/dashboard";
+  const from = (location.state as any)?.from?.pathname || "/app/projects";
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) navigate(from, { replace: true });

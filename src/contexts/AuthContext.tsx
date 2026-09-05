@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/app/dashboard`,
+        emailRedirectTo: `${window.location.origin}/app/projects`,
         data: { full_name: fullName || email, mobile: mobile.replace(/\D/g, "") },
       },
     });

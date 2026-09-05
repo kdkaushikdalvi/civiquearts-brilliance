@@ -29,6 +29,8 @@ import {
   Save,
   ChevronDown,
   ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   Download,
   Upload,
   MoreHorizontal,
@@ -45,6 +47,26 @@ interface SiteRow {
 }
 
 const DRAFT_KEY = "pm_assignment_draft";
+
+const STATUS_SORT_ORDER: Record<string, number> = {
+  "In Progress": 0,
+  "In Progress 25%": 1,
+  "In Progress – 25%": 1,
+  "In Progress 45%": 2,
+  "In Progress – 45%": 2,
+  "In Progress 80%": 3,
+  "In Progress – 80%": 3,
+  "QC Pending": 4,
+  "Completed": 5,
+  "Hold": 6,
+  "On Hold": 6,
+  "Not Started Yet": 7,
+};
+
+const getStatusRank = (status?: string): number => {
+  if (!status) return 99;
+  return STATUS_SORT_ORDER[status] ?? 99;
+};
 
 const Assignments = () => {
   const navigate = useNavigate();
@@ -140,40 +162,84 @@ const Assignments = () => {
   };
   const clearDraft = () => localStorage.removeItem(DRAFT_KEY);
 
-  const filtered = useMemo(
-    () =>
-      assignments
-        .filter((a) => a.month === month && a.year === year)
-        .sort((a, b) => {
-          const order = [
-            "In Progress",
-            "In Progress 25%",
-            "In Progress 45%",
-            "In Progress 80%",
-            "QC Pending",
-            "Completed",
-            "Hold",
-            "Not Started Yet",
-          ];
-          const idxA = order.indexOf(a.status);
-          const idxB = order.indexOf(b.status);
-          return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
-        }),
-    [assignments, month, year]
-  );
+  const [sortField, setSortField] = useState<"project" | "status">("status");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  const handleSort = (field: "project" | "status") => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const filtered = useMemo(() => {
+    const list = assignments.filter((a) => a.month === month && a.year === year);
+    return list.sort((a, b) => {
+      if (sortField === "project") {
+        const nameA = a.projectName || "";
+        const nameB = b.projectName || "";
+        const cmp = nameA.localeCompare(nameB, undefined, { sensitivity: "base", numeric: true });
+        if (cmp !== 0) return sortDirection === "asc" ? cmp : -cmp;
+        const siteA = a.siteName || "";
+        const siteB = b.siteName || "";
+        return siteA.localeCompare(siteB, undefined, { sensitivity: "base", numeric: true });
+      }
+
+      // Default: Status order
+      const idxA = getStatusRank(a.status);
+      const idxB = getStatusRank(b.status);
+      const cmp = idxA - idxB;
+      if (cmp !== 0) return sortDirection === "asc" ? cmp : -cmp;
+      const nameA = a.projectName || "";
+      const nameB = b.projectName || "";
+      return nameA.localeCompare(nameB, undefined, { sensitivity: "base", numeric: true });
+    });
+  }, [assignments, month, year, sortField, sortDirection]);
+
   const grouped = useMemo(() => {
     const groups = new Map<string, Assignment[]>();
     filtered.forEach((assignment) => {
       const key = `${assignment.projectId}-${assignment.siteName}`;
       groups.set(key, [...(groups.get(key) ?? []), assignment]);
     });
-    return Array.from(groups.values()).map((rows) =>
+    const result = Array.from(groups.values()).map((rows) =>
       [...rows].sort(
         (a, b) =>
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       )
     );
-  }, [filtered]);
+
+    return result.sort((rowsA, rowsB) => {
+      if (sortField === "project") {
+        const pA = rowsA[0]?.projectName || "";
+        const pB = rowsB[0]?.projectName || "";
+        const cmp = pA.localeCompare(pB, undefined, { sensitivity: "base", numeric: true });
+        if (cmp !== 0) return sortDirection === "asc" ? cmp : -cmp;
+        const sA = rowsA[0]?.siteName || "";
+        const sB = rowsB[0]?.siteName || "";
+        return sA.localeCompare(sB, undefined, { sensitivity: "base", numeric: true });
+      }
+
+      // Status sort: sort by best/top status within the group
+      const getGroupRank = (rows: Assignment[]) => {
+        if (!rows.length) return 99;
+        const ranks = rows.map((r) => getStatusRank(r.status));
+        return Math.min(...ranks);
+      };
+      const rankA = getGroupRank(rowsA);
+      const rankB = getGroupRank(rowsB);
+      const cmp = rankA - rankB;
+      if (cmp !== 0) return sortDirection === "asc" ? cmp : -cmp;
+
+      const pA = rowsA[0]?.projectName || "";
+      const pB = rowsB[0]?.projectName || "";
+      const pCmp = pA.localeCompare(pB, undefined, { sensitivity: "base", numeric: true });
+      if (pCmp !== 0) return pCmp;
+      return (rowsA[0]?.siteName || "").localeCompare(rowsB[0]?.siteName || "");
+    });
+  }, [filtered, sortField, sortDirection]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Assignment | null>(null);
@@ -769,9 +835,29 @@ const Assignments = () => {
                 <tr>
                   <th
                     className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]"
-                    title="Project"
+                    title={
+                      sortField === "project"
+                        ? `Sorted by Project (${sortDirection === "asc" ? "A to Z" : "Z to A"}) - click to reverse`
+                        : "Click to sort by Project"
+                    }
                   >
-                    Project
+                    <button
+                      type="button"
+                      onClick={() => handleSort("project")}
+                      className="group inline-flex items-center justify-center gap-1.5 font-semibold text-white hover:text-white/80 transition-colors focus:outline-none cursor-pointer"
+                      aria-label={`Sort by Project, currently ${sortField === "project" ? (sortDirection === "asc" ? "ascending" : "descending") : "unsorted"}`}
+                    >
+                      <span>Project</span>
+                      {sortField === "project" ? (
+                        sortDirection === "asc" ? (
+                          <ArrowUp className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+                        ) : (
+                          <ArrowDown className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" />
+                      )}
+                    </button>
                   </th>
                   <th
                     className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]"
@@ -799,11 +885,29 @@ const Assignments = () => {
                   </th>
                   <th
                     className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]"
-                    title="Status order: In Progress, Completed, Hold"
+                    title={
+                      sortField === "status"
+                        ? `Sorted by Status (${sortDirection === "asc" ? "In Progress → Completed → Hold" : "Hold → Completed → In Progress"}) - click to reverse`
+                        : "Click to sort by Status"
+                    }
                   >
-                    <span className="inline-flex items-center justify-center gap-1">
-                      Status <ArrowUpDown className="h-3.5 w-3.5" />
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleSort("status")}
+                      className="group inline-flex items-center justify-center gap-1.5 font-semibold text-white hover:text-white/80 transition-colors focus:outline-none cursor-pointer"
+                      aria-label={`Sort by Status, currently ${sortField === "status" ? (sortDirection === "asc" ? "ascending" : "descending") : "unsorted"}`}
+                    >
+                      <span>Status</span>
+                      {sortField === "status" ? (
+                        sortDirection === "asc" ? (
+                          <ArrowUp className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+                        ) : (
+                          <ArrowDown className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" />
+                      )}
+                    </button>
                   </th>
                   <th
                     className="w-[52px] px-0.5 py-3 text-center font-semibold whitespace-nowrap"
@@ -827,18 +931,18 @@ const Assignments = () => {
                     return (
                       <tr
                         key={a.id}
-                        className={`transition-colors hover:bg-blue-50 [&>td]:border-y [&>td]:border-slate-200 [&>td:first-child]:border-l [&>td:last-child]:border-r ${
-                          index % 2 === 0 ? "bg-white" : "bg-slate-50"
+                        className={`transition-colors duration-150 hover:bg-blue-50/80 [&>td]:border-y [&>td]:border-slate-200 [&>td:first-child]:border-l [&>td:last-child]:border-r ${
+                          index % 2 === 0 ? "bg-white" : "bg-slate-100"
                         }`}
                       >
                         <td
-                          className="px-2 py-0 max-w-[180px] truncate whitespace-nowrap"
+                          className="px-3 py-1 max-w-[180px] truncate whitespace-nowrap font-medium text-slate-800"
                           title={a.projectName}
                         >
                           {a.projectName}
                         </td>
                         <td
-                          className="px-2 py-0 whitespace-normal break-words"
+                          className="px-3 py-1 whitespace-normal break-words text-slate-700"
                           title={a.siteName}
                         >
                           {a.siteName}

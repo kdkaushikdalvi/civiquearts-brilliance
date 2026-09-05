@@ -8,7 +8,7 @@ import { getSiteCode } from "@/lib/siteCodeMatching";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, Printer, FileText, Pencil, Save, Trash2 } from "lucide-react";
+import { ChevronDown, Printer, FileText, Pencil, Save, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { formatClientInvoiceFileName } from "@/lib/clientInvoiceFormat";
@@ -371,20 +371,34 @@ const ClientInvoice = () => {
             </Card>
           ) : (
             <>
-              <button
-                type="button"
-                onClick={() => setAllocationTableOpen((open) => !open)}
-                className="flex w-full items-center justify-between rounded-lg bg-slate-50 px-4 py-2 text-lg font-semibold text-slate-800 hover:bg-slate-100"
-                aria-expanded={allocationTableOpen}
-              >
-                <span>Allocate Accounting Code</span>
-                <ChevronDown
-                  className={`h-5 w-5 text-muted-foreground transition-transform ${
-                    allocationTableOpen ? "rotate-180" : ""
-                  }`}
-                  aria-hidden="true"
-                />
-              </button>
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <h2 className="min-w-0 truncate text-xl font-medium text-slate-500">
+                  {MONTH_NAMES[month]} {year} — Sites
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setAllocationTableOpen((open) => !open)}
+                  className="flex shrink-0 items-center gap-2 rounded-lg border-2 border-blue-600 bg-white px-4 py-2.5 text-left text-blue-800 shadow-sm transition-colors hover:bg-blue-50"
+                  aria-expanded={allocationTableOpen}
+                >
+                  <span className="flex items-center gap-2 font-semibold">
+                    <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-green-500 text-white shadow-sm">
+                      <span
+                        className={`absolute inset-0 rounded-full bg-green-400 opacity-60 ${
+                          !allocationTableOpen ? "animate-ping" : ""
+                        }`}
+                      />
+                      <Plus className="relative h-4 w-4" />
+                    </span>
+                    Allocate Accounting Code
+                  </span>
+                  <ChevronDown
+                    className={`h-5 w-5 shrink-0 text-blue-600 transition-transform duration-300 ${
+                      allocationTableOpen ? "rotate-180" : "animate-bounce"
+                    }`}
+                  />
+                </button>
+              </div>
               {allocationTableOpen && <Card className="overflow-x-auto rounded-2xl border-slate-200 shadow-sm">
                 <table className="w-full table-fixed text-sm">
                   <colgroup>

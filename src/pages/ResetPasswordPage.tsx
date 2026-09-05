@@ -39,7 +39,7 @@ const ResetPasswordPage = () => {
     setBusy(false);
     if (res.ok) {
       toast.success("Password updated. You are now signed in.");
-      navigate("/app/dashboard", { replace: true });
+      navigate("/app/projects", { replace: true });
     } else {
       setError(res.error || "Could not update password.");
     }
