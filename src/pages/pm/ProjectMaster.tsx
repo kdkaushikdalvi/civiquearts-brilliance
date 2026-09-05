@@ -5,9 +5,23 @@ import { useData } from "@/contexts/DataContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Pencil, Plus, Save, Search, Trash2, X, ArrowLeft } from "lucide-react";
+import { Pencil, Plus, Search, Trash2, ArrowLeft, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import SearchableSelect from "@/components/pm/SearchableSelect";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Project } from "@/types/pm";
 
 const PAGE_SIZE = 8;
 const MasterWrapper = ({ embedded, children }: { embedded: boolean; children: ReactNode }) =>
@@ -22,11 +36,50 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
   const [name, setName] = useState("");
   const [clientId, setClientId] = useState("");
   const [defaultPrice, setDefaultPrice] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState("");
-  const [editPrice, setEditPrice] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+
+  // Edit project modal state
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editClientId, setEditClientId] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleOpenEdit = (p: Project) => {
+    setEditingProject(p);
+    setEditName(p.name);
+    setEditClientId(p.clientId || "");
+    setEditPrice(p.defaultPrice != null ? String(p.defaultPrice) : "");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingProject) return;
+    const trimmed = editName.trim();
+    if (!trimmed) return toast.error("Project name required");
+    const price = editPrice.trim() === "" ? undefined : Number(editPrice);
+    if (price !== undefined && (isNaN(price) || price < 0)) return toast.error("Enter a valid default price");
+
+    setIsSaving(true);
+    const client = clients.find((c) => c.id === editClientId);
+    await updateProject(
+      editingProject.id,
+      trimmed,
+      price,
+      editClientId || undefined,
+      client?.name
+    );
+    setIsSaving(false);
+    toast.success("Project updated successfully");
+    setEditingProject(null);
+  };
+
+  const handleDelete = (p: Project) => {
+    if (confirm(`Delete project "${p.name}"?`)) {
+      deleteProject(p.id);
+      toast.success("Deleted");
+    }
+  };
 
   const filtered = projects.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase())
@@ -49,20 +102,6 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
     if (returnTo) {
       navigate(returnTo, { state: { newProjectId: p.id } });
     }
-  };
-
-  const startEdit = (p: { id: string; name: string; defaultPrice?: number }) => {
-    setEditingId(p.id);
-    setEditValue(p.name);
-    setEditPrice(p.defaultPrice != null ? String(p.defaultPrice) : "");
-  };
-  const saveEdit = () => {
-    if (!editValue.trim()) return toast.error("Name required");
-    const price = editPrice.trim() === "" ? undefined : Number(editPrice);
-    if (price !== undefined && (isNaN(price) || price < 0)) return toast.error("Enter a valid default price");
-    updateProject(editingId!, editValue.trim(), price);
-    setEditingId(null);
-    toast.success("Updated");
   };
 
   return (
@@ -159,75 +198,46 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
                     <tr key={p.id} className="border-t border-border">
                       <td className="px-4 py-3 text-muted-foreground">{(page - 1) * PAGE_SIZE + i + 1}</td>
                       <td className="px-4 py-3">
-                        {editingId === p.id ? (
-                          <Input
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                saveEdit();
-                              }
-                            }}
-                          />
-                        ) : (
-                          <span>
-                            {p.name}
-                            {p.clientName && (
-                              <span className="text-muted-foreground"> — {p.clientName}</span>
-                            )}
-                          </span>
-                        )}
+                        <span>
+                          {p.name}
+                          {p.clientName && (
+                            <span className="text-muted-foreground"> — {p.clientName}</span>
+                          )}
+                        </span>
                       </td>
                       <td className="px-4 py-3">
-                        {editingId === p.id ? (
-                          <Input
-                            type="number"
-                            min="0"
-                            step="any"
-                            value={editPrice}
-                            onChange={(e) => setEditPrice(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                saveEdit();
-                              }
-                            }}
-                            className="w-28"
-                          />
-                        ) : (
-                          p.defaultPrice != null ? p.defaultPrice : "—"
-                        )}
+                        {p.defaultPrice != null ? p.defaultPrice : "—"}
                       </td>
-                      <td className="px-4 py-3 text-right space-x-1">
-                        {editingId === p.id ? (
-                          <>
-                            <Button size="icon" variant="ghost" onClick={saveEdit}>
-                              <Save className="h-4 w-4" />
-                            </Button>
-                            <Button size="icon" variant="ghost" onClick={() => setEditingId(null)}>
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <Button size="icon" variant="ghost" onClick={() => startEdit(p)}>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
                             <Button
                               size="icon"
                               variant="ghost"
-                              onClick={() => {
-                                if (confirm(`Delete "${p.name}"?`)) {
-                                  deleteProject(p.id);
-                                  toast.success("Deleted");
-                                }
-                              }}
+                              className="h-8 w-8 rounded-full text-slate-500 hover:text-slate-900"
+                              title="Actions"
+                              aria-label={`Actions for ${p.name}`}
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <MoreHorizontal className="h-4 w-4" />
                             </Button>
-                          </>
-                        )}
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-32 rounded-xl p-1.5 shadow-lg border-slate-200">
+                            <DropdownMenuItem
+                              onClick={() => handleOpenEdit(p)}
+                              className="cursor-pointer rounded-lg text-xs font-medium"
+                            >
+                              <Pencil className="mr-2 h-3.5 w-3.5 text-slate-500" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(p)}
+                              className="cursor-pointer rounded-lg text-xs font-medium text-destructive focus:text-destructive focus:bg-destructive/10"
+                            >
+                              <Trash2 className="mr-2 h-3.5 w-3.5" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   ))
@@ -247,6 +257,72 @@ const ProjectMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
             </div>
           )}
         </Card>
+
+        <Dialog open={!!editingProject} onOpenChange={(open) => !open && setEditingProject(null)}>
+          <DialogContent className="sm:max-w-md rounded-2xl p-6">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold text-slate-900">Edit Project</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+                  Client Mapping
+                </label>
+                <SearchableSelect
+                  value={editClientId}
+                  onChange={setEditClientId}
+                  options={clients.map((c) => ({ id: c.id, label: c.name }))}
+                  placeholder="Select Client"
+                  title="Select Client"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+                  Project Name *
+                </label>
+                <Input
+                  placeholder="Enter project name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
+                  className="rounded-xl border-slate-200"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+                  Default Price
+                </label>
+                <Input
+                  placeholder="Default Price (e.g. 0.25)"
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
+                  className="rounded-xl border-slate-200"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => setEditingProject(null)}
+                className="rounded-xl"
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                className="bg-[#5c24ff] text-white hover:bg-[#4b1ed6] rounded-xl"
+                disabled={isSaving}
+              >
+                {isSaving ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MasterWrapper>
   );

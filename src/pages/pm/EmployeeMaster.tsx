@@ -5,8 +5,22 @@ import { useData } from "@/contexts/DataContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Pencil, Plus, Save, Search, Trash2, X } from "lucide-react";
+import { ArrowLeft, Pencil, Plus, Search, Trash2, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Employee } from "@/types/pm";
 
 const PAGE_SIZE = 8;
 const MasterWrapper = ({ embedded, children }: { embedded: boolean; children: ReactNode }) =>
@@ -20,10 +34,13 @@ const EmployeeMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
   const forSiteId = (location.state as any)?.forSiteId;
 
   const [form, setForm] = useState({ name: "" });
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState({ name: "" });
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+
+  // Edit employee modal state
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [editName, setEditName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const filtered = employees.filter((e) =>
     e.name.toLowerCase().includes(search.toLowerCase())
@@ -40,17 +57,27 @@ const EmployeeMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
     if (returnTo) navigate(returnTo, { state: { newEmployeeId: e.id, forSiteId } });
   };
 
-  const startEdit = (id: string, e: typeof editValue) => {
-    setEditingId(id);
-    setEditValue({ name: e.name });
+  const handleOpenEdit = (e: Employee) => {
+    setEditingEmployee(e);
+    setEditName(e.name);
   };
-  const saveEdit = () => {
-    if (!editValue.name.trim()) return toast.error("Name required");
-    updateEmployee(editingId!, {
-      name: editValue.name.trim(),
-    });
-    setEditingId(null);
-    toast.success("Updated");
+
+  const handleSaveEdit = async () => {
+    if (!editingEmployee) return;
+    const trimmed = editName.trim();
+    if (!trimmed) return toast.error("Name required");
+    setIsSaving(true);
+    await updateEmployee(editingEmployee.id, { name: trimmed });
+    setIsSaving(false);
+    setEditingEmployee(null);
+    toast.success("Employee updated successfully");
+  };
+
+  const handleDelete = (e: Employee) => {
+    if (confirm(`Delete "${e.name}"?`)) {
+      deleteEmployee(e.id);
+      toast.success("Deleted");
+    }
   };
 
   return (
@@ -107,27 +134,38 @@ const EmployeeMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
                   pageItems.map((e, i) => (
                     <tr key={e.id} className="border-t border-border">
                       <td className="px-4 py-3 text-muted-foreground">{(page - 1) * PAGE_SIZE + i + 1}</td>
-                      {editingId === e.id ? (
-                        <>
-                          <td className="px-4 py-3"><Input value={editValue.name} onChange={(ev) => setEditValue({ ...editValue, name: ev.target.value })} onKeyDown={(ev) => { if (ev.key === "Enter") { ev.preventDefault(); saveEdit(); } }} /></td>
-                          <td className="px-4 py-3 text-right space-x-1">
-                            <Button size="icon" variant="ghost" onClick={saveEdit}><Save className="h-4 w-4" /></Button>
-                            <Button size="icon" variant="ghost" onClick={() => setEditingId(null)}><X className="h-4 w-4" /></Button>
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td className="px-4 py-3">{e.name}</td>
-                          <td className="px-4 py-3 text-right space-x-1">
-                            <Button size="icon" variant="ghost" onClick={() => startEdit(e.id, { name: e.name })}><Pencil className="h-4 w-4" /></Button>
-                            <Button size="icon" variant="ghost" onClick={() => {
-                              if (confirm(`Delete "${e.name}"?`)) { deleteEmployee(e.id); toast.success("Deleted"); }
-                            }}>
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                      <td className="px-4 py-3 font-medium">{e.name}</td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-full text-slate-500 hover:text-slate-900"
+                              title="Actions"
+                              aria-label={`Actions for ${e.name}`}
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
                             </Button>
-                          </td>
-                        </>
-                      )}
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-32 rounded-xl p-1.5 shadow-lg border-slate-200">
+                            <DropdownMenuItem
+                              onClick={() => handleOpenEdit(e)}
+                              className="cursor-pointer rounded-lg text-xs font-medium"
+                            >
+                              <Pencil className="mr-2 h-3.5 w-3.5 text-slate-500" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(e)}
+                              className="cursor-pointer rounded-lg text-xs font-medium text-destructive focus:text-destructive focus:bg-destructive/10"
+                            >
+                              <Trash2 className="mr-2 h-3.5 w-3.5" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -142,6 +180,45 @@ const EmployeeMaster = ({ embedded = false }: { embedded?: boolean } = {}) => {
             </div>
           )}
         </Card>
+
+        <Dialog open={!!editingEmployee} onOpenChange={(open) => !open && setEditingEmployee(null)}>
+          <DialogContent className="sm:max-w-md rounded-2xl p-6">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold text-slate-900">Edit Employee</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+                  Employee Name *
+                </label>
+                <Input
+                  placeholder="Enter employee name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
+                  className="rounded-xl border-slate-200"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => setEditingEmployee(null)}
+                className="rounded-xl"
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                className="gradient-saffron text-saffron-foreground rounded-xl"
+                disabled={isSaving}
+              >
+                {isSaving ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MasterWrapper>
   );

@@ -4,20 +4,75 @@ import { useData } from "@/contexts/DataContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { Plus, Search, Trash2, MoreHorizontal, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import SearchableSelect from "@/components/pm/SearchableSelect";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Site } from "@/types/pm";
 
 const PAGE_SIZE = 8;
 const MasterWrapper = ({ embedded, children }: { embedded: boolean; children: ReactNode }) =>
   embedded ? <>{children}</> : <AppShell>{children}</AppShell>;
 
 const SiteList = ({ embedded = false }: { embedded?: boolean } = {}) => {
-  const { sites, projects, addSite, deleteSite } = useData();
+  const { sites, projects, addSite, updateSite, deleteSite } = useData();
   const [projectId, setProjectId] = useState("");
   const [name, setName] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+
+  // Edit site modal state
+  const [editingSite, setEditingSite] = useState<Site | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editProjectId, setEditProjectId] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleOpenEdit = (s: Site) => {
+    setEditingSite(s);
+    setEditName(s.name);
+    setEditProjectId(s.projectId);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingSite) return;
+    if (!editProjectId) {
+      toast.error("Please select a project");
+      return;
+    }
+    if (!editName.trim()) {
+      toast.error("Site name is required");
+      return;
+    }
+    setIsSaving(true);
+    const updated = await updateSite(editingSite.id, {
+      name: editName.trim(),
+      projectId: editProjectId,
+    });
+    setIsSaving(false);
+    if (updated) {
+      toast.success("Site updated successfully");
+      setEditingSite(null);
+    }
+  };
+
+  const handleDelete = (s: { id: string; name: string }) => {
+    if (confirm(`Delete site "${s.name}"?`)) {
+      deleteSite(s.id);
+      toast.success("Site deleted");
+    }
+  };
 
   const rows = useMemo(
     () =>
@@ -129,19 +184,35 @@ const SiteList = ({ embedded = false }: { embedded?: boolean } = {}) => {
                         {s.projectName}
                       </td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          title="Delete this site"
-                          onClick={() => {
-                            if (confirm(`Delete "${s.name}"?`)) {
-                              deleteSite(s.id);
-                              toast.success("Deleted");
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-full text-slate-500 hover:text-slate-900"
+                              title="Actions"
+                              aria-label={`Actions for ${s.name}`}
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-32 rounded-xl p-1.5 shadow-lg border-slate-200">
+                            <DropdownMenuItem
+                              onClick={() => handleOpenEdit(s)}
+                              className="cursor-pointer rounded-lg text-xs font-medium"
+                            >
+                              <Pencil className="mr-2 h-3.5 w-3.5 text-slate-500" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(s)}
+                              className="cursor-pointer rounded-lg text-xs font-medium text-destructive focus:text-destructive focus:bg-destructive/10"
+                            >
+                              <Trash2 className="mr-2 h-3.5 w-3.5" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   ))
@@ -175,6 +246,57 @@ const SiteList = ({ embedded = false }: { embedded?: boolean } = {}) => {
             </div>
           )}
         </Card>
+
+        <Dialog open={!!editingSite} onOpenChange={(open) => !open && setEditingSite(null)}>
+          <DialogContent className="sm:max-w-md rounded-2xl p-6">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold text-slate-900">Edit Site</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+                  Project *
+                </label>
+                <SearchableSelect
+                  value={editProjectId}
+                  onChange={setEditProjectId}
+                  options={projects.map((p) => ({ id: p.id, label: p.name }))}
+                  placeholder="Select Project *"
+                  title="Select Project *"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+                  Site Name *
+                </label>
+                <Input
+                  placeholder="Enter site name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
+                  className="rounded-xl border-slate-200"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => setEditingSite(null)}
+                className="rounded-xl"
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                className="gradient-saffron text-saffron-foreground rounded-xl"
+                disabled={isSaving}
+              >
+                {isSaving ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MasterWrapper>
   );

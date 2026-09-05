@@ -5,8 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Pencil, Plus, Save, Search, Trash2, X } from "lucide-react";
+import { Pencil, Plus, Search, Trash2, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { BillTo } from "@/types/pm";
 
 const PAGE_SIZE = 8;
 const MasterWrapper = ({ embedded, children }: { embedded: boolean; children: ReactNode }) =>
@@ -19,8 +33,11 @@ const BillToMaster = ({ embedded = false }: { embedded?: boolean }) => {
   const [form, setForm] = useState(emptyForm);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Edit Bill To modal state
+  const [editingBillTo, setEditingBillTo] = useState<BillTo | null>(null);
   const [editForm, setEditForm] = useState(emptyForm);
+  const [isSaving, setIsSaving] = useState(false);
 
   const filtered = billTos.filter(
     (b) =>
@@ -40,12 +57,27 @@ const BillToMaster = ({ embedded = false }: { embedded?: boolean }) => {
     }
   };
 
-  const saveEdit = async () => {
+  const handleOpenEdit = (b: BillTo) => {
+    setEditingBillTo(b);
+    setEditForm({ name: b.name, details: b.details, gstin: b.gstin ?? "" });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingBillTo) return;
     if (!editForm.name.trim()) return toast.error("Name required");
     if (!editForm.details.trim()) return toast.error("Address details required");
-    await updateBillTo(editingId!, editForm);
-    setEditingId(null);
-    toast.success("Updated");
+    setIsSaving(true);
+    await updateBillTo(editingBillTo.id, editForm);
+    setIsSaving(false);
+    setEditingBillTo(null);
+    toast.success("Bill To updated successfully");
+  };
+
+  const handleDelete = (b: BillTo) => {
+    if (confirm(`Delete "${b.name}"?`)) {
+      deleteBillTo(b.id);
+      toast.success("Deleted");
+    }
   };
 
   return (
@@ -115,53 +147,41 @@ const BillToMaster = ({ embedded = false }: { embedded?: boolean }) => {
                       {(page - 1) * PAGE_SIZE + i + 1}
                     </td>
                     <td className="px-4 py-3">
-                      {editingId === b.id ? (
-                        <Input
-                          value={editForm.name}
-                          onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                        />
-                      ) : (
-                        <span className="font-medium">{b.name}</span>
-                      )}
+                      <span className="font-medium">{b.name}</span>
                     </td>
-                    <td className="px-4 py-3 whitespace-pre-line">
-                      {editingId === b.id ? (
-                        <Textarea
-                          value={editForm.details}
-                          onChange={(e) => setEditForm((f) => ({ ...f, details: e.target.value }))}
-                          rows={3}
-                        />
-                      ) : (
-                        b.details
-                      )}
+                    <td className="px-4 py-3 whitespace-pre-line text-muted-foreground">
+                      {b.details}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      {editingId === b.id ? (
-                        <>
-                          <Button size="icon" variant="ghost" onClick={saveEdit}>
-                            <Save className="h-4 w-4" />
-                          </Button>
-                          <Button size="icon" variant="ghost" onClick={() => setEditingId(null)}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <Button
                             size="icon"
                             variant="ghost"
-                            onClick={() => {
-                              setEditingId(b.id);
-                              setEditForm({ name: b.name, details: b.details, gstin: b.gstin ?? "" });
-                            }}
+                            className="h-8 w-8 rounded-full text-slate-500 hover:text-slate-900"
+                            title="Actions"
+                            aria-label={`Actions for ${b.name}`}
                           >
-                            <Pencil className="h-4 w-4" />
+                            <MoreHorizontal className="h-4 w-4" />
                           </Button>
-                          <Button size="icon" variant="ghost" onClick={() => deleteBillTo(b.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </>
-                      )}
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-32 rounded-xl p-1.5 shadow-lg border-slate-200">
+                          <DropdownMenuItem
+                            onClick={() => handleOpenEdit(b)}
+                            className="cursor-pointer rounded-lg text-xs font-medium"
+                          >
+                            <Pencil className="mr-2 h-3.5 w-3.5 text-slate-500" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(b)}
+                            className="cursor-pointer rounded-lg text-xs font-medium text-destructive focus:text-destructive focus:bg-destructive/10"
+                          >
+                            <Trash2 className="mr-2 h-3.5 w-3.5" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))
@@ -187,6 +207,56 @@ const BillToMaster = ({ embedded = false }: { embedded?: boolean }) => {
             </div>
           </div>
         </Card>
+
+        <Dialog open={!!editingBillTo} onOpenChange={(open) => !open && setEditingBillTo(null)}>
+          <DialogContent className="sm:max-w-md rounded-2xl p-6">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold text-slate-900">Edit Bill To</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+                  Company / Client Name *
+                </label>
+                <Input
+                  placeholder="Company / Client Name"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                  className="rounded-xl border-slate-200"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+                  Address Details *
+                </label>
+                <Textarea
+                  placeholder="Address details (one per line)"
+                  value={editForm.details}
+                  onChange={(e) => setEditForm((f) => ({ ...f, details: e.target.value }))}
+                  rows={4}
+                  className="rounded-xl border-slate-200"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => setEditingBillTo(null)}
+                className="rounded-xl"
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                className="gradient-saffron text-saffron-foreground rounded-xl"
+                disabled={isSaving}
+              >
+                {isSaving ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MasterWrapper>
   );

@@ -21,9 +21,10 @@ interface DataContextValue {
   updateBillTo: (id: string, data: Omit<BillTo, "id">) => Promise<void>;
   deleteBillTo: (id: string) => Promise<void>;
   addProject: (name: string, clientId?: string, clientName?: string, defaultPrice?: number) => Promise<Project | null>;
-  updateProject: (id: string, name: string, defaultPrice?: number) => Promise<void>;
+  updateProject: (id: string, name: string, defaultPrice?: number, clientId?: string, clientName?: string) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   addSite: (projectId: string, name: string) => Promise<Site | null>;
+  updateSite: (id: string, data: { name: string; projectId: string }) => Promise<Site | null>;
   deleteSite: (id: string) => Promise<void>;
   addEmployee: (data: Omit<Employee, "id">) => Promise<Employee | null>;
   updateEmployee: (id: string, data: Omit<Employee, "id">) => Promise<void>;
@@ -183,10 +184,44 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setProjects((prev) => [...prev, p].sort((a, b) => a.name.localeCompare(b.name)));
     return p;
   };
-  const updateProject = async (id: string, name: string, defaultPrice?: number) => {
-    const { error } = await supabase.from("projects").update({ name: name.trim(), default_price: defaultPrice ?? null }).eq("id", id);
+  const updateProject = async (id: string, name: string, defaultPrice?: number, clientId?: string, clientName?: string) => {
+    const trimmed = name.trim();
+    const patch: { name: string; default_price: number | null; client_id?: string | null; client_name?: string | null } = {
+      name: trimmed,
+      default_price: defaultPrice ?? null,
+    };
+    if (clientId !== undefined) patch.client_id = clientId || null;
+    if (clientName !== undefined) patch.client_name = clientName || null;
+
+    const { error } = await supabase.from("projects").update(patch).eq("id", id);
     if (error) { toast.error(error.message); return; }
-    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name: name.trim(), defaultPrice } : p)));
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              name: trimmed,
+              defaultPrice,
+              ...(clientId !== undefined ? { clientId, clientName } : {}),
+            }
+          : p
+      )
+    );
+
+    const oldProj = projects.find((p) => p.id === id);
+    if (oldProj && (oldProj.name !== trimmed || clientName !== undefined)) {
+      setAssignments((prev) =>
+        prev.map((a) =>
+          a.projectId === id
+            ? {
+                ...a,
+                projectName: trimmed,
+                ...(clientName !== undefined ? { clientName } : {}),
+              }
+            : a
+        )
+      );
+    }
   };
   const deleteProject = async (id: string) => {
     const { error } = await supabase.from("projects").delete().eq("id", id);
@@ -215,6 +250,54 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.from("sites").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     setSites((prev) => prev.filter((s) => s.id !== id));
+  };
+  const updateSite = async (id: string, data: { name: string; projectId: string }) => {
+    const trimmed = data.name.trim();
+    if (!trimmed) {
+      toast.error("Site name is required");
+      return null;
+    }
+    const existing = sites.find(
+      (s) => s.id !== id && s.projectId === data.projectId && s.name.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (existing) {
+      toast.error("A site with this name already exists in the selected project");
+      return null;
+    }
+    const { error } = await supabase
+      .from("sites")
+      .update({ name: trimmed, project_id: data.projectId })
+      .eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      return null;
+    }
+
+    const oldSite = sites.find((s) => s.id === id);
+    const newProject = projects.find((p) => p.id === data.projectId);
+    const updatedSite: Site = { id, name: trimmed, projectId: data.projectId };
+
+    setSites((prev) => prev.map((s) => (s.id === id ? updatedSite : s)));
+
+    if (oldSite && newProject) {
+      setAssignments((prev) =>
+        prev.map((a) => {
+          const isTarget = a.siteId === id || (a.siteName === oldSite.name && a.projectId === oldSite.projectId);
+          if (isTarget) {
+            return {
+              ...a,
+              siteName: trimmed,
+              projectId: newProject.id,
+              projectName: newProject.name,
+              clientId: newProject.clientId ?? a.clientId,
+              clientName: newProject.clientName ?? a.clientName,
+            };
+          }
+          return a;
+        })
+      );
+    }
+    return updatedSite;
   };
 
   const addEmployee = async (data: Omit<Employee, "id">) => {
@@ -371,7 +454,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         clients, projects, sites, employees, assignments, invoices, loading,
         addClient, updateClient, deleteClient,
         addProject, updateProject, deleteProject,
-        addSite, deleteSite,
+        addSite, updateSite, deleteSite,
         addEmployee, updateEmployee, deleteEmployee,
         addAssignments, updateAssignment, deleteAssignment,
         addInvoice,
