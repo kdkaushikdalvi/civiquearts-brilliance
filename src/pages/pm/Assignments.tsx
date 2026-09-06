@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import AppShell from "@/components/pm/AppShell";
 import MonthNavigator, { MONTH_NAMES } from "@/components/pm/MonthNavigator";
@@ -31,8 +31,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Download,
-  Upload,
+  Mail,
   MoreHorizontal,
   Pencil,
 } from "lucide-react";
@@ -43,7 +42,14 @@ import { isSiteGroupCompleted } from "@/lib/projectCompletion";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import ExcelJS from "exceljs";
 
 interface SiteRow {
@@ -76,12 +82,18 @@ const Assignments = () => {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
-  const [reportFrom, setReportFrom] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10));
-  const [reportTo, setReportTo] = useState(() => now.toISOString().slice(0, 10));
+  const [reportFrom, setReportFrom] = useState(() =>
+    new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
+  );
+  const [reportTo, setReportTo] = useState(() =>
+    now.toISOString().slice(0, 10)
+  );
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportSending, setReportSending] = useState(false);
+  const [reportRecipient, setReportRecipient] = useState("");
+  const [recipientEditing, setRecipientEditing] = useState(false);
+  const [reportSectionOpen, setReportSectionOpen] = useState(false);
   const [allocationFormOpen, setAllocationFormOpen] = useState(false);
-  const importRef = useRef<HTMLInputElement>(null);
 
   const [clientId, setClientId] = useState("");
   const [projectId, setProjectId] = useState("");
@@ -166,22 +178,33 @@ const Assignments = () => {
   };
 
   const filtered = useMemo(() => {
-    const list = assignments.filter((a) => a.month === month && a.year === year);
+    const list = assignments.filter(
+      (a) => a.month === month && a.year === year
+    );
     return list.sort((a, b) => {
       const nameA = a.projectName || "";
       const nameB = b.projectName || "";
 
       if (sortField === "project") {
-        const cmp = nameA.localeCompare(nameB, undefined, { sensitivity: "base", numeric: true });
+        const cmp = nameA.localeCompare(nameB, undefined, {
+          sensitivity: "base",
+          numeric: true,
+        });
         if (cmp !== 0) return sortDirection === "asc" ? cmp : -cmp;
         const siteA = a.siteName || "";
         const siteB = b.siteName || "";
-        return siteA.localeCompare(siteB, undefined, { sensitivity: "base", numeric: true });
+        return siteA.localeCompare(siteB, undefined, {
+          sensitivity: "base",
+          numeric: true,
+        });
       }
 
       // sortField === "status":
       // Keep project order unchanged:
-      const pCmp = nameA.localeCompare(nameB, undefined, { sensitivity: "base", numeric: true });
+      const pCmp = nameA.localeCompare(nameB, undefined, {
+        sensitivity: "base",
+        numeric: true,
+      });
       if (pCmp !== 0) return pCmp;
 
       // Within each project group, sort by status:
@@ -191,7 +214,10 @@ const Assignments = () => {
 
       const siteA = a.siteName || "";
       const siteB = b.siteName || "";
-      return siteA.localeCompare(siteB, undefined, { sensitivity: "base", numeric: true });
+      return siteA.localeCompare(siteB, undefined, {
+        sensitivity: "base",
+        numeric: true,
+      });
     });
   }, [assignments, month, year, sortField, sortDirection]);
 
@@ -208,7 +234,9 @@ const Assignments = () => {
           const rankA = getStatusRank(a.status, sortDirection);
           const rankB = getStatusRank(b.status, sortDirection);
           if (rankA !== rankB) return rankA - rankB;
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
         });
       }
       return [...rows].sort(
@@ -222,15 +250,24 @@ const Assignments = () => {
       const pB = rowsB[0]?.projectName || "";
 
       if (sortField === "project") {
-        const cmp = pA.localeCompare(pB, undefined, { sensitivity: "base", numeric: true });
+        const cmp = pA.localeCompare(pB, undefined, {
+          sensitivity: "base",
+          numeric: true,
+        });
         if (cmp !== 0) return sortDirection === "asc" ? cmp : -cmp;
         const sA = rowsA[0]?.siteName || "";
         const sB = rowsB[0]?.siteName || "";
-        return sA.localeCompare(sB, undefined, { sensitivity: "base", numeric: true });
+        return sA.localeCompare(sB, undefined, {
+          sensitivity: "base",
+          numeric: true,
+        });
       }
 
       // Status sort: keep project order unchanged, sort within project group
-      const projectCmp = pA.localeCompare(pB, undefined, { sensitivity: "base", numeric: true });
+      const projectCmp = pA.localeCompare(pB, undefined, {
+        sensitivity: "base",
+        numeric: true,
+      });
       if (projectCmp !== 0) return projectCmp;
 
       const rankA = getStatusRank(rowsA[0]?.status, sortDirection);
@@ -239,7 +276,10 @@ const Assignments = () => {
 
       const sA = rowsA[0]?.siteName || "";
       const sB = rowsB[0]?.siteName || "";
-      return sA.localeCompare(sB, undefined, { sensitivity: "base", numeric: true });
+      return sA.localeCompare(sB, undefined, {
+        sensitivity: "base",
+        numeric: true,
+      });
     });
   }, [filtered, sortField, sortDirection]);
 
@@ -277,7 +317,9 @@ const Assignments = () => {
     return pSet.size;
   }, [completedGrouped]);
 
-  const [userSelectedTab, setUserSelectedTab] = useState<"all" | "in_progress" | "completed" | null>(null);
+  const [userSelectedTab, setUserSelectedTab] = useState<
+    "all" | "in_progress" | "completed" | null
+  >(null);
   const [lastMonthYearKey, setLastMonthYearKey] = useState(`${month}-${year}`);
 
   // Reset explicit tab selection when navigating to a different month/year
@@ -304,36 +346,58 @@ const Assignments = () => {
     else updateAssignment(a.id, { status: next });
   };
 
-  const reportRecords = useMemo(() => assignments.filter((a) => {
-    const date = (a.updatedAt ?? a.createdAt).slice(0, 10);
-    return a.status === "Completed" && date >= reportFrom && date <= reportTo;
-  }), [assignments, reportFrom, reportTo]);
+  const reportRecords = useMemo(
+    () => completedGrouped.flat(),
+    [completedGrouped]
+  );
 
   const openReportConfirmation = () => {
-    if (!user) return toast.error("Unable to determine the authenticated user's email");
-    if (!reportFrom || !reportTo || reportFrom > reportTo) return toast.error("Select a valid date range");
-    if (!reportRecords.length) return toast.info("No completed sites found for the selected date range.");
+    if (!user)
+      return toast.error("Unable to determine the authenticated user's email");
+    if (!reportFrom || !reportTo || reportFrom > reportTo)
+      return toast.error("Select a valid date range");
+    if (!reportRecords.length)
+      return toast.info(
+        "No completed sites found for the selected date range."
+      );
+    if (!reportRecipient) setReportRecipient(user);
+    setRecipientEditing(false);
     setReportModalOpen(true);
   };
 
   const sendCompletedSitesReport = async () => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(reportRecipient.trim()))
+      return toast.error("Enter a valid recipient email address");
     setReportSending(true);
-    const { data, error } = await supabase.functions.invoke("send-completed-sites-report", { body: { fromDate: reportFrom, toDate: reportTo } });
+    const { data, error } = await supabase.functions.invoke(
+      "send-completed-sites-report",
+      {
+        body: {
+          fromDate: reportFrom,
+          toDate: reportTo,
+          recipient: reportRecipient.trim(),
+          assignmentIds: reportRecords.map((assignment) => assignment.id),
+        },
+      }
+    );
     setReportSending(false);
     if (error) {
       let detail = error.message || "Failed to send report";
       try {
         const context = (error as { context?: Response }).context;
         if (context) {
-          const body = await context.clone().json() as { error?: string };
+          const body = (await context.clone().json()) as { error?: string };
           if (body.error) detail = body.error;
         }
-      } catch { /* Keep the provider message when the response is not JSON. */ }
+      } catch {
+        /* Keep the provider message when the response is not JSON. */
+      }
       return toast.error(detail);
     }
-    if (!data?.sent) return toast.error(data?.message || "The report was not sent");
+    if (!data?.sent)
+      return toast.error(data?.message || "The report was not sent");
     setReportModalOpen(false);
-    toast.success(`Completed sites report sent to ${user}`);
+    toast.success(`Completed sites report sent to ${reportRecipient.trim()}`);
   };
 
   const addAssigneeToGroup = async (row: Assignment) => {
@@ -439,7 +503,9 @@ const Assignments = () => {
               assigneeName: emp?.name,
               month,
               year,
-              status: (emp?.id ? "In Progress – 0%" : "Not Started Yet") as const,
+              status: (emp?.id
+                ? "In Progress – 0%"
+                : "Not Started Yet") as const,
             };
           });
         })
@@ -633,10 +699,7 @@ const Assignments = () => {
               <Select
                 value={row.assigneeId ?? "__unassigned__"}
                 onValueChange={(value) => {
-                  if (
-                    value === "__unassigned__" ||
-                    value === "__remove__"
-                  ) {
+                  if (value === "__unassigned__" || value === "__remove__") {
                     updateAssignment(row.id, {
                       assigneeId: undefined,
                       assigneeName: undefined,
@@ -644,9 +707,7 @@ const Assignments = () => {
                     });
                     return;
                   }
-                  const employee = employees.find(
-                    (item) => item.id === value
-                  );
+                  const employee = employees.find((item) => item.id === value);
                   if (employee) {
                     const alreadyAssigned = rows.some(
                       (otherRow) =>
@@ -708,9 +769,7 @@ const Assignments = () => {
               className="my-[5px] flex h-8 items-center justify-center whitespace-nowrap"
             >
               {row.unitType
-                ? `${row.unitType} · ${formatNumber(
-                    row.quantity ?? 0
-                  )}`
+                ? `${row.unitType} · ${formatNumber(row.quantity ?? 0)}`
                 : "-"}
             </div>
           ))}
@@ -735,8 +794,7 @@ const Assignments = () => {
                 className={`relative inline-flex items-center rounded-full border px-2.5 shadow-sm ${
                   row.status === "Completed"
                     ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : row.status === "On Hold" ||
-                      row.status === "On Hold"
+                    : row.status === "On Hold" || row.status === "On Hold"
                     ? "border-amber-200 bg-amber-50 text-amber-700"
                     : row.status === "Not Started Yet"
                     ? "border-slate-200 bg-slate-100 text-slate-600"
@@ -757,10 +815,7 @@ const Assignments = () => {
                 <Select
                   value={row.status}
                   onValueChange={(value) =>
-                    handleStatusChange(
-                      row,
-                      value as Assignment["status"]
-                    )
+                    handleStatusChange(row, value as Assignment["status"])
                   }
                 >
                   <SelectTrigger
@@ -891,35 +946,16 @@ const Assignments = () => {
             </h3>
           </div>
           <div className="flex items-center gap-1.5">
-            <input
-              ref={importRef}
-              type="file"
-              accept=".xlsx,.xls"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void importAllocations(file);
-                e.currentTarget.value = "";
-              }}
-            />
             <Button
               variant="outline"
               size="icon"
-              onClick={() => importRef.current?.click()}
-              title="Import site allocations"
-              aria-label="Import site allocations"
+              className="border-2 border-teal-500 bg-white text-blue-700 shadow-sm hover:border-blue-600 hover:bg-blue-50 hover:text-blue-700"
+              onClick={() => setReportSectionOpen((open) => !open)}
+              title="Open completed sites report"
+              aria-label="Open completed sites report"
+              aria-expanded={reportSectionOpen}
             >
-              <Upload className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => void exportAllocations()}
-              disabled={!filtered.length}
-              title="Export site allocations"
-              aria-label="Export site allocations"
-            >
-              <Download className="h-4 w-4" />
+              <Mail className="h-4 w-4 text-amber-500" />
             </Button>
             <MonthNavigator
               month={month}
@@ -932,6 +968,44 @@ const Assignments = () => {
             />
           </div>
         </div>
+
+        {reportSectionOpen && (
+          <Card className="border-blue-100 bg-blue-50/40">
+            <div className="flex flex-wrap items-end gap-3 p-3">
+              <div className="space-y-1">
+                <Label htmlFor="report-from" className="text-xs text-blue-900">
+                  From Date
+                </Label>
+                <Input
+                  id="report-from"
+                  type="date"
+                  value={reportFrom}
+                  onChange={(e) => setReportFrom(e.target.value)}
+                  className="h-9 w-[155px] bg-white"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="report-to" className="text-xs text-blue-900">
+                  To Date
+                </Label>
+                <Input
+                  id="report-to"
+                  type="date"
+                  value={reportTo}
+                  onChange={(e) => setReportTo(e.target.value)}
+                  className="h-9 w-[155px] bg-white"
+                />
+              </div>
+              <Button
+                onClick={openReportConfirmation}
+                disabled={reportSending}
+                className="h-9 bg-blue-700 hover:bg-blue-800"
+              >
+                {reportSending ? "Sending…" : "Send Mail"}
+              </Button>
+            </div>
+          </Card>
+        )}
 
         {/* Tab Filter & Actions Section */}
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1032,14 +1106,6 @@ const Assignments = () => {
             />
           </button>
         </div>
-        <Card className="border-blue-100 bg-blue-50/40">
-          <div className="flex flex-wrap items-end gap-3 p-3">
-            <div className="space-y-1"><Label htmlFor="report-from" className="text-xs text-blue-900">From Date</Label><Input id="report-from" type="date" value={reportFrom} onChange={(e) => setReportFrom(e.target.value)} className="h-9 w-[155px] bg-white" /></div>
-            <div className="space-y-1"><Label htmlFor="report-to" className="text-xs text-blue-900">To Date</Label><Input id="report-to" type="date" value={reportTo} onChange={(e) => setReportTo(e.target.value)} className="h-9 w-[155px] bg-white" /></div>
-            <Button onClick={openReportConfirmation} disabled={reportSending} className="h-9 bg-blue-700 hover:bg-blue-800">{reportSending ? "Sending…" : "Send Mail"}</Button>
-            <span className="text-xs text-muted-foreground">{reportRecords.length} completed site{reportRecords.length === 1 ? "" : "s"} in range</span>
-          </div>
-        </Card>
         {allocationFormOpen && (
           <Card className="overflow-visible">
             <div className="space-y-3 bg-blue-50/50 p-3">
@@ -1283,7 +1349,9 @@ const Assignments = () => {
                     className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]"
                     title={
                       sortField === "project"
-                        ? `Sorted by Project (${sortDirection === "asc" ? "A to Z" : "Z to A"}) - click to reverse`
+                        ? `Sorted by Project (${
+                            sortDirection === "asc" ? "A to Z" : "Z to A"
+                          }) - click to reverse`
                         : "Click to sort by Project"
                     }
                   >
@@ -1291,7 +1359,13 @@ const Assignments = () => {
                       type="button"
                       onClick={() => handleSort("project")}
                       className="group inline-flex items-center justify-center gap-1.5 font-semibold text-white hover:text-white/80 transition-colors focus:outline-none cursor-pointer"
-                      aria-label={`Sort by Project, currently ${sortField === "project" ? (sortDirection === "asc" ? "ascending" : "descending") : "unsorted"}`}
+                      aria-label={`Sort by Project, currently ${
+                        sortField === "project"
+                          ? sortDirection === "asc"
+                            ? "ascending"
+                            : "descending"
+                          : "unsorted"
+                      }`}
                     >
                       <span>Project</span>
                       {sortField === "project" ? (
@@ -1333,7 +1407,11 @@ const Assignments = () => {
                     className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]"
                     title={
                       sortField === "status"
-                        ? `Sorted by Status (${sortDirection === "asc" ? "In Progress → Not Yet Started → Completed" : "Completed → Not Yet Started → In Progress"}) - click to reverse`
+                        ? `Sorted by Status (${
+                            sortDirection === "asc"
+                              ? "In Progress → Not Yet Started → Completed"
+                              : "Completed → Not Yet Started → In Progress"
+                          }) - click to reverse`
                         : "Click to sort by Status"
                     }
                   >
@@ -1341,7 +1419,13 @@ const Assignments = () => {
                       type="button"
                       onClick={() => handleSort("status")}
                       className="group inline-flex items-center justify-center gap-1.5 font-semibold text-white hover:text-white/80 transition-colors focus:outline-none cursor-pointer"
-                      aria-label={`Sort by Status, currently ${sortField === "status" ? (sortDirection === "asc" ? "ascending" : "descending") : "unsorted"}`}
+                      aria-label={`Sort by Status, currently ${
+                        sortField === "status"
+                          ? sortDirection === "asc"
+                            ? "ascending"
+                            : "descending"
+                          : "unsorted"
+                      }`}
                     >
                       <span>Status</span>
                       {sortField === "status" ? (
@@ -1381,7 +1465,10 @@ const Assignments = () => {
                             <span className="h-2 w-2 rounded-full bg-purple-500 shadow-xs" />
                             <span>In Progress</span>
                             <span className="text-[11px] font-medium text-purple-600 lowercase">
-                              ({inProgressProjectsCount} project{inProgressProjectsCount === 1 ? "" : "s"} · {inProgressGrouped.length} site{inProgressGrouped.length === 1 ? "" : "s"})
+                              ({inProgressProjectsCount} project
+                              {inProgressProjectsCount === 1 ? "" : "s"} ·{" "}
+                              {inProgressGrouped.length} site
+                              {inProgressGrouped.length === 1 ? "" : "s"})
                             </span>
                           </div>
                         </div>
@@ -1397,7 +1484,9 @@ const Assignments = () => {
                         </td>
                       </tr>
                     ) : (
-                      inProgressGrouped.map((rows, index) => renderSiteRow(rows, index))
+                      inProgressGrouped.map((rows, index) =>
+                        renderSiteRow(rows, index)
+                      )
                     )}
 
                     {/* Completed Section Header */}
@@ -1408,7 +1497,10 @@ const Assignments = () => {
                             <span className="h-2 w-2 rounded-full bg-emerald-600 shadow-xs" />
                             <span>Completed</span>
                             <span className="text-[11px] font-medium text-emerald-700 lowercase">
-                              ({completedProjectsCount} project{completedProjectsCount === 1 ? "" : "s"} · {completedGrouped.length} site{completedGrouped.length === 1 ? "" : "s"})
+                              ({completedProjectsCount} project
+                              {completedProjectsCount === 1 ? "" : "s"} ·{" "}
+                              {completedGrouped.length} site
+                              {completedGrouped.length === 1 ? "" : "s"})
                             </span>
                           </div>
                         </div>
@@ -1424,7 +1516,9 @@ const Assignments = () => {
                         </td>
                       </tr>
                     ) : (
-                      completedGrouped.map((rows, index) => renderSiteRow(rows, index))
+                      completedGrouped.map((rows, index) =>
+                        renderSiteRow(rows, index)
+                      )
                     )}
                   </>
                 ) : activeTab === "in_progress" ? (
@@ -1438,20 +1532,22 @@ const Assignments = () => {
                       </td>
                     </tr>
                   ) : (
-                    inProgressGrouped.map((rows, index) => renderSiteRow(rows, index))
+                    inProgressGrouped.map((rows, index) =>
+                      renderSiteRow(rows, index)
+                    )
                   )
+                ) : completedGrouped.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-4 py-8 text-center text-muted-foreground"
+                    >
+                      No completed projects for this month yet.
+                    </td>
+                  </tr>
                 ) : (
-                  completedGrouped.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={7}
-                        className="px-4 py-8 text-center text-muted-foreground"
-                      >
-                        No completed projects for this month yet.
-                      </td>
-                    </tr>
-                  ) : (
-                    completedGrouped.map((rows, index) => renderSiteRow(rows, index))
+                  completedGrouped.map((rows, index) =>
+                    renderSiteRow(rows, index)
                   )
                 )}
               </tbody>
@@ -1469,11 +1565,79 @@ const Assignments = () => {
         assignment={editing}
         onSave={handleSaveModal}
       />
-      <Dialog open={reportModalOpen} onOpenChange={(open) => !reportSending && setReportModalOpen(open)}>
+      <Dialog
+        open={reportModalOpen}
+        onOpenChange={(open) => !reportSending && setReportModalOpen(open)}
+      >
         <DialogContent>
-          <DialogHeader><DialogTitle>Send Completed Sites Report?</DialogTitle><DialogDescription>Review the report details before sending.</DialogDescription></DialogHeader>
-          <div className="space-y-3 rounded-lg bg-slate-50 p-4 text-sm"><div><span className="font-semibold">Recipient:</span> {user}</div><div><span className="font-semibold">Date range:</span> {reportFrom} to {reportTo}</div><div><span className="font-semibold">Completed sites:</span> {reportRecords.length}</div></div>
-          <DialogFooter><Button variant="outline" onClick={() => setReportModalOpen(false)} disabled={reportSending}>Cancel</Button><Button onClick={() => void sendCompletedSitesReport()} disabled={reportSending}>{reportSending ? "Sending…" : "Confirm & Send"}</Button></DialogFooter>
+          <DialogHeader>
+            <DialogTitle>Send Completed Sites Report?</DialogTitle>
+            <DialogDescription>
+              Review the report details before sending.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 rounded-lg bg-slate-50 p-4 text-sm">
+            <div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-semibold">Recipient</span>
+                <button
+                  type="button"
+                  onClick={() => setRecipientEditing((editing) => !editing)}
+                  className="rounded-md p-1.5 text-blue-700 transition-colors hover:bg-blue-100"
+                  aria-label={
+                    recipientEditing
+                      ? "Save recipient email"
+                      : "Edit recipient email"
+                  }
+                  title={recipientEditing ? "Save" : "Edit recipient email"}
+                >
+                  {recipientEditing ? (
+                    <Save className="h-4 w-4" />
+                  ) : (
+                    <Pencil className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              {recipientEditing ? (
+                <Input
+                  id="report-recipient"
+                  type="email"
+                  value={reportRecipient}
+                  onChange={(event) => setReportRecipient(event.target.value)}
+                  placeholder="recipient@example.com"
+                  className="mt-1 bg-white"
+                  autoFocus
+                />
+              ) : (
+                <p className="mt-1 break-all text-base text-slate-900">
+                  {reportRecipient}
+                </p>
+              )}
+            </div>
+            <div>
+              <span className="font-semibold">Date range:</span> {reportFrom} to{" "}
+              {reportTo}
+            </div>
+            <div>
+              <span className="font-semibold">Completed sites:</span>{" "}
+              {reportRecords.length}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setReportModalOpen(false)}
+              disabled={reportSending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void sendCompletedSitesReport()}
+              disabled={reportSending}
+            >
+              {reportSending ? "Sending…" : "Confirm & Send"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </AppShell>

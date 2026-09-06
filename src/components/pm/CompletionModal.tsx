@@ -18,7 +18,12 @@ interface Props {
   open: boolean;
   onClose: () => void;
   assignment: Assignment | null;
-  onSave: (data: { unitType: Assignment["unitType"]; quantity: number; rate: number; amount: number }) => void;
+  onSave: (data: {
+    unitType: Assignment["unitType"];
+    quantity: number;
+    rate: number;
+    amount: number;
+  }) => void;
 }
 
 const DEFAULT_UNITS = ["Feet", "Per Page", "Per Address"];
@@ -48,7 +53,9 @@ const CompletionModal = ({ open, onClose, assignment, onSave }: Props) => {
   useEffect(() => {
     if (assignment && open) {
       setUnitType(assignment.unitType ?? units[0] ?? "Feet");
-      setQuantity(assignment.quantity != null ? String(assignment.quantity) : "");
+      setQuantity(
+        assignment.quantity != null ? String(assignment.quantity) : ""
+      );
       setRate(assignment.rate != null ? String(assignment.rate) : "");
       setErrors({});
       setAdding(false);
@@ -76,7 +83,8 @@ const CompletionModal = ({ open, onClose, assignment, onSave }: Props) => {
   };
 
   const handleRemoveUnit = (u: string) => {
-    if (DEFAULT_UNITS.includes(u)) return toast.error("Default units cannot be removed");
+    if (DEFAULT_UNITS.includes(u))
+      return toast.error("Default units cannot be removed");
     setUnits((prev) => prev.filter((x) => x !== u));
     if (unitType === u) setUnitType(DEFAULT_UNITS[0]);
   };
@@ -98,7 +106,8 @@ const CompletionModal = ({ open, onClose, assignment, onSave }: Props) => {
         </DialogHeader>
         {assignment && (
           <div className="text-sm text-muted-foreground -mt-2">
-            {assignment.projectName} → {assignment.siteName} ({assignment.assigneeName})
+            {assignment.projectName} → {assignment.siteName} (
+            {assignment.assigneeName})
           </div>
         )}
         <div className="space-y-4 py-2">
@@ -151,15 +160,23 @@ const CompletionModal = ({ open, onClose, assignment, onSave }: Props) => {
                   onChange={(e) => setNewUnit(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleAddUnit();
-                    if (e.key === "Escape") { setAdding(false); setNewUnit(""); }
+                    if (e.key === "Escape") {
+                      setAdding(false);
+                      setNewUnit("");
+                    }
                   }}
                 />
-                <Button type="button" size="sm" onClick={handleAddUnit}>Add</Button>
+                <Button type="button" size="sm" onClick={handleAddUnit}>
+                  Add
+                </Button>
                 <Button
                   type="button"
                   size="sm"
                   variant="ghost"
-                  onClick={() => { setAdding(false); setNewUnit(""); }}
+                  onClick={() => {
+                    setAdding(false);
+                    setNewUnit("");
+                  }}
                 >
                   Cancel
                 </Button>
@@ -193,12 +210,21 @@ const CompletionModal = ({ open, onClose, assignment, onSave }: Props) => {
           </div>
           <div className="rounded-md bg-secondary/50 px-4 py-3 flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Amount</span>
-            <span className="text-lg font-bold text-foreground">{formatINR(amount || 0)}</span>
+            <span className="text-lg font-bold text-foreground">
+              {formatINR(amount || 0)}
+            </span>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} className="gradient-saffron text-saffron-foreground">Save</Button>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            className="gradient-saffron text-saffron-foreground"
+          >
+            Save
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
