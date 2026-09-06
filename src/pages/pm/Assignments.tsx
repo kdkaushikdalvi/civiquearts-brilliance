@@ -398,7 +398,7 @@ const Assignments = () => {
               assigneeName: emp?.name,
               month,
               year,
-              status: (emp?.id ? "In Progress" : "Not Started Yet") as const,
+              status: (emp?.id ? "In Progress – 0%" : "Not Started Yet") as const,
             };
           });
         })
@@ -518,17 +518,17 @@ const Assignments = () => {
         const site = await upsertSite(project.id, String(siteName).trim());
         const resolvedStatus = [
           "Completed",
-          "Hold",
-          "In Progress",
-          "In Progress 25%",
-          "In Progress 45%",
-          "In Progress 80%",
+          "On Hold",
+          "In Progress – 0%",
+          "In Progress – 25%",
+          "In Progress – 45%",
+          "In Progress – 80%",
           "QC Pending",
           "Not Started Yet",
         ].includes(String(status))
           ? (String(status) as Assignment["status"])
           : employee?.id
-          ? "In Progress"
+          ? "In Progress – 0%"
           : "Not Started Yet";
         records.push({
           clientId: client.id,
@@ -623,7 +623,7 @@ const Assignments = () => {
                       assigneeName: employee.name,
                       status:
                         row.status === "Not Started Yet"
-                          ? "In Progress"
+                          ? "In Progress – 0%"
                           : row.status,
                     });
                   }
@@ -694,20 +694,20 @@ const Assignments = () => {
                 className={`relative inline-flex items-center rounded-full border px-2.5 shadow-sm ${
                   row.status === "Completed"
                     ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : row.status === "Hold" ||
+                    : row.status === "On Hold" ||
                       row.status === "On Hold"
                     ? "border-amber-200 bg-amber-50 text-amber-700"
                     : row.status === "Not Started Yet"
                     ? "border-slate-200 bg-slate-100 text-slate-600"
                     : row.status === "QC Pending"
                     ? "border-teal-200 bg-teal-50 text-teal-700"
-                    : row.status === "In Progress 25%" ||
+                    : row.status === "In Progress – 25%" ||
                       row.status === "In Progress – 25%"
                     ? "border-blue-200 bg-blue-50 text-blue-700"
-                    : row.status === "In Progress 45%" ||
+                    : row.status === "In Progress – 45%" ||
                       row.status === "In Progress – 45%"
                     ? "border-indigo-200 bg-indigo-50 text-indigo-700"
-                    : row.status === "In Progress 80%" ||
+                    : row.status === "In Progress – 80%" ||
                       row.status === "In Progress – 80%"
                     ? "border-purple-200 bg-purple-50 text-purple-700"
                     : "border-violet-200 bg-violet-50 text-violet-700"
@@ -730,7 +730,7 @@ const Assignments = () => {
                   </SelectTrigger>
                   <SelectContent className="min-w-[170px] rounded-xl border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 data-[state=open]:animate-none data-[state=closed]:animate-none">
                     <SelectItem
-                      value="In Progress"
+                      value="In Progress – 0%"
                       className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-violet-700 focus:bg-transparent focus:text-violet-700"
                     >
                       In Progress
@@ -747,22 +747,22 @@ const Assignments = () => {
                     <div className="my-1 border-t border-gray-200" />
 
                     <SelectItem
-                      value="In Progress 25%"
+                      value="In Progress – 25%"
                       className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-blue-700 focus:bg-transparent focus:text-blue-700"
                     >
-                      In Progress 25%
+                      In Progress – 25%
                     </SelectItem>
                     <SelectItem
-                      value="In Progress 45%"
+                      value="In Progress – 45%"
                       className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-indigo-700 focus:bg-transparent focus:text-indigo-700"
                     >
-                      In Progress 45%
+                      In Progress – 45%
                     </SelectItem>
                     <SelectItem
-                      value="In Progress 80%"
+                      value="In Progress – 80%"
                       className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-purple-700 focus:bg-transparent focus:text-purple-700"
                     >
-                      In Progress 80%
+                      In Progress – 80%
                     </SelectItem>
                     <SelectItem
                       value="QC Pending"
@@ -772,7 +772,7 @@ const Assignments = () => {
                     </SelectItem>
 
                     <SelectItem
-                      value="Hold"
+                      value="On Hold"
                       className="cursor-pointer rounded-lg py-2 pl-8 text-xs font-semibold text-amber-700 focus:bg-transparent focus:text-amber-700"
                     >
                       Hold
