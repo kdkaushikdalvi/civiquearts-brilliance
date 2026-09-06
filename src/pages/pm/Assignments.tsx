@@ -51,6 +51,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import ExcelJS from "exceljs";
+import { compactAssigneeName } from "@/lib/assigneeFormat";
 
 interface SiteRow {
   id: string;
@@ -59,19 +60,6 @@ interface SiteRow {
 }
 
 const DRAFT_KEY = "pm_assignment_draft";
-
-const compactAssigneeName = (name?: string) => {
-  const compactNames: Record<string, string> = {
-    Kaushik: "Kaushik D",
-    "Kaushik Dalvi": "Kaushik D",
-    Vijay: "Vijay C",
-    "Vijay Choudhari": "Vijay C",
-    Yogesh: "Yogesh C",
-    "Yogesh Choudhari": "Yogesh C",
-  };
-
-  return name ? compactNames[name] ?? name : name;
-};
 
 const Assignments = () => {
   const navigate = useNavigate();
@@ -703,6 +691,28 @@ const Assignments = () => {
         >
           {a.siteName}
         </td>
+        {activeTab !== "in_progress" && <td className="space-y-[5px] px-2 py-0 pb-[5px] max-w-[160px] whitespace-nowrap text-left">
+          {rows.map((row) => (
+            <div
+              key={row.id}
+              className="my-[5px] flex h-8 items-center justify-start whitespace-nowrap"
+            >
+              {row.unitType
+                ? `${row.unitType} · ${formatNumber(row.quantity ?? 0)}`
+                : "-"}
+            </div>
+          ))}
+        </td>}
+        {activeTab !== "in_progress" && <td className="space-y-[5px] px-2 py-0 pb-[5px] font-medium whitespace-nowrap text-left">
+          {rows.map((row) => (
+            <div
+              key={row.id}
+              className="my-[5px] flex h-8 items-center justify-start whitespace-nowrap"
+            >
+              {formatINR(row.amount ?? 0)}
+            </div>
+          ))}
+        </td>}
         <td className="space-y-[5px] px-2 py-0 pb-[5px] align-middle text-left">
           {rows.map((row) => (
             <div
@@ -746,20 +756,24 @@ const Assignments = () => {
               >
                 <SelectTrigger
                   aria-label={`Assigned To for ${row.siteName}`}
-                  className={`h-8 w-[150px] rounded-full py-0 px-3 text-xs font-semibold shadow-sm focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:opacity-70 ${
+                  className={`h-8 w-[150px] rounded-full py-0 px-3 text-xs font-semibold shadow-sm focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:opacity-75 ${
                     row.assigneeId
-                      ? "border-violet-200 bg-violet-50 text-violet-700"
-                      : "border-slate-200 bg-slate-100 text-slate-500"
+                      ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100/60 hover:border-red-300 [&>svg]:text-red-600"
+                      : "border-slate-200 bg-slate-100 text-slate-500 hover:border-red-200 hover:bg-red-50/40 hover:text-red-600"
                   }`}
                 >
                   <SelectValue placeholder="Unassigned">
-                    {compactAssigneeName(row.assigneeName)}
+                    {compactAssigneeName(
+                      row.assigneeName,
+                      row.assigneeId,
+                      employees
+                    )}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="min-w-[170px] rounded-xl border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 data-[state=open]:animate-none data-[state=closed]:animate-none">
+                <SelectContent className="min-w-[170px] rounded-xl border-red-100 bg-white p-1.5 shadow-xl shadow-red-950/10 data-[state=open]:animate-none data-[state=closed]:animate-none">
                   <SelectItem
                     value="__unassigned__"
-                    className="cursor-pointer rounded-lg py-2 text-xs font-semibold text-slate-600 focus:bg-transparent focus:text-slate-600"
+                    className="cursor-pointer rounded-lg py-2 text-xs font-semibold text-slate-600 focus:bg-red-50 focus:text-red-700"
                   >
                     Unassigned
                   </SelectItem>
@@ -767,9 +781,9 @@ const Assignments = () => {
                     <SelectItem
                       key={employee.id}
                       value={employee.id}
-                      className="cursor-pointer rounded-lg py-2 text-xs font-semibold text-slate-700 focus:bg-transparent focus:text-slate-700"
+                      className="cursor-pointer rounded-lg py-2 text-xs font-semibold text-slate-700 focus:bg-red-50 focus:text-red-700 data-[state=checked]:text-red-700 data-[state=checked]:font-bold"
                     >
-                      {employee.name}
+                      {compactAssigneeName(employee.name)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -777,28 +791,6 @@ const Assignments = () => {
             </div>
           ))}
         </td>
-        {activeTab !== "in_progress" && <td className="space-y-[5px] px-2 py-0 pb-[5px] max-w-[160px] whitespace-nowrap text-left">
-          {rows.map((row) => (
-            <div
-              key={row.id}
-              className="my-[5px] flex h-8 items-center justify-start whitespace-nowrap"
-            >
-              {row.unitType
-                ? `${row.unitType} · ${formatNumber(row.quantity ?? 0)}`
-                : "-"}
-            </div>
-          ))}
-        </td>}
-        {activeTab !== "in_progress" && <td className="space-y-[5px] px-2 py-0 pb-[5px] font-medium whitespace-nowrap text-left">
-          {rows.map((row) => (
-            <div
-              key={row.id}
-              className="my-[5px] flex h-8 items-center justify-start whitespace-nowrap"
-            >
-              {formatINR(row.amount ?? 0)}
-            </div>
-          ))}
-        </td>}
         <td className="space-y-[5px] px-2 py-0 pb-[5px] whitespace-nowrap">
           {rows.map((row) => (
             <div
@@ -1400,12 +1392,6 @@ const Assignments = () => {
                   >
                     Site
                   </th>
-                  <th
-                    className="px-4 py-3 text-left font-semibold whitespace-nowrap truncate max-w-[160px]"
-                    title="Assigned To"
-                  >
-                    Assigned To
-                  </th>
                   {activeTab !== "in_progress" && <th
                     className="px-4 py-3 text-left font-semibold whitespace-nowrap truncate max-w-[160px]"
                     title="Unit / Qty"
@@ -1418,6 +1404,12 @@ const Assignments = () => {
                   >
                     Amount
                   </th>}
+                  <th
+                    className="px-4 py-3 text-left font-semibold whitespace-nowrap truncate max-w-[160px]"
+                    title="Assigned To"
+                  >
+                    Assigned To
+                  </th>
                   <th
                     className="px-4 py-3 text-left font-semibold whitespace-nowrap truncate max-w-[160px]"
                     title={

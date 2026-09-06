@@ -7,7 +7,7 @@ const cors = {
 };
 const esc = (v: unknown) =>
   String(v ?? "").replace(
-    /[&<>\"']/g,
+    /[&<>"']/g,
     (c) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[
         c
