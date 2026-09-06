@@ -60,6 +60,19 @@ interface SiteRow {
 
 const DRAFT_KEY = "pm_assignment_draft";
 
+const compactAssigneeName = (name?: string) => {
+  const compactNames: Record<string, string> = {
+    Kaushik: "Kaushik D",
+    "Kaushik Dalvi": "Kaushik D",
+    Vijay: "Vijay C",
+    "Vijay Choudhari": "Vijay C",
+    Yogesh: "Yogesh C",
+    "Yogesh Choudhari": "Yogesh C",
+  };
+
+  return name ? compactNames[name] ?? name : name;
+};
+
 const Assignments = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -690,11 +703,11 @@ const Assignments = () => {
         >
           {a.siteName}
         </td>
-        <td className="space-y-[5px] px-2 py-0 pb-[5px] align-middle text-center">
+        <td className="space-y-[5px] px-2 py-0 pb-[5px] align-middle text-left">
           {rows.map((row) => (
             <div
               key={row.id}
-              className="relative my-[5px] flex h-8 items-center justify-center whitespace-nowrap"
+              className="relative my-[5px] flex h-8 items-center justify-start whitespace-nowrap"
             >
               <Select
                 value={row.assigneeId ?? "__unassigned__"}
@@ -739,7 +752,9 @@ const Assignments = () => {
                       : "border-slate-200 bg-slate-100 text-slate-500"
                   }`}
                 >
-                  <SelectValue placeholder="Unassigned" />
+                  <SelectValue placeholder="Unassigned">
+                    {compactAssigneeName(row.assigneeName)}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="min-w-[170px] rounded-xl border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 data-[state=open]:animate-none data-[state=closed]:animate-none">
                   <SelectItem
@@ -762,11 +777,11 @@ const Assignments = () => {
             </div>
           ))}
         </td>
-        <td className="space-y-[5px] px-2 py-0 pb-[5px] max-w-[160px] whitespace-nowrap text-center">
+        <td className="space-y-[5px] px-2 py-0 pb-[5px] max-w-[160px] whitespace-nowrap text-left">
           {rows.map((row) => (
             <div
               key={row.id}
-              className="my-[5px] flex h-8 items-center justify-center whitespace-nowrap"
+              className="my-[5px] flex h-8 items-center justify-start whitespace-nowrap"
             >
               {row.unitType
                 ? `${row.unitType} · ${formatNumber(row.quantity ?? 0)}`
@@ -774,11 +789,11 @@ const Assignments = () => {
             </div>
           ))}
         </td>
-        <td className="space-y-[5px] px-2 py-0 pb-[5px] font-medium whitespace-nowrap text-center">
+        <td className="space-y-[5px] px-2 py-0 pb-[5px] font-medium whitespace-nowrap text-left">
           {rows.map((row) => (
             <div
               key={row.id}
-              className="my-[5px] flex h-8 items-center justify-center whitespace-nowrap"
+              className="my-[5px] flex h-8 items-center justify-start whitespace-nowrap"
             >
               {formatINR(row.amount ?? 0)}
             </div>
@@ -788,7 +803,7 @@ const Assignments = () => {
           {rows.map((row) => (
             <div
               key={row.id}
-              className="my-[5px] flex h-8 items-center justify-center"
+              className="my-[5px] flex h-8 items-center justify-start"
             >
               <div
                 className={`relative inline-flex items-center rounded-full border px-2.5 shadow-sm ${
@@ -885,11 +900,11 @@ const Assignments = () => {
             </div>
           ))}
         </td>
-        <td className="w-[52px] space-y-[5px] px-0.5 py-0 pb-[5px] align-middle text-center">
+        <td className="w-[52px] space-y-[5px] px-0.5 py-0 pb-[5px] align-middle text-left">
           {rows.map((row) => (
             <div
               key={row.id}
-              className="my-[5px] flex h-8 items-center justify-center"
+              className="my-[5px] flex h-8 items-center justify-start"
             >
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -1346,7 +1361,7 @@ const Assignments = () => {
               >
                 <tr>
                   <th
-                    className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]"
+                    className="px-4 py-3 text-left font-semibold whitespace-nowrap truncate max-w-[160px]"
                     title={
                       sortField === "project"
                         ? `Sorted by Project (${
@@ -1358,7 +1373,7 @@ const Assignments = () => {
                     <button
                       type="button"
                       onClick={() => handleSort("project")}
-                      className="group inline-flex items-center justify-center gap-1.5 font-semibold text-white hover:text-white/80 transition-colors focus:outline-none cursor-pointer"
+                      className="group inline-flex items-center justify-start gap-1.5 font-semibold text-white hover:text-white/80 transition-colors focus:outline-none cursor-pointer"
                       aria-label={`Sort by Project, currently ${
                         sortField === "project"
                           ? sortDirection === "asc"
@@ -1380,31 +1395,31 @@ const Assignments = () => {
                     </button>
                   </th>
                   <th
-                    className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]"
+                    className="px-4 py-3 text-left font-semibold whitespace-nowrap truncate max-w-[160px]"
                     title="Site"
                   >
                     Site
                   </th>
                   <th
-                    className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]"
+                    className="px-4 py-3 text-left font-semibold whitespace-nowrap truncate max-w-[160px]"
                     title="Assigned To"
                   >
                     Assigned To
                   </th>
                   <th
-                    className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]"
+                    className="px-4 py-3 text-left font-semibold whitespace-nowrap truncate max-w-[160px]"
                     title="Unit / Qty"
                   >
                     Unit / Qty
                   </th>
                   <th
-                    className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]"
+                    className="px-4 py-3 text-left font-semibold whitespace-nowrap truncate max-w-[160px]"
                     title="Amount"
                   >
                     Amount
                   </th>
                   <th
-                    className="px-4 py-3 text-center font-semibold whitespace-nowrap truncate max-w-[160px]"
+                    className="px-4 py-3 text-left font-semibold whitespace-nowrap truncate max-w-[160px]"
                     title={
                       sortField === "status"
                         ? `Sorted by Status (${
@@ -1418,7 +1433,7 @@ const Assignments = () => {
                     <button
                       type="button"
                       onClick={() => handleSort("status")}
-                      className="group inline-flex items-center justify-center gap-1.5 font-semibold text-white hover:text-white/80 transition-colors focus:outline-none cursor-pointer"
+                      className="group inline-flex items-center justify-start gap-1.5 font-semibold text-white hover:text-white/80 transition-colors focus:outline-none cursor-pointer"
                       aria-label={`Sort by Status, currently ${
                         sortField === "status"
                           ? sortDirection === "asc"

@@ -256,7 +256,9 @@ const DownloadInvoices = () => {
         backgroundColor: "#ffffff",
         useCORS: true,
       });
-      const pageHeight = Math.floor(canvas.width * (277 / 190));
+      const pageWidth = 200;
+      const pageMargin = 5;
+      const pageHeight = Math.floor(canvas.width * (277 / pageWidth));
       for (let page = 0, top = 0; top < canvas.height; page += 1) {
         if (page > 0) pdf.addPage();
         const slice = document.createElement("canvas");
@@ -266,10 +268,10 @@ const DownloadInvoices = () => {
         pdf.addImage(
           slice.toDataURL("image/jpeg", 0.95),
           "JPEG",
-          10,
-          10,
-          190,
-          (slice.height / canvas.width) * 190
+          pageMargin,
+          pageMargin,
+          pageWidth,
+          (slice.height / canvas.width) * pageWidth
         );
         top += slice.height;
       }
