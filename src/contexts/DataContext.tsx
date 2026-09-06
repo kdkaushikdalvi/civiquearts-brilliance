@@ -58,6 +58,7 @@ const mapAssignment = (r: any): Assignment => ({
   rate: r.rate ?? undefined,
   amount: r.amount ?? undefined,
   createdAt: r.created_at,
+  updatedAt: r.updated_at,
 });
 
 const mapInvoice = (r: any): InvoiceRecord => ({

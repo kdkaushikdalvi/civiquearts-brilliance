@@ -40,6 +40,10 @@ import { toast } from "sonner";
 import { formatINR, formatNumber } from "@/lib/pmFormat";
 import { getStatusRank } from "@/lib/statusSort";
 import { isSiteGroupCompleted } from "@/lib/projectCompletion";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ExcelJS from "exceljs";
 
 interface SiteRow {
@@ -67,10 +71,15 @@ const Assignments = () => {
     addSite: upsertSite,
     addEmployee,
   } = useData();
+  const { user } = useAuth();
 
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
+  const [reportFrom, setReportFrom] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10));
+  const [reportTo, setReportTo] = useState(() => now.toISOString().slice(0, 10));
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportSending, setReportSending] = useState(false);
   const [allocationFormOpen, setAllocationFormOpen] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -293,6 +302,38 @@ const Assignments = () => {
   const handleStatusChange = (a: Assignment, next: Assignment["status"]) => {
     if (next === "Completed") openComplete(a);
     else updateAssignment(a.id, { status: next });
+  };
+
+  const reportRecords = useMemo(() => assignments.filter((a) => {
+    const date = (a.updatedAt ?? a.createdAt).slice(0, 10);
+    return a.status === "Completed" && date >= reportFrom && date <= reportTo;
+  }), [assignments, reportFrom, reportTo]);
+
+  const openReportConfirmation = () => {
+    if (!user) return toast.error("Unable to determine the authenticated user's email");
+    if (!reportFrom || !reportTo || reportFrom > reportTo) return toast.error("Select a valid date range");
+    if (!reportRecords.length) return toast.info("No completed sites found for the selected date range.");
+    setReportModalOpen(true);
+  };
+
+  const sendCompletedSitesReport = async () => {
+    setReportSending(true);
+    const { data, error } = await supabase.functions.invoke("send-completed-sites-report", { body: { fromDate: reportFrom, toDate: reportTo } });
+    setReportSending(false);
+    if (error) {
+      let detail = error.message || "Failed to send report";
+      try {
+        const context = (error as { context?: Response }).context;
+        if (context) {
+          const body = await context.clone().json() as { error?: string };
+          if (body.error) detail = body.error;
+        }
+      } catch { /* Keep the provider message when the response is not JSON. */ }
+      return toast.error(detail);
+    }
+    if (!data?.sent) return toast.error(data?.message || "The report was not sent");
+    setReportModalOpen(false);
+    toast.success(`Completed sites report sent to ${user}`);
   };
 
   const addAssigneeToGroup = async (row: Assignment) => {
@@ -991,6 +1032,14 @@ const Assignments = () => {
             />
           </button>
         </div>
+        <Card className="border-blue-100 bg-blue-50/40">
+          <div className="flex flex-wrap items-end gap-3 p-3">
+            <div className="space-y-1"><Label htmlFor="report-from" className="text-xs text-blue-900">From Date</Label><Input id="report-from" type="date" value={reportFrom} onChange={(e) => setReportFrom(e.target.value)} className="h-9 w-[155px] bg-white" /></div>
+            <div className="space-y-1"><Label htmlFor="report-to" className="text-xs text-blue-900">To Date</Label><Input id="report-to" type="date" value={reportTo} onChange={(e) => setReportTo(e.target.value)} className="h-9 w-[155px] bg-white" /></div>
+            <Button onClick={openReportConfirmation} disabled={reportSending} className="h-9 bg-blue-700 hover:bg-blue-800">{reportSending ? "Sending…" : "Send Mail"}</Button>
+            <span className="text-xs text-muted-foreground">{reportRecords.length} completed site{reportRecords.length === 1 ? "" : "s"} in range</span>
+          </div>
+        </Card>
         {allocationFormOpen && (
           <Card className="overflow-visible">
             <div className="space-y-3 bg-blue-50/50 p-3">
@@ -1420,6 +1469,13 @@ const Assignments = () => {
         assignment={editing}
         onSave={handleSaveModal}
       />
+      <Dialog open={reportModalOpen} onOpenChange={(open) => !reportSending && setReportModalOpen(open)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Send Completed Sites Report?</DialogTitle><DialogDescription>Review the report details before sending.</DialogDescription></DialogHeader>
+          <div className="space-y-3 rounded-lg bg-slate-50 p-4 text-sm"><div><span className="font-semibold">Recipient:</span> {user}</div><div><span className="font-semibold">Date range:</span> {reportFrom} to {reportTo}</div><div><span className="font-semibold">Completed sites:</span> {reportRecords.length}</div></div>
+          <DialogFooter><Button variant="outline" onClick={() => setReportModalOpen(false)} disabled={reportSending}>Cancel</Button><Button onClick={() => void sendCompletedSitesReport()} disabled={reportSending}>{reportSending ? "Sending…" : "Confirm & Send"}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 };

@@ -2,3 +2,8 @@ project_id = "iwrbraufjnrzbvdemcck"
 
 [functions.mobile-login]
 verify_jwt = false
+
+[functions.send-completed-sites-report]
+# The function validates the bearer token itself so it can return useful errors
+# instead of an opaque gateway rejection.
+verify_jwt = false

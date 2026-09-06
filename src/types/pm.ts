@@ -31,6 +31,7 @@ export interface Assignment {
   rate?: number;
   amount?: number;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Client {
