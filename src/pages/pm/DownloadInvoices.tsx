@@ -281,7 +281,7 @@ const DownloadInvoices = () => {
         pdf.setPage(page);
         pdf.text(`Page ${page} of ${pageCount}`, 200, 289, { align: "right" });
       }
-      const filename = `${assignee?.name}_Payslip_${MONTH_NAMES[month]} ${year}.pdf`;
+      const filename = `${assignee?.name}_Payslip_${MONTH_NAMES[month]}_${year}.pdf`;
       pdf.save(filename);
 
       addInvoice({
@@ -347,7 +347,7 @@ const DownloadInvoices = () => {
       /[^a-z0-9]+/gi,
       "_"
     );
-    const printTitle = `${printableAssigneeName}_Payment_Slip_${MONTH_NAMES[month]}_${year}`;
+    const printTitle = `${printableAssigneeName}_Payslip_${MONTH_NAMES[month]}_${year}`;
     printWindow.document.write(`
       <html><head><title>${printTitle}</title>
       <style>
