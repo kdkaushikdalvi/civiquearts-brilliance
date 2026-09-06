@@ -777,7 +777,7 @@ const Assignments = () => {
             </div>
           ))}
         </td>
-        <td className="space-y-[5px] px-2 py-0 pb-[5px] max-w-[160px] whitespace-nowrap text-left">
+        {activeTab !== "in_progress" && <td className="space-y-[5px] px-2 py-0 pb-[5px] max-w-[160px] whitespace-nowrap text-left">
           {rows.map((row) => (
             <div
               key={row.id}
@@ -788,8 +788,8 @@ const Assignments = () => {
                 : "-"}
             </div>
           ))}
-        </td>
-        <td className="space-y-[5px] px-2 py-0 pb-[5px] font-medium whitespace-nowrap text-left">
+        </td>}
+        {activeTab !== "in_progress" && <td className="space-y-[5px] px-2 py-0 pb-[5px] font-medium whitespace-nowrap text-left">
           {rows.map((row) => (
             <div
               key={row.id}
@@ -798,7 +798,7 @@ const Assignments = () => {
               {formatINR(row.amount ?? 0)}
             </div>
           ))}
-        </td>
+        </td>}
         <td className="space-y-[5px] px-2 py-0 pb-[5px] whitespace-nowrap">
           {rows.map((row) => (
             <div
@@ -1406,18 +1406,18 @@ const Assignments = () => {
                   >
                     Assigned To
                   </th>
-                  <th
+                  {activeTab !== "in_progress" && <th
                     className="px-4 py-3 text-left font-semibold whitespace-nowrap truncate max-w-[160px]"
                     title="Unit / Qty"
                   >
                     Unit / Qty
-                  </th>
-                  <th
+                  </th>}
+                  {activeTab !== "in_progress" && <th
                     className="px-4 py-3 text-left font-semibold whitespace-nowrap truncate max-w-[160px]"
                     title="Amount"
                   >
                     Amount
-                  </th>
+                  </th>}
                   <th
                     className="px-4 py-3 text-left font-semibold whitespace-nowrap truncate max-w-[160px]"
                     title={
@@ -1464,7 +1464,7 @@ const Assignments = () => {
                 {filtered.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={activeTab === "in_progress" ? 5 : 7}
                       className="px-4 py-8 text-center text-muted-foreground"
                     >
                       No projects for this month.
@@ -1474,7 +1474,7 @@ const Assignments = () => {
                   <>
                     {/* In Progress Section Header */}
                     <tr className="border-y border-purple-200 bg-purple-50/90 text-left font-semibold">
-                      <td colSpan={7} className="px-4 py-2">
+                      <td colSpan={activeTab === "in_progress" ? 5 : 7} className="px-4 py-2">
                         <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-purple-700">
                           <div className="flex items-center gap-2">
                             <span className="h-2 w-2 rounded-full bg-purple-500 shadow-xs" />
@@ -1492,7 +1492,7 @@ const Assignments = () => {
                     {inProgressGrouped.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={7}
+                          colSpan={activeTab === "in_progress" ? 5 : 7}
                           className="px-4 py-4 text-center text-xs text-muted-foreground italic"
                         >
                           No in-progress projects for this month.
@@ -1506,7 +1506,7 @@ const Assignments = () => {
 
                     {/* Completed Section Header */}
                     <tr className="border-y border-emerald-200 bg-emerald-50/90 text-left font-semibold">
-                      <td colSpan={7} className="px-4 py-2">
+                          <td colSpan={activeTab === "in_progress" ? 5 : 7} className="px-4 py-2">
                         <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-800">
                           <div className="flex items-center gap-2">
                             <span className="h-2 w-2 rounded-full bg-emerald-600 shadow-xs" />
@@ -1524,7 +1524,7 @@ const Assignments = () => {
                     {completedGrouped.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={7}
+                          colSpan={activeTab === "in_progress" ? 5 : 7}
                           className="px-4 py-4 text-center text-xs text-muted-foreground italic"
                         >
                           No completed projects for this month yet.
@@ -1540,7 +1540,7 @@ const Assignments = () => {
                   inProgressGrouped.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={7}
+                        colSpan={activeTab === "in_progress" ? 5 : 7}
                         className="px-4 py-8 text-center text-muted-foreground"
                       >
                         No in-progress projects for this month.
@@ -1554,7 +1554,7 @@ const Assignments = () => {
                 ) : completedGrouped.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={activeTab === "in_progress" ? 5 : 7}
                       className="px-4 py-8 text-center text-muted-foreground"
                     >
                       No completed projects for this month yet.
