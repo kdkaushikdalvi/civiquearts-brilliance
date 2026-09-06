@@ -50,7 +50,7 @@ const SearchableSelect = ({
       : emptyActionLabel;
 
   return (
-    <div className="relative" ref={wrap}>
+    <div className={cn("relative", open ? "z-[60]" : "z-auto")} ref={wrap}>
       <button
         type="button"
         disabled={disabled}
@@ -69,7 +69,7 @@ const SearchableSelect = ({
 
       {open && (
         <div className={cn(
-          "absolute z-50 w-full rounded-md border border-border bg-popover shadow-lg overflow-hidden",
+          "absolute left-0 z-[100] w-full rounded-md border border-border bg-popover shadow-2xl overflow-hidden",
           openUp ? "bottom-full mb-1" : "mt-1"
         )}>
           {title && (

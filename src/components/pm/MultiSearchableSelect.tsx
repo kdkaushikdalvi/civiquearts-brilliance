@@ -44,7 +44,7 @@ const MultiSearchableSelect = ({
         : [...selectedIds, id]
     );
   return (
-    <div ref={wrap} className="relative">
+    <div ref={wrap} className={cn("relative", open ? "z-[60]" : "z-auto")}>
       <div
         onClick={() => setOpen((current) => !current)}
         className="flex min-h-10 w-full cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-left text-sm hover:border-ring focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1"
@@ -91,7 +91,7 @@ const MultiSearchableSelect = ({
         </button>
       </div>
       {open && (
-        <div className="absolute top-full z-50 mt-1 w-full min-w-[220px] overflow-hidden rounded-md border border-border bg-popover shadow-lg">
+        <div className="absolute top-full left-0 z-[100] mt-1 w-full min-w-[240px] overflow-hidden rounded-md border border-border bg-popover shadow-2xl">
           <div className="flex items-center border-b border-border px-2">
             <Search className="h-4 w-4 text-muted-foreground" />
             <input

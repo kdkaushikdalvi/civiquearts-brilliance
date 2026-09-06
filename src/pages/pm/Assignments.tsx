@@ -1114,7 +1114,7 @@ const Assignments = () => {
           </button>
         </div>
         {allocationFormOpen && (
-          <Card className="overflow-visible">
+          <Card className="relative z-30 overflow-visible shadow-md">
             <div className="space-y-3 bg-blue-50/50 p-3">
               <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
                 <div className="space-y-2">
@@ -1208,17 +1208,18 @@ const Assignments = () => {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+              <div className="relative z-20 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
                 <div className="mb-2 hidden grid-cols-[1fr_1fr_auto] gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:grid">
                   <span className="text-cyan-800">Site Name</span>
                   <span className="text-pink-800">Select Assignee</span>
                   <span className="w-10" />
                 </div>
                 <div className="space-y-2">
-                  {sites.map((s) => (
+                  {sites.map((s, sIdx) => (
                     <div
                       key={s.id}
-                      className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 items-start"
+                      style={{ zIndex: sites.length - sIdx + 10 }}
+                      className="relative grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 items-start"
                     >
                       <div>
                         <SearchableSelect
@@ -1339,7 +1340,7 @@ const Assignments = () => {
         )}
 
         {/* Table */}
-        <Card className="overflow-hidden">
+        <Card className="relative z-0 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead
