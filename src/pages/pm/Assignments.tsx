@@ -91,8 +91,6 @@ const Assignments = () => {
   );
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportSending, setReportSending] = useState(false);
-  const [reportRecipient, setReportRecipient] = useState("");
-  const [recipientEditing, setRecipientEditing] = useState(false);
   const [reportSectionOpen, setReportSectionOpen] = useState(false);
   const [allocationFormOpen, setAllocationFormOpen] = useState(false);
 
@@ -347,10 +345,19 @@ const Assignments = () => {
     else updateAssignment(a.id, { status: next });
   };
 
-  const reportRecords = useMemo(
-    () => completedGrouped.flat(),
-    [completedGrouped]
-  );
+  const reportRecords = useMemo(() => {
+    const from = reportFrom ? new Date(`${reportFrom}T00:00:00`) : null;
+    const to = reportTo ? new Date(`${reportTo}T23:59:59.999`) : null;
+    if (!from || !to || Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
+      return [];
+    }
+
+    return assignments.filter((assignment) => {
+      if (assignment.status !== "Completed") return false;
+      const completedAt = new Date(assignment.updatedAt ?? assignment.createdAt);
+      return !Number.isNaN(completedAt.getTime()) && completedAt >= from && completedAt <= to;
+    });
+  }, [assignments, reportFrom, reportTo]);
 
   const openReportConfirmation = () => {
     if (!user)
@@ -361,14 +368,12 @@ const Assignments = () => {
       return toast.info(
         "No completed sites found for the selected date range."
       );
-    if (!reportRecipient) setReportRecipient(user);
-    setRecipientEditing(false);
     setReportModalOpen(true);
   };
 
   const sendCompletedSitesReport = async () => {
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(reportRecipient.trim()))
-      return toast.error("Enter a valid recipient email address");
+    if (!user)
+      return toast.error("Unable to determine the authenticated user's email");
     setReportSending(true);
     const { data, error } = await supabase.functions.invoke(
       "send-completed-sites-report",
@@ -376,8 +381,6 @@ const Assignments = () => {
         body: {
           fromDate: reportFrom,
           toDate: reportTo,
-          recipient: reportRecipient.trim(),
-          assignmentIds: reportRecords.map((assignment) => assignment.id),
         },
       }
     );
@@ -398,7 +401,7 @@ const Assignments = () => {
     if (!data?.sent)
       return toast.error(data?.message || "The report was not sent");
     setReportModalOpen(false);
-    toast.success(`Completed sites report sent to ${reportRecipient.trim()}`);
+    toast.success("Completed sites report sent successfully.");
   };
 
   const addAssigneeToGroup = async (row: Assignment) => {
@@ -970,6 +973,15 @@ const Assignments = () => {
               onChange={(m, y) => {
                 setMonth(m);
                 setYear(y);
+                  const firstDay = new Date(y, m, 1);
+                  const lastDay = new Date(y, m + 1, 0);
+                  const currentDate = new Date();
+                  const selectedTo =
+                    y === currentDate.getFullYear() && m === currentDate.getMonth()
+                      ? currentDate
+                      : lastDay;
+                  setReportFrom(firstDay.toISOString().slice(0, 10));
+                  setReportTo(selectedTo.toISOString().slice(0, 10));
                 persistDraft({ month: m, year: y });
               }}
             />
@@ -1581,47 +1593,13 @@ const Assignments = () => {
           <DialogHeader>
             <DialogTitle>Send Completed Sites Report?</DialogTitle>
             <DialogDescription>
-              Review the report details before sending.
+               Review the selected date range and completed site count before sending.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 rounded-lg bg-slate-50 p-4 text-sm">
-            <div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="font-semibold">Recipient</span>
-                <button
-                  type="button"
-                  onClick={() => setRecipientEditing((editing) => !editing)}
-                  className="rounded-md p-1.5 text-blue-700 transition-colors hover:bg-blue-100"
-                  aria-label={
-                    recipientEditing
-                      ? "Save recipient email"
-                      : "Edit recipient email"
-                  }
-                  title={recipientEditing ? "Save" : "Edit recipient email"}
-                >
-                  {recipientEditing ? (
-                    <Save className="h-4 w-4" />
-                  ) : (
-                    <Pencil className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-              {recipientEditing ? (
-                <Input
-                  id="report-recipient"
-                  type="email"
-                  value={reportRecipient}
-                  onChange={(event) => setReportRecipient(event.target.value)}
-                  placeholder="recipient@example.com"
-                  className="mt-1 bg-white"
-                  autoFocus
-                />
-              ) : (
-                <p className="mt-1 break-all text-base text-slate-900">
-                  {reportRecipient}
-                </p>
-              )}
-            </div>
+             <div>
+               <span className="font-semibold">Recipient:</span> Signed-in account email
+             </div>
             <div>
               <span className="font-semibold">Date range:</span> {reportFrom} to{" "}
               {reportTo}

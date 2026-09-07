@@ -35,20 +35,13 @@ Deno.serve(async (req) => {
     } = await supabase.auth.getUser();
     if (userError || !user?.email)
       throw new Error("Authenticated email unavailable");
-    const { fromDate, toDate, recipient, assignmentIds } = await req.json();
+    const { fromDate, toDate } = await req.json();
     if (
       !/^\d{4}-\d{2}-\d{2}$/.test(fromDate) ||
       !/^\d{4}-\d{2}-\d{2}$/.test(toDate) ||
       fromDate > toDate
     )
       throw new Error("Invalid date range");
-    if (
-      typeof recipient !== "string" ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.trim())
-    )
-      throw new Error("Invalid recipient email");
-    if (!Array.isArray(assignmentIds) || assignmentIds.length === 0)
-      throw new Error("No completed sites found");
     const { data, error } = await supabase
       .from("assignments")
       .select(
@@ -56,11 +49,13 @@ Deno.serve(async (req) => {
       )
       .eq("user_id", user.id)
       .eq("status", "Completed")
-      .in("id", assignmentIds);
+      .gte("updated_at", `${fromDate}T00:00:00.000Z`)
+      .lte("updated_at", `${toDate}T23:59:59.999Z`)
+      .order("updated_at", { ascending: true });
     if (error) throw error;
     if (!data?.length)
       return new Response(
-        JSON.stringify({ message: "No completed sites found" }),
+        JSON.stringify({ message: "No completed sites found for the selected date range." }),
         {
           status: 422,
           headers: { ...cors, "Content-Type": "application/json" },
@@ -106,7 +101,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         from: Deno.env.get("REPORT_FROM_EMAIL"),
-        to: [recipient.trim()],
+        to: [user.email],
         subject: `Completed Sites Report: ${fromDate} to ${toDate}`,
         html,
       }),
