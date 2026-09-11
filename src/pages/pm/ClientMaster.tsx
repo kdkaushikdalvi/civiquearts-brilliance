@@ -96,7 +96,7 @@ const ClientMaster = ({ embedded = false }: { embedded?: boolean }) => {
         </Card>
         <Card className="overflow-hidden">
           <div className="px-5 py-3 flex items-center justify-between gap-4 bg-gradient-to-r from-[#24105c] via-[#5c24ff] to-[#e91e9b] text-white">
-            <h2 className="font-semibold">Clients ({filtered.length})</h2>
+            <h2 className="text-sm font-semibold">Clients ({filtered.length})</h2>
             <div className="relative w-64 max-w-full">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
               <Input

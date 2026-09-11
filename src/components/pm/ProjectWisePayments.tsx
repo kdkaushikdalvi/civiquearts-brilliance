@@ -360,7 +360,7 @@ export default function ProjectWisePayments({
                     </button>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-semibold text-slate-900 text-base">
+                        <h4 className="text-sm font-semibold text-slate-900">
                           {summary.projectName}
                         </h4>
                         {summary.clientName && (

@@ -516,7 +516,7 @@ const DownloadInvoices = () => {
     <Card className="overflow-hidden border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-slate-50/90 px-4 py-3">
         <div>
-          <h4 className="font-semibold text-yellow-800">
+          <h4 className="text-sm font-semibold text-yellow-800">
             Payment Slip Preview {assignee ? `— ${assignee.name}` : ""}
           </h4>
           <p className="text-xs text-muted-foreground">
@@ -1274,7 +1274,7 @@ const DownloadInvoices = () => {
                 {showOthers && (
                   <Card className="space-y-4 border-slate-200/80 bg-white/95 p-4 shadow-lg shadow-slate-900/5">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-lg font-semibold text-yellow-800">
+                    <h4 className="text-sm font-semibold text-yellow-800">
                       Others {assignee ? `— ${assignee.name}` : ""}
                     </h4>
                     {draftOthers.length === 0 && (
@@ -1400,7 +1400,7 @@ const DownloadInvoices = () => {
                 {showOthers && addedOthers.length > 0 && (
                   <div className="space-y-6">
                     <Card className="overflow-x-auto border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
-                    <h4 className="border-b border-border bg-slate-50/80 px-4 py-3 font-semibold text-yellow-800">
+                    <h4 className="border-b border-border bg-slate-50/80 px-4 py-3 text-sm font-semibold text-yellow-800">
                       Added Others {assignee ? `— ${assignee.name}` : ""}
                     </h4>
                     <table className="w-full text-sm">
@@ -1488,7 +1488,8 @@ const DownloadInvoices = () => {
                       </tbody>
                     </table>
                   </Card>
-                )}
+                </div>
+              )}
                 {showSlipPreview && (
                   <>
                     {/* Payment Slip Preview */}

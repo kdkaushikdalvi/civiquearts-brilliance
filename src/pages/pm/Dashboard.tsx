@@ -51,7 +51,7 @@ const Dashboard = () => {
 
         <div className="grid md:grid-cols-2 gap-4">
           <div className="bg-card rounded-xl p-5 shadow-card border border-border">
-            <h3 className="font-semibold mb-3">Quick Actions</h3>
+            <h3 className="text-sm font-semibold mb-3">Quick Actions</h3>
             <div className="space-y-2">
               <Link to="/app/projects" className="block px-3 py-2 rounded-md hover:bg-secondary text-sm">
                 → Create site allocation
@@ -68,7 +68,7 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="bg-card rounded-xl p-5 shadow-card border border-border">
-            <h3 className="font-semibold mb-3">Recent Activity</h3>
+            <h3 className="text-sm font-semibold mb-3">Recent Activity</h3>
             {monthlyAssignments.slice(-5).reverse().map((a) => (
               <div key={a.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                 <div className="text-sm">
