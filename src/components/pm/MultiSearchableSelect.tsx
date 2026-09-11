@@ -99,7 +99,7 @@ const MultiSearchableSelect = ({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search assignees..."
-              className="flex-1 bg-transparent px-2 py-2 text-sm outline-none"
+              className="flex-1 bg-transparent px-2 py-2 text-sm text-black outline-none"
             />
           </div>
           <div className="max-h-56 overflow-y-auto p-1">

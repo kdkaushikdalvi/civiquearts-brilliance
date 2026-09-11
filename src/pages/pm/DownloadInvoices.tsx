@@ -25,12 +25,15 @@ import {
   Loader2,
   X,
   MoreHorizontal,
+  Building2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, formatNumber } from "@/lib/pmFormat";
+import { cleanUnit } from "@/lib/unitFormat";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import logo from "@/assets/logo.png";
+import ProjectWisePayments from "@/components/pm/ProjectWisePayments";
 
 const ONES = [
   "",
@@ -106,12 +109,17 @@ const amountInWords = (amount: number) => {
 
 interface OtherItem {
   id: string;
+  assigneeId: string;
+  month: number;
+  year: number;
   project: string;
   site: string;
   unit: string;
   quantity: number;
   rate: number;
 }
+
+const PAYMENT_SLIP_OTHERS_KEY = "pm_payment_slip_others_v2";
 
 const DownloadInvoices = () => {
   const { employees, assignments, addInvoice } = useData();
@@ -128,8 +136,56 @@ const DownloadInvoices = () => {
       "0"
     )}-${String(d.getDate()).padStart(2, "0")}`;
   });
-  const [otherItems, setOtherItems] = useState<OtherItem[]>([]);
-  const [addedOtherIds, setAddedOtherIds] = useState<string[]>([]);
+  const [otherItems, setOtherItems] = useState<OtherItem[]>(() => {
+    try {
+      const stored = localStorage.getItem(PAYMENT_SLIP_OTHERS_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed?.items)) {
+          return parsed.items.map((item: any) => ({
+            id: item.id || crypto.randomUUID(),
+            assigneeId: item.assigneeId || "",
+            month: typeof item.month === "number" ? item.month : now.getMonth(),
+            year: typeof item.year === "number" ? item.year : now.getFullYear(),
+            project: item.project || "",
+            site: item.site || "",
+            unit: item.unit || "",
+            quantity: Number(item.quantity) || 0,
+            rate: Number(item.rate) || 0,
+          }));
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load other items from localStorage:", e);
+    }
+    return [];
+  });
+  const [addedOtherIds, setAddedOtherIds] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(PAYMENT_SLIP_OTHERS_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed?.addedIds)) {
+          return parsed.addedIds;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load added other ids from localStorage:", e);
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        PAYMENT_SLIP_OTHERS_KEY,
+        JSON.stringify({ items: otherItems, addedIds: addedOtherIds })
+      );
+    } catch (e) {
+      console.error("Failed to save other items to localStorage:", e);
+    }
+  }, [otherItems, addedOtherIds]);
+
   const [isDownloading, setIsDownloading] = useState(false);
   const [pendingDownloadAssigneeId, setPendingDownloadAssigneeId] = useState<
     string | null
@@ -139,7 +195,9 @@ const DownloadInvoices = () => {
   >(null);
   const [showSlipPreview, setShowSlipPreview] = useState(false);
   const [showOthers, setShowOthers] = useState(false);
+  const [viewMode, setViewMode] = useState<"slips" | "project_wise">("slips");
   const invoiceRef = useRef<HTMLDivElement>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
   const assignee = employees.find((e) => e.id === assigneeId);
   const filtered = useMemo(
@@ -161,24 +219,65 @@ const DownloadInvoices = () => {
       ),
     [assignments, month, year]
   );
-  const monthTotal = monthCompletedAssignments.reduce(
+  const monthAssignmentsTotal = monthCompletedAssignments.reduce(
     (sum, assignment) => sum + (assignment.amount ?? 0),
     0
   );
+  const monthOthersTotal = useMemo(() => {
+    return otherItems
+      .filter(
+        (item) =>
+          item.month === month &&
+          item.year === year &&
+          addedOtherIds.includes(item.id)
+      )
+      .reduce((sum, item) => sum + item.quantity * item.rate, 0);
+  }, [otherItems, addedOtherIds, month, year]);
+  const monthTotal = monthAssignmentsTotal + monthOthersTotal;
+
   const availableAssigneeIds = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          monthCompletedAssignments
-            .map((assignment) => assignment.assigneeId)
-            .filter(Boolean)
+    () => {
+      const fromAssignments = monthCompletedAssignments
+        .map((assignment) => assignment.assigneeId)
+        .filter(Boolean);
+      const fromOthers = otherItems
+        .filter(
+          (item) =>
+            item.month === month &&
+            item.year === year &&
+            addedOtherIds.includes(item.id)
         )
-      ) as string[],
-    [monthCompletedAssignments]
+        .map((item) => item.assigneeId)
+        .filter(Boolean);
+      return Array.from(new Set([...fromAssignments, ...fromOthers])) as string[];
+    },
+    [monthCompletedAssignments, otherItems, addedOtherIds, month, year]
   );
-  const addedOthers = otherItems.filter((item) =>
-    addedOtherIds.includes(item.id)
+
+  const addedOthers = useMemo(
+    () =>
+      otherItems.filter(
+        (item) =>
+          item.assigneeId === assigneeId &&
+          item.month === month &&
+          item.year === year &&
+          addedOtherIds.includes(item.id)
+      ),
+    [otherItems, assigneeId, month, year, addedOtherIds]
   );
+
+  const draftOthers = useMemo(
+    () =>
+      otherItems.filter(
+        (item) =>
+          item.assigneeId === assigneeId &&
+          item.month === month &&
+          item.year === year &&
+          !addedOtherIds.includes(item.id)
+      ),
+    [otherItems, assigneeId, month, year, addedOtherIds]
+  );
+
   const addedOthersTotal = addedOthers.reduce(
     (s, item) => s + item.quantity * item.rate,
     0
@@ -205,8 +304,11 @@ const DownloadInvoices = () => {
       })
     : "";
 
-  const createEmptyOther = (): OtherItem => ({
+  const createEmptyOther = (targetAssigneeId = assigneeId): OtherItem => ({
     id: crypto.randomUUID(),
+    assigneeId: targetAssigneeId,
+    month,
+    year,
     project: "",
     site: "",
     unit: "",
@@ -214,12 +316,20 @@ const DownloadInvoices = () => {
     rate: 0,
   });
 
-  const addOther = () =>
+  const addOther = (targetAssigneeId = assigneeId) => {
+    if (!targetAssigneeId) return;
     setOtherItems((items) =>
-      items.some((item) => !addedOtherIds.includes(item.id))
+      items.some(
+        (item) =>
+          item.assigneeId === targetAssigneeId &&
+          item.month === month &&
+          item.year === year &&
+          !addedOtherIds.includes(item.id)
+      )
         ? items
-        : [...items, createEmptyOther()]
+        : [...items, createEmptyOther(targetAssigneeId)]
     );
+  };
 
   const updateOther = (id: string, patch: Partial<OtherItem>) =>
     setOtherItems((items) =>
@@ -327,11 +437,29 @@ const DownloadInvoices = () => {
     setAssigneeId(id);
     setShowSlipPreview(true);
     setShowOthers(false);
+    setTimeout(() => {
+      previewContainerRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 100);
   };
 
   const addOtherForAssignee = (id: string) => {
     setAssigneeId(id);
     setShowOthers(true);
+    setShowSlipPreview(false);
+    setOtherItems((items) => {
+      const hasDraft = items.some(
+        (item) =>
+          item.assigneeId === id &&
+          item.month === month &&
+          item.year === year &&
+          !addedOtherIds.includes(item.id)
+      );
+      if (hasDraft) return items;
+      return [...items, createEmptyOther(id)];
+    });
   };
 
   const previewAndDownloadForAssignee = (id: string) => {
@@ -384,6 +512,525 @@ const DownloadInvoices = () => {
     }, 300);
   };
 
+  const renderSlipPreviewContent = () => (
+    <Card className="overflow-hidden border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-slate-50/90 px-4 py-3">
+        <div>
+          <h4 className="font-semibold text-yellow-800">
+            Payment Slip Preview {assignee ? `— ${assignee.name}` : ""}
+          </h4>
+          <p className="text-xs text-muted-foreground">
+            {MONTH_NAMES[month]} {year} · {filtered.length} completed site
+            {filtered.length === 1 ? "" : "s"}
+            {addedOthers.length > 0 &&
+              ` + ${addedOthers.length} other${
+                addedOthers.length === 1 ? "" : "s"
+              }`}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={printInvoice}
+            className="h-8 gap-1.5 px-3 text-xs"
+          >
+            <Printer className="h-3.5 w-3.5 text-slate-600" />
+            Print
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={download}
+            disabled={isDownloading}
+            className="h-8 gap-1.5 bg-blue-600 px-3 text-xs text-white hover:bg-blue-700"
+          >
+            <ArrowDown className="h-3.5 w-3.5 text-white" />
+            {isDownloading ? "Generating..." : "Download PDF"}
+          </Button>
+          {!showOthers && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSlipPreview(false)}
+              className="h-8 w-8 p-0 text-slate-500 hover:text-slate-800"
+              title="Close Preview"
+              aria-label="Close Preview"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="overflow-x-auto bg-slate-100/70 p-4 sm:p-6">
+        <div
+          ref={invoiceRef}
+          className="payment-slip mx-auto bg-white p-4 sm:p-6 shadow-sm"
+          style={{
+            width: "190mm",
+            boxSizing: "border-box",
+            fontFamily: "Arial, sans-serif",
+          }}
+        >
+          <div className="payment-slip-page-header">
+            <div
+              className="payment-slip-header"
+              style={{
+                textAlign: "center",
+                fontWeight: "bold",
+                padding: "4px",
+                marginBottom: "6px",
+              }}
+            >
+              Payment Slip
+            </div>
+          </div>
+
+          <div className="payment-slip-page-body">
+            <div style={{ display: "flex", gap: 0 }}>
+              <div
+                className="payment-slip-company"
+                style={{
+                  flex: 2,
+                  border: "1px solid #666",
+                  padding: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <img
+                  src={logo}
+                  alt="Logo"
+                  style={{ height: 56, width: "auto" }}
+                  crossOrigin="anonymous"
+                />
+                <div>
+                  <h1 style={{ margin: 0, fontSize: 18 }}>Civique Arts</h1>
+                  <p style={{ margin: "3px 0", fontSize: 13 }}>
+                    Ground Floor Ghar No 214 Milkat No 2841 Inamdar Wasti Koregaon
+                    Mul
+                  </p>
+                  <p style={{ margin: "3px 0", fontSize: 13 }}>
+                    <b>Phone:</b> 9011718351 &nbsp;&nbsp;{" "}
+                    <b>Email:</b> vijayc@civiquearts.com
+                  </p>
+                </div>
+              </div>
+              <div
+                className="payment-slip-company"
+                style={{
+                  flex: 1,
+                  border: "1px solid #666",
+                  borderLeft: "none",
+                  padding: "8px",
+                }}
+              >
+                <p style={{ margin: "3px 0", fontSize: 13 }}>
+                  <b>Payment Slip No.:</b> {invoiceNumber}
+                </p>
+                <p style={{ margin: "3px 0", fontSize: 13 }}>
+                  <b>Date:</b> {invoiceDate}
+                </p>
+              </div>
+            </div>
+
+            <div
+              className="payment-slip-customer"
+              style={{
+                border: "1px solid #666",
+                borderTop: "none",
+                padding: "8px",
+              }}
+            >
+              <b>Full Name:</b> {assignee?.name}
+              {assignee?.mobile ? ` · ${assignee.mobile}` : ""}
+            </div>
+            <table
+              className="payment-slip-table"
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                tableLayout: "fixed",
+                marginTop: 6,
+              }}
+            >
+              <colgroup>
+                <col style={{ width: "5%" }} />
+                <col style={{ width: "45.4%" }} />
+                <col style={{ width: "11%" }} />
+                <col style={{ width: "12.6%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "14%" }} />
+              </colgroup>
+              <thead>
+                <tr style={{ background: "#f2f2f2" }}>
+                  <th
+                    style={{
+                      border: "1px solid #666",
+                      padding: 6,
+                      fontSize: 13,
+                    }}
+                  >
+                    #
+                  </th>
+                  <th
+                    style={{
+                      border: "1px solid #666",
+                      padding: 6,
+                      fontSize: 13,
+                      textAlign: "left",
+                    }}
+                  >
+                    Item Name
+                  </th>
+                  <th
+                    style={{
+                      border: "1px solid #666",
+                      padding: 6,
+                      fontSize: 13,
+                      textAlign: "right",
+                    }}
+                  >
+                    Quantity
+                  </th>
+                  <th
+                    style={{
+                      border: "1px solid #666",
+                      padding: 6,
+                      fontSize: 13,
+                      textAlign: "left",
+                    }}
+                  >
+                    Unit
+                  </th>
+                  <th
+                    style={{
+                      border: "1px solid #666",
+                      padding: 6,
+                      fontSize: 13,
+                      textAlign: "right",
+                    }}
+                  >
+                    Price (₹)
+                  </th>
+                  <th
+                    style={{
+                      border: "1px solid #666",
+                      padding: 6,
+                      fontSize: 13,
+                      textAlign: "right",
+                    }}
+                  >
+                    Amount (₹)
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((a, i) => (
+                  <tr key={a.id}>
+                    <td
+                      style={{
+                        border: "1px solid #666",
+                        padding: 6,
+                        fontSize: 13,
+                      }}
+                    >
+                      {i + 1}
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #666",
+                        padding: 6,
+                        fontSize: 13,
+                      }}
+                    >
+                      {a.site} - ({a.project})
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #666",
+                        padding: 6,
+                        fontSize: 13,
+                        textAlign: "right",
+                      }}
+                    >
+                      {formatNumber(a.quantity ?? 1)}
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #666",
+                        padding: 6,
+                        fontSize: 13,
+                        wordBreak: "break-word",
+                        overflowWrap: "break-word",
+                      }}
+                    >
+                      {cleanUnit(a.unit)}
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #666",
+                        padding: 6,
+                        fontSize: 13,
+                        textAlign: "right",
+                      }}
+                    >
+                      {(a.rate ?? 0).toFixed(2)}
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #666",
+                        padding: 6,
+                        fontSize: 13,
+                        textAlign: "right",
+                      }}
+                    >
+                      {formatINR(a.amount ?? 0)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              {addedOthers.length > 0 && (
+                <tbody className="payment-slip-others">
+                  <tr>
+                    <td
+                      colSpan={6}
+                      style={{
+                        border: "1px solid #666",
+                        padding: 6,
+                        fontSize: 13,
+                        fontWeight: "bold",
+                        background: "#f2f2f2",
+                      }}
+                    >
+                      Others
+                    </td>
+                  </tr>
+                  {addedOthers.map((item, i) => (
+                    <tr key={item.id}>
+                      <td
+                        style={{
+                          border: "1px solid #666",
+                          padding: 6,
+                          fontSize: 13,
+                        }}
+                      >
+                        {filtered.length + i + 1}
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #666",
+                          padding: 6,
+                          fontSize: 13,
+                        }}
+                      >
+                        {item.site} - ({item.project})
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #666",
+                          padding: 6,
+                          fontSize: 13,
+                          textAlign: "right",
+                        }}
+                      >
+                        {formatNumber(item.quantity)}
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #666",
+                          padding: 6,
+                          fontSize: 13,
+                          wordBreak: "break-word",
+                          overflowWrap: "break-word",
+                        }}
+                      >
+                        {cleanUnit(item.unit)}
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #666",
+                          padding: 6,
+                          fontSize: 13,
+                          textAlign: "right",
+                        }}
+                      >
+                        {item.rate.toFixed(2)}
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #666",
+                          padding: 6,
+                          fontSize: 13,
+                          textAlign: "right",
+                        }}
+                      >
+                        {formatINR(item.quantity * item.rate)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              )}
+              <tbody>
+                <tr>
+                  <td
+                    colSpan={2}
+                    style={{
+                      border: "1px solid #666",
+                      padding: 6,
+                      fontSize: 13,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Total
+                  </td>
+                  <td
+                    style={{
+                      border: "1px solid #666",
+                      padding: 6,
+                      fontSize: 13,
+                      textAlign: "right",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {formatNumber(totalQty)}
+                  </td>
+                  <td
+                    style={{
+                      border: "1px solid #666",
+                      padding: 6,
+                      fontSize: 13,
+                    }}
+                  />
+                  <td
+                    style={{
+                      border: "1px solid #666",
+                      padding: 6,
+                      fontSize: 13,
+                    }}
+                  />
+                  <td
+                    style={{
+                      border: "1px solid #666",
+                      padding: 6,
+                      fontSize: 13,
+                      textAlign: "right",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {formatINR(grandTotal)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <table
+              className="payment-slip-table payment-slip-footer-table"
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                tableLayout: "fixed",
+                marginTop: 0,
+              }}
+            >
+              <colgroup>
+                <col style={{ width: "5%" }} />
+                <col style={{ width: "45.4%" }} />
+                <col style={{ width: "11%" }} />
+                <col style={{ width: "12.6%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "14%" }} />
+              </colgroup>
+              <tbody className="payment-slip-footer">
+                <tr>
+                  <td
+                    colSpan={5}
+                    style={{
+                      border: "1px solid #666",
+                      padding: 6,
+                      fontSize: 13,
+                      textAlign: "left",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Sub Total
+                  </td>
+                  <td
+                    style={{
+                      border: "1px solid #666",
+                      padding: 6,
+                      fontSize: 13,
+                      textAlign: "right",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {formatINR(grandTotal)}
+                  </td>
+                </tr>
+                <tr>
+                  <td
+                    colSpan={5}
+                    style={{
+                      border: "1px solid #666",
+                      padding: 6,
+                      fontSize: 13,
+                      textAlign: "left",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Total
+                  </td>
+                  <td
+                    style={{
+                      border: "1px solid #666",
+                      padding: 6,
+                      fontSize: 13,
+                      textAlign: "right",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {formatINR(grandTotal)}
+                  </td>
+                </tr>
+                <tr>
+                  <td
+                    colSpan={6}
+                    style={{
+                      border: "1px solid #666",
+                      padding: 6,
+                      fontSize: 13,
+                      textAlign: "left",
+                    }}
+                  >
+                    <b>Amount in Words:</b> {amountInWords(grandTotal)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                border: "1px solid #666",
+                borderTop: "none",
+                padding: 6,
+                fontSize: 13,
+                fontWeight: "bold",
+              }}
+            >
+              <span>Paid</span>
+              <span>{formatINR(grandTotal)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+
   return (
     <AppShell>
       <div className="p-6 max-w-6xl mx-auto space-y-3">
@@ -403,16 +1050,61 @@ const DownloadInvoices = () => {
           />
         </div>
 
-        <Card className="mx-auto flex h-8 w-fit max-w-[calc(100vw-2rem)] items-center justify-center rounded-full border-slate-200 bg-slate-100/90 px-3 py-0 shadow-none">
-          <div className="flex items-baseline gap-2 whitespace-nowrap">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-800">
-              Total payment for {MONTH_NAMES[month]} {year}
-            </p>
-            <p className="font-mono text-base font-semibold leading-none text-red-600">
-              {formatINR(monthTotal)}
-            </p>
-          </div>
-        </Card>
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-2 border-b border-slate-200">
+          <button
+            type="button"
+            onClick={() => setViewMode("slips")}
+            className={`pb-2 px-3 text-sm font-medium transition-colors border-b-2 inline-flex items-center gap-1.5 ${
+              viewMode === "slips"
+                ? "border-amber-700 text-amber-900 font-semibold"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <FileText className="h-4 w-4" />
+            Payment Slips
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("project_wise")}
+            className={`pb-2 px-3 text-sm font-medium transition-colors border-b-2 inline-flex items-center gap-1.5 ${
+              viewMode === "project_wise"
+                ? "border-amber-700 text-amber-900 font-semibold"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <Building2 className="h-4 w-4" />
+            Project-wise Payments
+          </button>
+        </div>
+
+        {viewMode === "project_wise" ? (
+          <ProjectWisePayments
+            month={month}
+            year={year}
+            assignments={assignments}
+            employees={employees}
+            onSelectAssigneeForSlip={(empId) => {
+              setSelectedAssigneeIds((prev) =>
+                prev.includes(empId) ? prev : [...prev, empId]
+              );
+              setAssigneeId(empId);
+              setViewMode("slips");
+              setShowSlipPreview(true);
+            }}
+          />
+        ) : (
+          <>
+            <Card className="mx-auto flex h-8 w-fit max-w-[calc(100vw-2rem)] items-center justify-center rounded-full border-slate-200 bg-slate-100/90 px-3 py-0 shadow-none">
+              <div className="flex items-baseline gap-2 whitespace-nowrap">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-800">
+                  Total payment for {MONTH_NAMES[month]} {year}
+                </p>
+                <p className="font-mono text-base font-semibold leading-none text-red-600">
+                  {formatINR(monthTotal)}
+                </p>
+              </div>
+            </Card>
 
         <Card className="grid max-w-4xl gap-4 p-5 sm:grid-cols-2">
           <div>
@@ -423,9 +1115,15 @@ const DownloadInvoices = () => {
               value={selectedAssigneeIds}
               onChange={(ids) => {
                 setSelectedAssigneeIds(ids);
-                setAssigneeId(ids[0] ?? "");
-                setShowSlipPreview(false);
-                setShowOthers(false);
+                if (ids.length === 0) {
+                  setAssigneeId("");
+                  setShowSlipPreview(false);
+                  setShowOthers(false);
+                } else if (!ids.includes(assigneeId)) {
+                  setAssigneeId(ids[0]);
+                  setShowSlipPreview(false);
+                  setShowOthers(false);
+                }
               }}
               options={employees
                 .filter((employee) =>
@@ -468,14 +1166,33 @@ const DownloadInvoices = () => {
                 const employeeAssignments = monthCompletedAssignments.filter(
                   (assignment) => assignment.assigneeId === id
                 );
-                const employeeTotal = employeeAssignments.reduce(
+                const employeeBaseTotal = employeeAssignments.reduce(
                   (sum, assignment) => sum + (assignment.amount ?? 0),
                   0
                 );
+                const employeeOthers = otherItems.filter(
+                  (item) =>
+                    item.assigneeId === id &&
+                    item.month === month &&
+                    item.year === year &&
+                    addedOtherIds.includes(item.id)
+                );
+                const employeeOthersTotal = employeeOthers.reduce(
+                  (sum, item) => sum + item.quantity * item.rate,
+                  0
+                );
+                const employeeGrandTotal = employeeBaseTotal + employeeOthersTotal;
+                const hasAnyItems =
+                  employeeAssignments.length > 0 || employeeOthers.length > 0;
+                const isCurrentActive =
+                  assigneeId === id && (showSlipPreview || showOthers);
+
                 return (
                   <div
                     key={id}
-                    className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5"
+                    className={`flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 transition-colors ${
+                      isCurrentActive ? "bg-amber-50/60" : ""
+                    }`}
                   >
                     <div>
                       <p className="text-sm font-semibold text-slate-900">
@@ -483,8 +1200,18 @@ const DownloadInvoices = () => {
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {employeeAssignments.length} completed Site
-                        {employeeAssignments.length === 1 ? "" : "s"} ·{" "}
-                        {formatINR(employeeTotal)}
+                        {employeeAssignments.length === 1 ? "" : "s"}
+                        {employeeOthers.length > 0 && (
+                          <span className="font-medium text-emerald-700">
+                            {` + ${employeeOthers.length} other${
+                              employeeOthers.length === 1 ? "" : "s"
+                            }`}
+                          </span>
+                        )}
+                        {" · "}
+                        <span className="font-semibold text-slate-800">
+                          {formatINR(employeeGrandTotal)}
+                        </span>
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -507,9 +1234,7 @@ const DownloadInvoices = () => {
                             previewForAssignee(id);
                           }
                         }}
-                        disabled={
-                          isDownloading || employeeAssignments.length === 0
-                        }
+                        disabled={isDownloading || !hasAnyItems}
                         className="h-8 px-3 text-xs"
                       >
                         <Eye className="mr-1.5 h-3.5 w-3.5 text-violet-600" />
@@ -518,9 +1243,7 @@ const DownloadInvoices = () => {
                       <Button
                         type="button"
                         onClick={() => previewAndDownloadForAssignee(id)}
-                        disabled={
-                          isDownloading || employeeAssignments.length === 0
-                        }
+                        disabled={isDownloading || !hasAnyItems}
                         className="h-8 bg-blue-600 px-3 text-xs text-white hover:bg-blue-700"
                       >
                         <ArrowDown className="mr-1.5 h-3.5 w-3.5 animate-bounce text-white" />
@@ -548,17 +1271,16 @@ const DownloadInvoices = () => {
               </Card>
             ) : (
               <>
-                <Card className="space-y-4 border-slate-200/80 bg-white/95 p-4 shadow-lg shadow-slate-900/5">
+                {showOthers && (
+                  <Card className="space-y-4 border-slate-200/80 bg-white/95 p-4 shadow-lg shadow-slate-900/5">
                   <div className="flex items-center justify-between">
                     <h4 className="text-lg font-semibold text-yellow-800">
-                      Others
+                      Others {assignee ? `— ${assignee.name}` : ""}
                     </h4>
-                    {otherItems.filter(
-                      (item) => !addedOtherIds.includes(item.id)
-                    ).length === 0 && (
+                    {draftOthers.length === 0 && (
                       <Button
                         type="button"
-                        onClick={addOther}
+                        onClick={() => addOther(assigneeId)}
                         aria-label="Add other item"
                         title="Add other item"
                         className="h-8 w-8 rounded-full bg-violet-400 p-0 text-white hover:bg-violet-500"
@@ -567,9 +1289,7 @@ const DownloadInvoices = () => {
                       </Button>
                     )}
                   </div>
-                  {otherItems
-                    .filter((item) => !addedOtherIds.includes(item.id))
-                    .map((item) => (
+                  {draftOthers.map((item) => (
                       <div
                         key={item.id}
                         className="grid min-w-[620px] max-w-4xl grid-cols-[minmax(120px,1.5fr)_minmax(120px,1.5fr)_72px_60px_82px_96px_auto_auto] items-center gap-2"
@@ -580,7 +1300,7 @@ const DownloadInvoices = () => {
                           onChange={(e) =>
                             updateOther(item.id, { project: e.target.value })
                           }
-                          className="h-9 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                          className="h-9 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm text-black"
                         />
                         <input
                           value={item.site}
@@ -588,7 +1308,7 @@ const DownloadInvoices = () => {
                           onChange={(e) =>
                             updateOther(item.id, { site: e.target.value })
                           }
-                          className="h-9 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                          className="h-9 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm text-black"
                         />
                         <input
                           value={item.unit}
@@ -596,7 +1316,7 @@ const DownloadInvoices = () => {
                           onChange={(e) =>
                             updateOther(item.id, { unit: e.target.value })
                           }
-                          className="h-9 w-full rounded-lg border border-input bg-background px-2 text-center text-sm"
+                          className="h-9 w-full rounded-lg border border-input bg-background px-2 text-center text-sm text-black"
                         />
                         <input
                           type="number"
@@ -611,7 +1331,7 @@ const DownloadInvoices = () => {
                               ),
                             })
                           }
-                          className="h-9 w-full rounded-lg border border-input bg-background px-2 text-right text-sm"
+                          className="h-9 w-full rounded-lg border border-input bg-background px-2 text-right text-sm text-black"
                         />
                         <input
                           type="number"
@@ -625,10 +1345,10 @@ const DownloadInvoices = () => {
                               rate: Math.max(0, Number(e.target.value) || 0),
                             })
                           }
-                          className="h-9 w-full rounded-lg border border-input bg-background px-2 text-right text-sm"
+                          className="h-9 w-full rounded-lg border border-input bg-background px-2 text-right text-sm text-black"
                         />
                         <div
-                          className="flex h-9 w-full items-center justify-end overflow-hidden rounded-lg border bg-muted px-2.5 text-sm font-medium"
+                          className="flex h-9 w-full items-center justify-end overflow-hidden rounded-lg border bg-muted px-2.5 text-sm font-medium text-black"
                           aria-label="Amount (₹)"
                           title="Amount (₹)"
                         >
@@ -665,6 +1385,7 @@ const DownloadInvoices = () => {
                             setAddedOtherIds((ids) =>
                               ids.includes(item.id) ? ids : [...ids, item.id]
                             );
+                            toast.success("Other item added to slip");
                           }}
                           className="h-9 w-9 shrink-0 rounded-full p-0"
                           aria-label="Save other item"
@@ -675,30 +1396,30 @@ const DownloadInvoices = () => {
                       </div>
                     ))}
                 </Card>
-                {addedOtherIds.length > 0 && (
-                  <Card className="overflow-x-auto border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+                )}
+                {showOthers && addedOthers.length > 0 && (
+                  <div className="space-y-6">
+                    <Card className="overflow-x-auto border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
                     <h4 className="border-b border-border bg-slate-50/80 px-4 py-3 font-semibold text-yellow-800">
-                      Added Others
+                      Added Others {assignee ? `— ${assignee.name}` : ""}
                     </h4>
                     <table className="w-full text-sm">
                       <tbody>
-                        {otherItems
-                          .filter((item) => addedOtherIds.includes(item.id))
-                          .map((item) => (
+                        {addedOthers.map((item) => (
                             <tr
                               key={item.id}
                               className="border-b border-border last:border-0"
                             >
-                              <td className="px-4 py-3">{item.project}</td>
-                              <td className="px-4 py-3">{item.site}</td>
-                              <td className="px-4 py-3">{item.unit}</td>
-                              <td className="px-4 py-3 text-right">
+                              <td className="px-4 py-3 font-medium text-slate-900">{item.project}</td>
+                              <td className="px-4 py-3 text-slate-800">{item.site}</td>
+                              <td className="px-4 py-3 text-slate-800">{cleanUnit(item.unit)}</td>
+                              <td className="px-4 py-3 text-right text-slate-900">
                                 {formatNumber(item.quantity)}
                               </td>
-                              <td className="px-4 py-3 text-right">
+                              <td className="px-4 py-3 text-right text-slate-900">
                                 {item.rate.toFixed(2)}
                               </td>
-                              <td className="px-4 py-3 text-right">
+                              <td className="px-4 py-3 text-right font-medium text-slate-900">
                                 {formatINR(item.quantity * item.rate)}
                               </td>
                               <td className="whitespace-nowrap px-4 py-3 text-right">
@@ -721,7 +1442,7 @@ const DownloadInvoices = () => {
                                     <DropdownMenuItem
                                       onClick={() => {
                                         setShowOthers(true);
-                                        addOther();
+                                        addOther(assigneeId);
                                         window.scrollTo({
                                           top: 0,
                                           behavior: "smooth",
@@ -732,12 +1453,12 @@ const DownloadInvoices = () => {
                                       More
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
-                                      onClick={() =>
-                                        window.scrollTo({
-                                          top: 0,
-                                          behavior: "smooth",
-                                        })
-                                      }
+                                      onClick={() => {
+                                        setAddedOtherIds((ids) =>
+                                          ids.filter((id) => id !== item.id)
+                                        );
+                                        setShowOthers(true);
+                                      }}
                                     >
                                       <Pencil className="mr-2 h-3.5 w-3.5" />
                                       Edit
@@ -752,6 +1473,7 @@ const DownloadInvoices = () => {
                                         setAddedOtherIds((ids) =>
                                           ids.filter((id) => id !== item.id)
                                         );
+                                        toast.success("Other item removed");
                                       }}
                                       className="text-red-600 focus:text-red-600"
                                     >
@@ -882,12 +1604,12 @@ const DownloadInvoices = () => {
                               }}
                             >
                               <colgroup>
-                                <col style={{ width: "5.3%" }} />
-                                <col style={{ width: "51.5%" }} />
-                                <col style={{ width: "10.9%" }} />
-                                <col style={{ width: "6.9%" }} />
-                                <col style={{ width: "11.9%" }} />
-                                <col style={{ width: "13.6%" }} />
+                                <col style={{ width: "5%" }} />
+                                <col style={{ width: "45.4%" }} />
+                                <col style={{ width: "11%" }} />
+                                <col style={{ width: "12.6%" }} />
+                                <col style={{ width: "12%" }} />
+                                <col style={{ width: "14%" }} />
                               </colgroup>
                               <thead>
                                 <tr style={{ background: "#f2f2f2" }}>
@@ -925,7 +1647,7 @@ const DownloadInvoices = () => {
                                       border: "1px solid #666",
                                       padding: 6,
                                       fontSize: 13,
-                                      textAlign: "right",
+                                      textAlign: "left",
                                     }}
                                   >
                                     Unit
@@ -988,9 +1710,11 @@ const DownloadInvoices = () => {
                                         border: "1px solid #666",
                                         padding: 6,
                                         fontSize: 13,
+                                        wordBreak: "break-word",
+                                        overflowWrap: "break-word",
                                       }}
                                     >
-                                      {a.unitType}
+                                      {cleanUnit(a.unitType)}
                                     </td>
                                     <td
                                       style={{
@@ -1066,9 +1790,11 @@ const DownloadInvoices = () => {
                                           border: "1px solid #666",
                                           padding: 6,
                                           fontSize: 13,
+                                          wordBreak: "break-word",
+                                          overflowWrap: "break-word",
                                         }}
                                       >
-                                        {item.unit}
+                                        {cleanUnit(item.unit)}
                                       </td>
                                       <td
                                         style={{
@@ -1156,12 +1882,12 @@ const DownloadInvoices = () => {
                               }}
                             >
                               <colgroup>
-                                <col style={{ width: "5.3%" }} />
-                                <col style={{ width: "51.5%" }} />
-                                <col style={{ width: "10.9%" }} />
-                                <col style={{ width: "6.9%" }} />
-                                <col style={{ width: "11.9%" }} />
-                                <col style={{ width: "13.6%" }} />
+                                <col style={{ width: "5%" }} />
+                                <col style={{ width: "45.4%" }} />
+                                <col style={{ width: "11%" }} />
+                                <col style={{ width: "12.6%" }} />
+                                <col style={{ width: "12%" }} />
+                                <col style={{ width: "14%" }} />
                               </colgroup>
                               <tbody className="payment-slip-footer">
                                 <tr>
@@ -1253,6 +1979,8 @@ const DownloadInvoices = () => {
                 )}
               </>
             )}
+          </>
+        )}
           </>
         )}
       </div>

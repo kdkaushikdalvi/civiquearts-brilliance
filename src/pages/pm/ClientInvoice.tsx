@@ -12,6 +12,7 @@ import { ChevronDown, Printer, FileText, Pencil, Save, Trash2, Plus } from "luci
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { formatClientInvoiceFileName } from "@/lib/clientInvoiceFormat";
+import { cleanUnit } from "@/lib/unitFormat";
 
 const ONES = [
   "",
@@ -192,7 +193,7 @@ const ClientInvoice = () => {
           name: `${s.siteName} - (${s.projectName})`,
           code: getSiteCode(siteCodes, s.siteName) || "N/A",
           quantity,
-          unit: s.unitType ?? "-",
+          unit: s.unitType ? cleanUnit(s.unitType) : "-",
           price,
           amount: Number((quantity * price).toFixed(4)),
         };
@@ -402,13 +403,14 @@ const ClientInvoice = () => {
               {allocationTableOpen && <Card className="overflow-x-auto rounded-2xl border-slate-200 shadow-sm">
                 <table className="w-full table-fixed text-sm">
                   <colgroup>
-                    <col style={{ width: "5%" }} />
-                    <col style={{ width: "37%" }} />
-                    <col style={{ width: "17%" }} />
+                    <col style={{ width: "4%" }} />
+                    <col style={{ width: "32%" }} />
+                    <col style={{ width: "16%" }} />
                     <col style={{ width: "10%" }} />
-                    <col style={{ width: "7%" }} />
-                    <col style={{ width: "7%" }} />
-                    <col style={{ width: "17%" }} />
+                    <col style={{ width: "10%" }} />
+                    <col style={{ width: "10%" }} />
+                    <col style={{ width: "10%" }} />
+                    <col style={{ width: "8%" }} />
                   </colgroup>
                   <thead className="bg-gradient-to-r from-indigo-100 via-blue-50 to-cyan-100">
                     <tr>
@@ -826,12 +828,12 @@ const ClientInvoice = () => {
                     }}
                   >
                     <colgroup>
-                      <col style={{ width: "5.3%" }} />
-                      <col style={{ width: "51.5%" }} />
-                      <col style={{ width: "10.9%" }} />
-                      <col style={{ width: "6.9%" }} />
-                      <col style={{ width: "11.9%" }} />
-                      <col style={{ width: "13.6%" }} />
+                      <col style={{ width: "5%" }} />
+                      <col style={{ width: "45.4%" }} />
+                      <col style={{ width: "11%" }} />
+                      <col style={{ width: "12.6%" }} />
+                      <col style={{ width: "12%" }} />
+                      <col style={{ width: "14%" }} />
                     </colgroup>
                     <thead>
                       <tr>
@@ -849,7 +851,7 @@ const ClientInvoice = () => {
                         <th
                           style={{
                             ...headCell,
-                            textAlign: "right",
+                            textAlign: "left",
                           }}
                         >
                           Unit
@@ -903,10 +905,12 @@ const ClientInvoice = () => {
                           <td
                             style={{
                               ...cell,
-                              textAlign: "right",
+                              textAlign: "left",
+                              wordBreak: "break-word",
+                              overflowWrap: "break-word",
                             }}
                           >
-                            {l.unit || "-"}
+                            {cleanUnit(l.unit) || "-"}
                           </td>
 
                           <td

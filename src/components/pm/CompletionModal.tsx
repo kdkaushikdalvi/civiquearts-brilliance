@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Assignment } from "@/types/pm";
 import { formatINR } from "@/lib/pmFormat";
+import { cleanUnit } from "@/lib/unitFormat";
 import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,13 +27,21 @@ interface Props {
   }) => void;
 }
 
-const DEFAULT_UNITS = ["Feet", "Per Page", "Per Address"];
+const DEFAULT_UNITS = ["Feet", "Page", "Address"];
 const UNITS_KEY = "pm_unit_types";
 
 const loadUnits = (): string[] => {
   try {
     const raw = localStorage.getItem(UNITS_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed
+          .map((u) => (typeof u === "string" ? cleanUnit(u) : ""))
+          .filter(Boolean);
+        return Array.from(new Set([...DEFAULT_UNITS, ...cleaned]));
+      }
+    }
   } catch {}
   return DEFAULT_UNITS;
 };
@@ -52,7 +61,8 @@ const CompletionModal = ({ open, onClose, assignment, onSave }: Props) => {
 
   useEffect(() => {
     if (assignment && open) {
-      setUnitType(assignment.unitType ?? units[0] ?? "Feet");
+      const currentUnit = cleanUnit(assignment.unitType) || units[0] || "Feet";
+      setUnitType(currentUnit);
       setQuantity(
         assignment.quantity != null ? String(assignment.quantity) : ""
       );
@@ -60,8 +70,8 @@ const CompletionModal = ({ open, onClose, assignment, onSave }: Props) => {
       setErrors({});
       setAdding(false);
       setNewUnit("");
-      if (assignment.unitType && !units.includes(assignment.unitType)) {
-        setUnits((u) => [...u, assignment.unitType as string]);
+      if (currentUnit && !units.includes(currentUnit)) {
+        setUnits((u) => [...u, currentUnit]);
       }
     }
   }, [assignment, open]);
@@ -71,7 +81,7 @@ const CompletionModal = ({ open, onClose, assignment, onSave }: Props) => {
   const amount = isFinite(q) && isFinite(r) ? q * r : 0;
 
   const handleAddUnit = () => {
-    const v = newUnit.trim();
+    const v = cleanUnit(newUnit);
     if (!v) return toast.error("Enter a unit name");
     if (units.some((u) => u.toLowerCase() === v.toLowerCase()))
       return toast.error("Unit already exists");
@@ -95,7 +105,7 @@ const CompletionModal = ({ open, onClose, assignment, onSave }: Props) => {
     if (!r || r <= 0) errs.r = "Rate must be > 0";
     setErrors(errs);
     if (Object.keys(errs).length) return;
-    onSave({ unitType, quantity: q, rate: r, amount });
+    onSave({ unitType: cleanUnit(unitType), quantity: q, rate: r, amount });
   };
 
   return (

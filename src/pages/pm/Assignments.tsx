@@ -34,9 +34,12 @@ import {
   Mail,
   MoreHorizontal,
   Pencil,
+  Search,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, formatNumber } from "@/lib/pmFormat";
+import { cleanUnit } from "@/lib/unitFormat";
 import { getStatusRank } from "@/lib/statusSort";
 import { isSiteGroupCompleted } from "@/lib/projectCompletion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -93,6 +96,7 @@ const Assignments = () => {
   const [reportSending, setReportSending] = useState(false);
   const [reportSectionOpen, setReportSectionOpen] = useState(false);
   const [allocationFormOpen, setAllocationFormOpen] = useState(false);
+  const [siteSearch, setSiteSearch] = useState("");
 
   const [clientId, setClientId] = useState("");
   const [projectId, setProjectId] = useState("");
@@ -125,7 +129,6 @@ const Assignments = () => {
         if (typeof d.year === "number") setYear(d.year);
       } catch {}
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-select newly created project/employee via location.state
@@ -180,7 +183,17 @@ const Assignments = () => {
     const list = assignments.filter(
       (a) => a.month === month && a.year === year
     );
-    return list.sort((a, b) => {
+    const query = siteSearch.trim().toLowerCase();
+    const searchedList = query
+      ? list.filter((a) => {
+          const siteMatch = a.siteName && a.siteName.toLowerCase().includes(query);
+          const projectMatch =
+            a.projectName && a.projectName.toLowerCase().includes(query);
+          return siteMatch || projectMatch;
+        })
+      : list;
+
+    return searchedList.sort((a, b) => {
       const nameA = a.projectName || "";
       const nameB = b.projectName || "";
 
@@ -218,7 +231,7 @@ const Assignments = () => {
         numeric: true,
       });
     });
-  }, [assignments, month, year, sortField, sortDirection]);
+  }, [assignments, month, year, sortField, sortDirection, siteSearch]);
 
   const grouped = useMemo(() => {
     const groups = new Map<string, Assignment[]>();
@@ -430,7 +443,7 @@ const Assignments = () => {
     if (editing) {
       updateAssignment(editing.id, {
         status: "Completed",
-        unitType: data.unitType,
+        unitType: cleanUnit(data.unitType),
         quantity: data.quantity,
         rate: data.rate,
         amount: data.amount,
@@ -548,7 +561,7 @@ const Assignments = () => {
         a.siteName,
         a.clientName,
         a.assigneeName,
-        a.unitType,
+        cleanUnit(a.unitType),
         a.quantity ?? "",
         a.rate ?? "",
         a.amount ?? "",
@@ -653,7 +666,7 @@ const Assignments = () => {
           month,
           year,
           status: resolvedStatus,
-          unitType: String(unitType ?? "-"),
+          unitType: cleanUnit(String(unitType ?? "-")),
           quantity: Number(quantity) || 0,
           rate: Number(rate) || 0,
           amount: Number(amount) || 0,
@@ -701,7 +714,7 @@ const Assignments = () => {
               className="my-[5px] flex h-8 items-center justify-start whitespace-nowrap"
             >
               {row.unitType
-                ? `${row.unitType} · ${formatNumber(row.quantity ?? 0)}`
+                ? `${cleanUnit(row.unitType)} · ${formatNumber(row.quantity ?? 0)}`
                 : "-"}
             </div>
           ))}
@@ -1027,25 +1040,25 @@ const Assignments = () => {
         )}
 
         {/* Tab Filter & Actions Section */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="relative inline-flex items-center gap-1.5 rounded-xl border-2 border-slate-300 bg-slate-100/90 p-1 text-xs font-semibold shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="relative inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100/80 p-0.5 text-xs font-semibold shadow-2xs">
             {/* ALL Tab */}
             <button
               type="button"
               onClick={() => setUserSelectedTab("all")}
-              className={`relative rounded-lg px-3 py-1.5 cursor-pointer select-none border-2 transition-colors ${
+              className={`relative rounded-md px-2.5 py-1 cursor-pointer select-none border transition-colors ${
                 activeTab === "all"
-                  ? "border-blue-600 bg-white text-blue-700 font-bold shadow-xs"
-                  : "border-slate-200/90 bg-white/70 text-slate-600 hover:border-blue-300 hover:text-blue-700 hover:bg-white"
+                  ? "border-blue-600 bg-white text-blue-700 font-bold shadow-2xs"
+                  : "border-transparent bg-transparent text-slate-600 hover:border-slate-200 hover:bg-white/80 hover:text-blue-700"
               }`}
             >
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1">
                 <span>ALL</span>
                 <span
-                  className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold transition-colors ${
+                  className={`inline-flex items-center justify-center rounded-full px-1.5 py-0 text-[10.5px] font-semibold transition-colors ${
                     activeTab === "all"
                       ? "bg-blue-100 text-blue-700 border border-blue-200"
-                      : "bg-slate-100 text-slate-600 group-hover:bg-blue-50 group-hover:text-blue-700"
+                      : "bg-slate-200/70 text-slate-600"
                   }`}
                 >
                   ({filtered.length})
@@ -1057,19 +1070,19 @@ const Assignments = () => {
             <button
               type="button"
               onClick={() => setUserSelectedTab("in_progress")}
-              className={`relative rounded-lg px-3 py-1.5 cursor-pointer select-none border-2 transition-colors ${
+              className={`relative rounded-md px-2.5 py-1 cursor-pointer select-none border transition-colors ${
                 activeTab === "in_progress"
-                  ? "border-[#7c3aed] bg-white text-[#7c3aed] font-bold shadow-xs"
-                  : "border-slate-200/90 bg-white/70 text-slate-600 hover:border-purple-300 hover:text-[#7c3aed] hover:bg-white"
+                  ? "border-[#7c3aed] bg-white text-[#7c3aed] font-bold shadow-2xs"
+                  : "border-transparent bg-transparent text-slate-600 hover:border-slate-200 hover:bg-white/80 hover:text-[#7c3aed]"
               }`}
             >
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1">
                 <span>In Progress</span>
                 <span
-                  className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold transition-colors ${
+                  className={`inline-flex items-center justify-center rounded-full px-1.5 py-0 text-[10.5px] font-semibold transition-colors ${
                     activeTab === "in_progress"
                       ? "bg-purple-100 text-purple-700 border border-purple-200"
-                      : "bg-slate-100 text-slate-600 group-hover:bg-purple-50 group-hover:text-purple-700"
+                      : "bg-slate-200/70 text-slate-600"
                   }`}
                 >
                   ({inProgressAssignmentsCount})
@@ -1081,19 +1094,19 @@ const Assignments = () => {
             <button
               type="button"
               onClick={() => setUserSelectedTab("completed")}
-              className={`relative rounded-lg px-3 py-1.5 cursor-pointer select-none border-2 transition-colors ${
+              className={`relative rounded-md px-2.5 py-1 cursor-pointer select-none border transition-colors ${
                 activeTab === "completed"
-                  ? "border-emerald-600 bg-white text-emerald-700 font-bold shadow-xs"
-                  : "border-slate-200/90 bg-white/70 text-slate-600 hover:border-emerald-300 hover:text-emerald-700 hover:bg-white"
+                  ? "border-emerald-600 bg-white text-emerald-700 font-bold shadow-2xs"
+                  : "border-transparent bg-transparent text-slate-600 hover:border-slate-200 hover:bg-white/80 hover:text-emerald-700"
               }`}
             >
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1">
                 <span>Completed</span>
                 <span
-                  className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold transition-colors ${
+                  className={`inline-flex items-center justify-center rounded-full px-1.5 py-0 text-[10.5px] font-semibold transition-colors ${
                     activeTab === "completed"
                       ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                      : "bg-slate-100 text-slate-600 group-hover:bg-emerald-50 group-hover:text-emerald-700"
+                      : "bg-slate-200/70 text-slate-600"
                   }`}
                 >
                   ({completedAssignmentsCount})
@@ -1101,29 +1114,56 @@ const Assignments = () => {
               </span>
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setAllocationFormOpen((open) => !open)}
-            className="flex shrink-0 items-center gap-1.5 rounded-md border border-blue-600 bg-white px-2.5 py-1 text-left text-xs font-semibold text-blue-800 shadow-sm transition-colors hover:bg-blue-50"
-            aria-expanded={allocationFormOpen}
-          >
-            <span className="flex items-center gap-1.5 font-semibold">
-              <span className="relative flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white shadow-sm">
-                <span
-                  className={`absolute inset-0 rounded-full bg-green-400 opacity-60 ${
-                    !allocationFormOpen ? "animate-slow-ping" : ""
-                  }`}
-                />
-                <Plus className="relative h-3 w-3" />
+
+          <div className="flex flex-1 sm:flex-initial items-center justify-end gap-2">
+            {/* Site Search Bar */}
+            <div className="relative w-36 sm:w-44 md:w-52 max-w-full">
+              <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <Input
+                id="site-search-bar"
+                type="text"
+                placeholder="Search sites..."
+                value={siteSearch}
+                onChange={(e) => setSiteSearch(e.target.value)}
+                className="h-7.5 w-full rounded-md border border-slate-300 bg-white pl-7 pr-6 text-xs text-black placeholder:text-slate-400 focus-visible:border-blue-600 focus-visible:ring-1 focus-visible:ring-blue-600 shadow-2xs"
+              />
+              {siteSearch && (
+                <button
+                  type="button"
+                  onClick={() => setSiteSearch("")}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:text-slate-600"
+                  title="Clear search"
+                  aria-label="Clear site search"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setAllocationFormOpen((open) => !open)}
+              className="flex h-7.5 shrink-0 items-center gap-1.5 rounded-md border border-blue-600 bg-white px-2 py-0.5 text-left text-xs font-semibold text-blue-800 shadow-2xs transition-colors hover:bg-blue-50"
+              aria-expanded={allocationFormOpen}
+            >
+              <span className="flex items-center gap-1.5 font-semibold">
+                <span className="relative flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-white shadow-2xs">
+                  <span
+                    className={`absolute inset-0 rounded-full bg-green-400 opacity-60 ${
+                      !allocationFormOpen ? "animate-slow-ping" : ""
+                    }`}
+                  />
+                  <Plus className="relative h-2.5 w-2.5 stroke-[2.5]" />
+                </span>
+                Add
               </span>
-              Add Sites
-            </span>
-            <ChevronDown
-              className={`h-3.5 w-3.5 shrink-0 text-blue-600 transition-transform duration-300 ${
-                allocationFormOpen ? "rotate-180" : "animate-slow-bounce"
-              }`}
-            />
-          </button>
+              <ChevronDown
+                className={`h-3 w-3 shrink-0 text-blue-600 transition-transform duration-300 ${
+                  allocationFormOpen ? "rotate-180" : "animate-slow-bounce"
+                }`}
+              />
+            </button>
+          </div>
         </div>
         {allocationFormOpen && (
           <Card className="relative z-30 overflow-visible shadow-md">
@@ -1472,7 +1512,18 @@ const Assignments = () => {
                       colSpan={activeTab === "in_progress" ? 5 : 7}
                       className="px-4 py-8 text-center text-muted-foreground"
                     >
-                      No projects for this month.
+                      {siteSearch.trim() ? (
+                        <div className="space-y-1">
+                          <p className="font-medium text-slate-700">
+                            No sites found matching "{siteSearch.trim()}"
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            Check your spelling or clear the search query.
+                          </p>
+                        </div>
+                      ) : (
+                        "No projects for this month."
+                      )}
                     </td>
                   </tr>
                 ) : activeTab === "all" ? (
@@ -1500,7 +1551,9 @@ const Assignments = () => {
                           colSpan={activeTab === "in_progress" ? 5 : 7}
                           className="px-4 py-4 text-center text-xs text-muted-foreground italic"
                         >
-                          No in-progress projects for this month.
+                          {siteSearch.trim()
+                            ? `No in-progress sites matching "${siteSearch.trim()}".`
+                            : "No in-progress projects for this month."}
                         </td>
                       </tr>
                     ) : (
@@ -1532,7 +1585,9 @@ const Assignments = () => {
                           colSpan={activeTab === "in_progress" ? 5 : 7}
                           className="px-4 py-4 text-center text-xs text-muted-foreground italic"
                         >
-                          No completed projects for this month yet.
+                          {siteSearch.trim()
+                            ? `No completed sites matching "${siteSearch.trim()}".`
+                            : "No completed projects for this month yet."}
                         </td>
                       </tr>
                     ) : (
@@ -1548,7 +1603,18 @@ const Assignments = () => {
                         colSpan={activeTab === "in_progress" ? 5 : 7}
                         className="px-4 py-8 text-center text-muted-foreground"
                       >
-                        No in-progress projects for this month.
+                        {siteSearch.trim() ? (
+                          <div className="space-y-1">
+                            <p className="font-medium text-slate-700">
+                              No in-progress sites found matching "{siteSearch.trim()}"
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              Try checking other tabs or clear your search.
+                            </p>
+                          </div>
+                        ) : (
+                          "No in-progress projects for this month."
+                        )}
                       </td>
                     </tr>
                   ) : (
@@ -1562,7 +1628,18 @@ const Assignments = () => {
                       colSpan={activeTab === "in_progress" ? 5 : 7}
                       className="px-4 py-8 text-center text-muted-foreground"
                     >
-                      No completed projects for this month yet.
+                      {siteSearch.trim() ? (
+                        <div className="space-y-1">
+                          <p className="font-medium text-slate-700">
+                            No completed sites found matching "{siteSearch.trim()}"
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            Try checking other tabs or clear your search.
+                          </p>
+                        </div>
+                      ) : (
+                        "No completed projects for this month yet."
+                      )}
                     </td>
                   </tr>
                 ) : (
