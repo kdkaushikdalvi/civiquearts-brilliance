@@ -1096,13 +1096,18 @@ const DownloadInvoices = () => {
           />
         ) : (
           <>
-            <Card className="mx-auto flex h-8 w-fit max-w-[calc(100vw-2rem)] items-center justify-center rounded-full border-slate-200 bg-slate-100/90 px-3 py-0 shadow-none">
-              <div className="flex items-baseline gap-2 whitespace-nowrap">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-800">
-                  Total payment for {MONTH_NAMES[month]} {year}
+            <Card className="mx-auto flex h-10 w-fit max-w-[calc(100vw-2rem)] items-center justify-center rounded-full border-slate-700 bg-slate-900 px-5 py-0 shadow-lg shadow-slate-900/20">
+              <div className="flex items-baseline gap-2.5 whitespace-nowrap">
+                <p className="font-sans text-sm font-bold tracking-tight text-white">
+                  {MONTH_NAMES[month]} {year}
                 </p>
-                <p className="font-mono text-base font-semibold leading-none text-red-600">
-                  {formatINR(monthTotal)}
+                <span className="text-sm font-medium text-slate-500">·</span>
+                <p className="font-sans text-xs font-semibold uppercase tracking-[0.12em] text-emerald-300">
+                  Total Payment
+                </p>
+                <span className="text-sm font-medium text-slate-500">·</span>
+                <p className="font-sans text-lg font-extrabold leading-none tracking-tight text-amber-300">
+                  ₹{Math.round(monthTotal).toLocaleString("en-IN")}
                 </p>
               </div>
             </Card>

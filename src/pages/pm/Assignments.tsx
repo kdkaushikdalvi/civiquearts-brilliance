@@ -250,10 +250,10 @@ const Assignments = () => {
   };
   const clearDraft = () => localStorage.removeItem(DRAFT_KEY);
 
-  const [sortField, setSortField] = useState<"project" | "status">("status");
+  const [sortField, setSortField] = useState<"project" | "site" | "status">("status");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  const handleSort = (field: "project" | "status") => {
+  const handleSort = (field: "project" | "site" | "status") => {
     if (sortField === field) {
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
@@ -279,6 +279,12 @@ const Assignments = () => {
     return searchedList.sort((a, b) => {
       const nameA = a.projectName || "";
       const nameB = b.projectName || "";
+
+      if (sortField === "site") {
+        return sortDirection === "asc"
+          ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
 
       if (sortField === "project") {
         const cmp = nameA.localeCompare(nameB, undefined, {
@@ -343,6 +349,14 @@ const Assignments = () => {
     return siteGroups.sort((rowsA, rowsB) => {
       const pA = rowsA[0]?.projectName || "";
       const pB = rowsB[0]?.projectName || "";
+
+      if (sortField === "site") {
+        return rowsA[0] && rowsB[0]
+          ? sortDirection === "asc"
+            ? new Date(rowsA[0].createdAt).getTime() - new Date(rowsB[0].createdAt).getTime()
+            : new Date(rowsB[0].createdAt).getTime() - new Date(rowsA[0].createdAt).getTime()
+          : 0;
+      }
 
       if (sortField === "project") {
         const cmp = pA.localeCompare(pB, undefined, {
@@ -910,7 +924,7 @@ const Assignments = () => {
                 type="button"
                 id={`edit-site-btn-${a.id}`}
                 onClick={() => handleOpenEditSiteModal(rows)}
-                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded border border-blue-200 bg-blue-50 text-blue-600 shadow-2xs transition-colors hover:border-blue-400 hover:bg-blue-100 hover:text-blue-800 cursor-pointer"
+                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-transparent text-blue-600 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800 cursor-pointer"
                 title={`Change site name for "${a.siteName}"`}
                 aria-label={`Change site name for ${a.siteName}`}
               >
@@ -1184,13 +1198,13 @@ const Assignments = () => {
             <Button
               variant="outline"
               size="icon"
-              className="border-2 border-teal-500 bg-white text-blue-700 shadow-sm hover:border-blue-600 hover:bg-blue-50 hover:text-blue-700"
+              className="border border-indigo-950 bg-[#172554] text-amber-300 shadow-lg shadow-indigo-950/20 hover:border-indigo-500 hover:bg-indigo-900 hover:text-amber-200"
               onClick={() => setReportSectionOpen((open) => !open)}
               title="Open completed sites report"
               aria-label="Open completed sites report"
               aria-expanded={reportSectionOpen}
             >
-              <Mail className="h-4 w-4 text-amber-500" />
+              <Mail className="h-4 w-4 text-amber-300" />
             </Button>
             <MonthNavigator
               month={month}
@@ -1653,12 +1667,12 @@ const Assignments = () => {
                       <span>Project</span>
                       {sortField === "project" ? (
                         sortDirection === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+                          <ArrowUp className="h-4 w-4 shrink-0 text-amber-300" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+                          <ArrowDown className="h-4 w-4 shrink-0 text-amber-300" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" />
+                        <ArrowUpDown className="h-4 w-4 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" />
                       )}
                     </button>
                   </th>
@@ -1671,15 +1685,36 @@ const Assignments = () => {
                     }
                   >
                     <div className="flex items-center gap-2">
-                      <span>Site</span>
+                      <button
+                        type="button"
+                        onClick={() => handleSort("site")}
+                        className="group inline-flex items-center gap-1.5 font-semibold text-white hover:text-white/80 transition-colors focus:outline-none"
+                        aria-label={`Sort by Site date, currently ${
+                          sortField === "site"
+                            ? sortDirection === "asc" ? "oldest first" : "newest first"
+                            : "unsorted"
+                        }`}
+                        title="Sort Site by date"
+                      >
+                        <span>Site</span>
+                        {sortField === "site" ? (
+                          sortDirection === "asc" ? (
+                            <ArrowUp className="h-4 w-4 text-amber-300" />
+                          ) : (
+                            <ArrowDown className="h-4 w-4 text-amber-300" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="h-4 w-4 opacity-60" />
+                        )}
+                      </button>
                       <button
                         type="button"
                         id="toggle-site-edit-pencils-header"
                         onClick={() => setShowSiteEditPencils((v) => !v)}
-                        className={`inline-flex h-5.5 w-5.5 items-center justify-center rounded transition-all cursor-pointer ${
+                        className={`inline-flex h-7 w-7 items-center justify-center rounded-lg transition-all cursor-pointer ${
                           showSiteEditPencils
-                            ? "bg-amber-400 text-slate-900 shadow-xs ring-1 ring-amber-300"
-                            : "bg-white/15 text-white hover:bg-white/25 hover:text-white"
+                            ? "bg-white text-blue-700 shadow-sm ring-1 ring-white/70"
+                            : "text-white/75 hover:bg-white/15 hover:text-white"
                         }`}
                         title={
                           showSiteEditPencils
@@ -1738,12 +1773,12 @@ const Assignments = () => {
                       <span>Status</span>
                       {sortField === "status" ? (
                         sortDirection === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+                          <ArrowUp className="h-4 w-4 shrink-0 text-amber-300" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+                          <ArrowDown className="h-4 w-4 shrink-0 text-amber-300" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" />
+                        <ArrowUpDown className="h-4 w-4 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" />
                       )}
                     </button>
                   </th>

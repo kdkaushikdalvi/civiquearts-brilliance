@@ -8,7 +8,22 @@ import { getSiteCode } from "@/lib/siteCodeMatching";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, Printer, FileText, Pencil, Save, Trash2, Plus } from "lucide-react";
+import {
+  ChevronDown,
+  Printer,
+  FileText,
+  Pencil,
+  Save,
+  Trash2,
+  Plus,
+  MoreHorizontal,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { formatClientInvoiceFileName } from "@/lib/clientInvoiceFormat";
@@ -447,30 +462,31 @@ const ClientInvoice = () => {
                   </colgroup>
                   <thead className="bg-gradient-to-r from-indigo-100 via-blue-50 to-cyan-100">
                     <tr>
-                      <th className="text-left font-semibold px-4 py-3 w-10">
+                      <th className="text-left text-xs font-semibold px-4 py-3 w-10">
                         #
                       </th>
-                      <th className="text-left font-semibold px-4 py-3">
+                      <th className="text-left text-xs font-semibold px-4 py-3">
                         Site Name (Project Name)
                       </th>
-                      <th className="text-left font-semibold px-4 py-3 w-40">
+                      <th className="text-left text-xs font-semibold px-4 py-3 w-40">
                         Accounting Code
                       </th>
-                      <th className="text-right font-semibold px-4 py-3 w-28">
+                      <th className="text-right text-xs font-semibold px-4 py-3 w-28">
                         Quantity
                       </th>
-                      <th className="text-left font-semibold px-4 py-3 w-28">
+                      <th className="text-left text-xs font-semibold px-4 py-3 w-28">
                         Unit
                       </th>
-                      <th className="text-right font-semibold px-4 py-3 w-32">
+                      <th className="text-right text-xs font-semibold px-4 py-3 w-32">
                         Price ($)
                       </th>
-                      <th className="text-right font-semibold px-4 py-3 w-32">
+                      <th className="text-right text-xs font-semibold px-4 py-3 w-32">
                         Amount ($)
                       </th>
-                      <th className="text-center font-semibold px-4 py-3 w-32">
-                        Actions
-                      </th>
+                      <th
+                        className="text-center text-xs font-semibold px-4 py-3 w-32"
+                        aria-label="Row actions"
+                      />
                     </tr>
                   </thead>
                   <tbody>
@@ -537,7 +553,7 @@ const ClientInvoice = () => {
                           />
                         </td>
                         <td className="px-4 py-2">
-                          <div className="flex items-center justify-center gap-1">
+                          <div className="flex items-center justify-center">
                             {editingLineId === l.id ? (
                               <button
                                 type="button"
@@ -549,35 +565,43 @@ const ClientInvoice = () => {
                                 <Save className="h-4 w-4" />
                               </button>
                             ) : (
-                              <button
-                                type="button"
-                                onClick={() => setEditingLineId(l.id)}
-                                className="rounded p-1.5 text-indigo-600 hover:bg-indigo-100"
-                                aria-label={`Edit row for ${l.name}`}
-                                title="Edit"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-full"
+                                    aria-label={`Open actions for ${l.name}`}
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-32">
+                                  <DropdownMenuItem onClick={() => setEditingLineId(l.id)}>
+                                    <Pencil className="mr-2 h-3.5 w-3.5" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      const key = l.name.trim().toLowerCase();
+                                      setLines((prev) =>
+                                        prev.filter(
+                                          (line) =>
+                                            line.id !== l.id &&
+                                            line.name.trim().toLowerCase() !== key
+                                        )
+                                      );
+                                      setEditingLineId(null);
+                                    }}
+                                    className="text-red-600 focus:text-red-600"
+                                  >
+                                    <Trash2 className="mr-2 h-3.5 w-3.5" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             )}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const key = l.name.trim().toLowerCase();
-                                setLines((prev) =>
-                                  prev.filter(
-                                    (line) =>
-                                      line.id !== l.id &&
-                                      line.name.trim().toLowerCase() !== key
-                                  )
-                                );
-                                setEditingLineId(null);
-                              }}
-                              className="rounded p-1.5 text-red-600 hover:bg-red-100"
-                              aria-label={`Delete row for ${l.name}`}
-                              title="Delete"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
                           </div>
                         </td>
                       </tr>
