@@ -492,38 +492,55 @@ const Assignments = () => {
     }
     try {
       const workbook = new ExcelJS.Workbook();
-      const sheet = workbook.addWorksheet("Completed Sites");
-      sheet.addRow([
-        "Project Name",
-        "Site Name",
-        "Client",
-        "Assignee",
-        "Unit",
-        "Quantity",
-        "Rate (₹)",
-        "Amount (₹)",
-        "Status",
-        "Completed Date",
-      ]);
-      reportRecords.forEach((a) => {
-        const dateStr = a.updatedAt ? new Date(a.updatedAt).toLocaleDateString("en-IN") : "";
-        sheet.addRow([
-          a.projectName,
-          a.siteName,
-          a.clientName,
-          a.assigneeName || "Unassigned",
-          cleanUnit(a.unitType),
-          a.quantity ?? "",
-          a.rate ?? "",
-          a.amount ?? "",
-          a.status,
-          dateStr,
-        ]);
+      const sheet = workbook.addWorksheet("Site Allocation");
+
+      const grouped = new Map<string, Assignment[]>();
+      reportRecords.forEach((record) => {
+        const key = record.projectName || "Other Sites";
+        grouped.set(key, [...(grouped.get(key) ?? []), record]);
       });
-      sheet.getRow(1).font = { bold: true };
-      sheet.getRow(1).alignment = { horizontal: "center", vertical: "middle" };
-      sheet.columns.forEach((col) => {
-        col.width = 18;
+
+      for (const [projectName, records] of grouped) {
+        const section = sheet.addRow([
+          `We have completed ${records.length} ${projectName} and uploaded at this location - Please see status below - Completed`,
+        ]);
+        sheet.mergeCells(`A${section.number}:G${section.number}`);
+        section.font = { name: "Arial", bold: true, size: 11, color: { argb: "FF000000" } };
+
+        const header = sheet.addRow([
+          "Sr. No.", "Site Name", "Incoming Date", "Foot Count",
+          "Considered Foot Count", "Completed Date", "Status",
+        ]);
+        header.font = { name: "Arial", bold: false, size: 11, color: { argb: "FF000000" } };
+        header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF2F2F2" } };
+        header.alignment = { horizontal: "center", vertical: "middle" };
+        header.eachCell((cell) => {
+          cell.border = { top: { style: "thin", color: { argb: "FF777777" } }, bottom: { style: "thin", color: { argb: "FF777777" } }, left: { style: "thin", color: { argb: "FF777777" } }, right: { style: "thin", color: { argb: "FF777777" } } };
+        });
+
+        records.forEach((a, index) => {
+          const incomingDate = a.createdAt ? new Date(a.createdAt).toLocaleDateString("en-US") : "";
+          const completedDate = a.updatedAt ? new Date(a.updatedAt).toLocaleDateString("en-US") : "";
+          const row = sheet.addRow([
+            index + 1,
+            a.siteName,
+            incomingDate,
+            a.quantity ?? "",
+            a.quantity ?? "",
+            completedDate,
+            a.status,
+          ]);
+          row.font = { name: "Arial", size: 11, color: { argb: "FF000000" } };
+          row.alignment = { horizontal: "center", vertical: "middle" };
+          row.eachCell((cell) => {
+            cell.border = { top: { style: "thin", color: { argb: "FF777777" } }, bottom: { style: "thin", color: { argb: "FF777777" } }, left: { style: "thin", color: { argb: "FF777777" } }, right: { style: "thin", color: { argb: "FF777777" } } };
+          });
+        });
+        sheet.addRow([]);
+      }
+
+      [10, 42, 18, 16, 24, 18, 16].forEach((width, index) => {
+        sheet.getColumn(index + 1).width = width;
       });
       const buffer = await workbook.xlsx.writeBuffer();
       const url = URL.createObjectURL(
@@ -903,8 +920,8 @@ const Assignments = () => {
     return (
       <tr
         key={a.id}
-        className={`transition-colors duration-150 hover:bg-blue-50/80 [&>td]:border-y [&>td]:border-slate-200 [&>td:first-child]:border-l [&>td:last-child]:border-r ${
-          index % 2 === 0 ? "bg-white" : "bg-slate-100"
+        className={`relative cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:z-10 hover:rounded-xl hover:shadow-[inset_0_0_0_2px_rgb(148_163_184),0_10px_20px_-12px_rgb(15_23_42_/_0.25)] hover:bg-slate-100/60 [&>td]:border-y [&>td]:border-slate-200 [&>td:first-child]:border-l [&>td:last-child]:border-r ${
+          index % 2 === 0 ? "bg-blue-50" : "bg-violet-50"
         }`}
       >
         <td
@@ -1190,8 +1207,8 @@ const Assignments = () => {
       <div className="p-4 sm:p-5 max-w-7xl mx-auto space-y-3">
         <div className="relative flex flex-wrap items-center justify-between gap-3 bg-slate-50 pb-2.5 before:absolute before:bottom-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-b before:border-slate-200 before:content-['']">
           <div>
-            <h3 className="text-lg font-semibold text-blue-800">
-              Site Allocation
+            <h3 className="w-fit bg-gradient-to-r from-blue-700 via-violet-600 to-fuchsia-500 bg-[length:200%_100%] bg-clip-text text-lg font-extrabold text-transparent animate-gradient-flow">
+              Projects &amp; Sites
             </h3>
           </div>
           <div className="flex items-center gap-1.5">

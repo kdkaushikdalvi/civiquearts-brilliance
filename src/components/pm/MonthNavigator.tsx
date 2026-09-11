@@ -16,7 +16,7 @@ const MonthNavigator = ({ month, year, onChange }: Props) => {
   const prev = () => (month === 0 ? onChange(11, year - 1) : onChange(month - 1, year));
   const next = () => (month === 11 ? onChange(0, year + 1) : onChange(month + 1, year));
   return (
-    <div className="inline-flex items-center overflow-hidden rounded-full border border-indigo-950 bg-[#172554] shadow-lg shadow-indigo-950/25">
+    <div className="inline-flex items-center overflow-hidden rounded-full border border-indigo-950 bg-[#172554] shadow-lg shadow-indigo-950/25 transition-transform duration-300 hover:scale-105">
       <Button
         variant="default"
         size="icon"
@@ -28,7 +28,7 @@ const MonthNavigator = ({ month, year, onChange }: Props) => {
       </Button>
       <span className="flex min-w-[176px] items-center justify-center gap-2 bg-[#172554] px-4 py-1.5">
         <CalendarDays className="h-4 w-4 shrink-0 text-amber-300" strokeWidth={2} />
-        <span className="flex items-baseline gap-1.5">
+        <span className="flex animate-calendar-text items-baseline gap-1.5">
           <span className="text-[13px] font-semibold tracking-tight text-white">{MONTH_NAMES[month]}</span>
           <span className="text-[11px] font-medium tabular-nums text-indigo-200">{year}</span>
         </span>

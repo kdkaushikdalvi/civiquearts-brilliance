@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   FileSpreadsheet,
+  FileText,
   Table,
   Receipt,
   CreditCard,
@@ -22,16 +23,26 @@ import {
   UserRound,
   Landmark,
   LayoutDashboard,
+  UserCircle,
+  Settings,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const nav = [
   {
     to: "/app/projects",
-    label: "Site Allocation",
+    label: "Projects & Sites",
     icon: ClipboardList,
     iconClass: "text-blue-600",
     tip: "Allocate sites to team members",
@@ -44,7 +55,7 @@ const processExcelNav = [
 ];
 
 const invoiceNav = [
-  { to: "/app/download-invoices", label: "Payment Slip", icon: CreditCard, iconClass: "text-amber-600", tip: "Generate and download payment slips" },
+  { to: "/app/download-invoices", label: "Payment Slip", icon: FileText, iconClass: "text-amber-600", tip: "Generate and download payment slips" },
   { to: "/app/client-invoice", label: "Client Invoice", icon: Download, iconClass: "text-emerald-600", tip: "Create a client tax invoice" },
 ];
 
@@ -64,16 +75,13 @@ const AppShell = ({ children }: { children: ReactNode }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [invoiceOpen, setInvoiceOpen] = useState(() =>
-    invoiceNav.some((n) => location.pathname === n.to),
-  );
-  const [processExcelOpen, setProcessExcelOpen] = useState(() =>
-    processExcelNav.some((n) => location.pathname === n.to),
-  );
+  const [headerCompact, setHeaderCompact] = useState(false);
+  const [invoiceOpen, setInvoiceOpen] = useState(true);
+  const [processExcelOpen, setProcessExcelOpen] = useState(true);
   const invoiceActive = invoiceNav.some((n) => location.pathname === n.to);
   const processExcelActive = processExcelNav.some((n) => location.pathname === n.to);
   const allListActive = allListRoutes.includes(location.pathname);
-  const [masterDataOpen, setMasterDataOpen] = useState(false);
+  const [masterDataOpen, setMasterDataOpen] = useState(true);
 
   useEffect(() => {
     if (invoiceActive) setInvoiceOpen(true);
@@ -154,7 +162,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
             type="button"
             title="Invoice documents"
             onClick={() => setInvoiceOpen((open) => !open)}
-            className={topLevel(invoiceActive)}
+            className={cn(topLevel(invoiceActive), invoiceActive && "bg-purple-50 text-purple-700 border-l-purple-600")}
             aria-expanded={invoiceOpen}
           >
             <Receipt className={iconBox("text-purple-700")} />
@@ -162,7 +170,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
             {!sidebarCollapsed && <ChevronDown className={cn("h-4 w-4 transition-transform", invoiceOpen && "rotate-180")} />}
           </button>
           {invoiceOpen && (
-            <div className="ml-8 border-l border-border py-1">
+            <div className="ml-8 border-l-2 border-slate-700 py-1">
               {invoiceNav.map((n) => (
                 <NavLink
                   key={n.to}
@@ -173,7 +181,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
                     cn(
                       "flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors",
                       isActive
-                        ? "text-saffron bg-saffron/5"
+                        ? "text-purple-700 bg-purple-50"
                         : "text-foreground/70 hover:bg-secondary hover:text-foreground",
                     )
                   }
@@ -191,7 +199,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
             type="button"
             title="Excel tools"
             onClick={() => setProcessExcelOpen((open) => !open)}
-            className={topLevel(processExcelActive)}
+            className={cn(topLevel(processExcelActive), processExcelActive && "bg-teal-50 text-teal-700 border-l-teal-600")}
             aria-expanded={processExcelOpen}
           >
             <Table className={iconBox("text-teal-700")} />
@@ -199,7 +207,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
             {!sidebarCollapsed && <ChevronDown className={cn("h-4 w-4 transition-transform", processExcelOpen && "rotate-180")} />}
           </button>
           {processExcelOpen && (
-            <div className="ml-8 border-l border-border py-1">
+            <div className="ml-8 border-l-2 border-slate-700 py-1">
               {processExcelNav.map((n) => (
                 <NavLink
                   key={n.to}
@@ -210,7 +218,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
                     cn(
                       "flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors",
                       isActive
-                        ? "text-saffron bg-saffron/5"
+                        ? "text-teal-700 bg-teal-50"
                         : "text-foreground/70 hover:bg-secondary hover:text-foreground",
                     )
                   }
@@ -228,7 +236,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
             type="button"
             title="Manage projects, sites, employees and clients"
             onClick={() => setMasterDataOpen((open) => !open)}
-            className={topLevel(allListActive)}
+            className={cn(topLevel(allListActive), allListActive && "bg-indigo-50 text-indigo-700 border-l-indigo-600")}
             aria-expanded={masterDataOpen}
           >
             <Layers className={iconBox("text-indigo-700")} />
@@ -236,7 +244,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
             {!sidebarCollapsed && <ChevronDown className={cn("h-4 w-4 transition-transform", masterDataOpen && "rotate-180")} />}
           </button>
           {masterDataOpen && (
-            <div className="ml-8 border-l border-border py-1">
+            <div className="ml-8 border-l-2 border-slate-700 py-1">
               {masterDataNav.map((item) => (
                 <NavLink
                   key={item.tab}
@@ -246,7 +254,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
                   className={({ isActive }) => cn(
                     "flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors",
                     isActive && (location.state as any)?.tab === item.tab
-                      ? "text-saffron bg-saffron/5"
+                      ? "text-indigo-700 bg-indigo-50"
                       : "text-foreground/70 hover:bg-secondary hover:text-foreground",
                   )}
                 >
@@ -258,48 +266,11 @@ const AppShell = ({ children }: { children: ReactNode }) => {
           )}
         </div>
       </nav>
-      <div className={cn("border-t border-border p-3 text-xs text-muted-foreground truncate", sidebarCollapsed && "text-center")} title={sidebarCollapsed ? `Signed in as ${user}` : undefined}>
-        {!sidebarCollapsed && <>Signed in as <span className="font-medium text-foreground">{user}</span></>}
-      </div>
-      <NavLink
-        to="/app/dashboard"
-        title="Dashboard"
-        onClick={() => setMobileOpen(false)}
-        className={({ isActive }) =>
-          cn(
-            "border-t border-border w-full py-3 text-sm font-semibold transition-colors flex items-center gap-2",
-            sidebarCollapsed ? "justify-center px-2" : "px-5",
-            isActive
-              ? "bg-blue-50 text-blue-700 border-l-2 border-l-blue-600"
-              : "text-blue-600 hover:text-blue-700 hover:bg-blue-50/70",
-          )
-        }
-      >
-        <LayoutDashboard className="h-5 w-5 shrink-0 stroke-[2.5] text-blue-600" />
-        {!sidebarCollapsed && <span>Dashboard</span>}
-      </NavLink>
-      <button
-        type="button"
-        onClick={handleRefreshApp}
-        disabled={refreshing}
-        title="Clear cached data and reload the app"
-        className={cn("border-t border-border w-full py-3 text-sm font-medium text-foreground/80 hover:bg-secondary disabled:opacity-60 flex items-center gap-2", sidebarCollapsed ? "justify-center px-2" : "px-5")}
-      >
-        <RefreshCw className={cn("h-5 w-5 text-sky-700 stroke-[2.5]", refreshing && "animate-spin")} />
-        {!sidebarCollapsed && (refreshing ? "Refreshing…" : "Refresh App")}
-      </button>
-      <button
-        onClick={handleLogout}
-        title="Sign out of your account"
-        className={cn("border-t border-border w-full py-3 text-sm font-medium text-destructive hover:bg-destructive/10 flex items-center gap-2", sidebarCollapsed ? "justify-center px-2" : "px-5")}
-      >
-        <LogOut className="h-5 w-5 text-red-700 stroke-[2.5]" /> {!sidebarCollapsed && "Logout"}
-      </button>
     </>
   );
 
   const footerTabs = [
-    { to: "/app/projects", label: "Allocate", icon: ClipboardList, iconClass: "text-blue-600", tip: "Site Allocation" },
+    { to: "/app/projects", label: "Projects & Sites", icon: ClipboardList, iconClass: "text-blue-600", tip: "Projects and site allocation" },
     { to: "/app/master/all", label: "Master Data", icon: Layers, iconClass: "text-indigo-700", tip: "Project, Site, Employee & Client lists", active: allListActive },
     { to: "/app/download-invoices", label: "Slip", icon: CreditCard, iconClass: "text-amber-600", tip: "Payment Slip" },
     { to: "/app/client-invoice", label: "Invoice", icon: Download, iconClass: "text-emerald-600", tip: "Client Invoice" },
@@ -334,14 +305,60 @@ const AppShell = ({ children }: { children: ReactNode }) => {
       )}
 
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        <header className="lg:hidden bg-card border-b border-border px-4 py-3 flex items-center justify-between sticky top-0 z-30">
-          <button onClick={() => setMobileOpen(true)} aria-label="Open menu" title="Open menu">
+        <header className="bg-card border-b border-border px-4 py-2 flex items-center justify-between sticky top-0 z-30">
+          <button
+            onClick={() => {
+              setHeaderCompact((compact) => !compact);
+              setMobileOpen(true);
+            }}
+            aria-label={headerCompact ? "Show header" : "Hide header details"}
+            title={headerCompact ? "Show header details" : "Hide header details"}
+          >
             <Menu className="h-5 w-5" />
           </button>
-          <img src={logo} alt="CiviqueArts" className="h-8 w-auto" />
-          <button onClick={handleLogout} aria-label="Logout" title="Logout">
-            <LogOut className="h-5 w-5" />
-          </button>
+          {!headerCompact && <div className="flex items-center gap-2 leading-tight">
+            <img src={logo} alt="CiviqueArts" className="h-8 w-auto object-contain" />
+            <div className="hidden items-baseline gap-2 text-left sm:flex">
+              <div className="font-extrabold text-[15px] tracking-tight bg-gradient-to-r from-blue-700 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                CiviqueArts
+              </div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-orange-600">
+                Billing System
+              </div>
+            </div>
+          </div>}
+          {!headerCompact && <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Open account settings"
+                title="Account settings"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 transition-colors hover:bg-indigo-100"
+              >
+                <Settings className="h-5 w-5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 rounded-xl p-1.5">
+              <DropdownMenuLabel className="truncate px-3 py-2 text-xs text-slate-500">
+                Signed in as <span className="font-semibold text-slate-800">{user}</span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/app/dashboard")} className="cursor-pointer rounded-lg hover:bg-blue-50">
+                <LayoutDashboard className="mr-2 h-4 w-4 text-blue-600" /> Dashboard
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/app/profile")} className="cursor-pointer rounded-lg hover:bg-violet-50">
+                <UserCircle className="mr-2 h-4 w-4 text-violet-600" /> Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleRefreshApp} disabled={refreshing} className="cursor-pointer rounded-lg hover:bg-sky-50">
+                <RefreshCw className={cn("mr-2 h-4 w-4 text-sky-700", refreshing && "animate-spin")} />
+                {refreshing ? "Refreshing…" : "Refresh App"}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer rounded-lg text-red-600 hover:bg-red-50 focus:text-red-600">
+                <LogOut className="mr-2 h-4 w-4" /> Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>}
         </header>
         <main className="flex-1 min-h-0 overflow-auto pb-20 lg:pb-0">{children}</main>
       </div>

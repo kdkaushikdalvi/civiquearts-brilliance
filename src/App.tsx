@@ -20,6 +20,7 @@ import GenerateCapProjectsList from "@/pages/pm/GenerateCapProjectsList";
 import ClientInvoice from "@/pages/pm/ClientInvoice";
 import AllLists from "@/pages/pm/AllLists";
 import SiteList from "@/pages/pm/SiteList";
+import Profile from "@/pages/pm/Profile";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/app/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
                   </ProtectedRoute>
                 }
               />

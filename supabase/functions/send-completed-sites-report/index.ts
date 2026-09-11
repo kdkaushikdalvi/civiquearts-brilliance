@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
     const { data, error } = await supabase
       .from("assignments")
       .select(
-        "project_name, site_name, assignee_name, unit_type, quantity, amount, status, updated_at"
+        "project_name, site_name, assignee_name, unit_type, quantity, amount, status, created_at, updated_at"
       )
       .eq("user_id", user.id)
       .eq("status", "Completed")
@@ -64,38 +64,21 @@ Deno.serve(async (req) => {
           headers: { ...cors, "Content-Type": "application/json" },
         }
       );
-    const rows = data
-      .map(
-        (r) =>
-          `<tr><td>${esc(r.project_name)}</td><td>${esc(
-            r.site_name
-          )}</td><td>${esc(r.assignee_name)}</td><td>${esc(
-            r.unit_type
-          )} / ${esc(r.quantity)}</td><td>${inr(r.amount)}</td><td>${esc(
-            r.status
-          )}</td><td>${new Date(r.updated_at).toLocaleDateString(
-            "en-IN"
-          )}</td></tr>`
-      )
-      .join("");
-    const html = `<div style="font-family:Arial,sans-serif;color:#172033"><h2>Completed Sites Report</h2><p>${esc(
-      fromDate
-    )} to ${esc(
-      toDate
-    )}</p><table style="border-collapse:collapse;width:100%"><thead><tr>${[
-      "Project",
-      "Site",
-      "Assigned To",
-      "Unit / Qty",
-      "Amount",
-      "Status",
-      "Completion Date",
-    ]
-      .map(
-        (h) =>
-          `<th style="background:#1d4ed8;color:white;padding:8px;text-align:left">${h}</th>`
-      )
-      .join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    const groups = new Map<string, typeof data>();
+    for (const row of data) {
+      const key = row.project_name || "Other Sites";
+      groups.set(key, [...(groups.get(key) ?? []), row]);
+    }
+    const sections = [...groups.entries()].map(([project, records]) => {
+      const rows = records.map((r, index) => {
+        const incoming = new Date(r.created_at ?? r.updated_at).toLocaleDateString("en-US");
+        const completed = new Date(r.updated_at).toLocaleDateString("en-US");
+        return `<tr><td>${index + 1}</td><td>${esc(r.site_name)}</td><td>${incoming}</td><td>${esc(r.quantity)}</td><td>${esc(r.quantity)}</td><td>${completed}</td><td>${esc(r.status)}</td></tr>`;
+      }).join("");
+      const headers = ["Sr. No.", "Site Name", "Incoming Date", "Foot Count", "Considered Foot Count", "Completed Date", "Status"];
+      return `<h3 style="margin:24px 0 4px;font-size:11pt;font-weight:400;color:#000">We have completed <b>${records.length} ${esc(project)}</b> and uploaded at this location - Please see status below - <u>Completed</u></h3><table style="border-collapse:collapse;width:100%;margin-bottom:18px;font-family:Arial,sans-serif;font-size:11pt;color:#000;text-align:center"><thead><tr>${headers.map((h) => `<th style="background:#f2f2f2;color:#000;padding:4px;border:1px solid #777;font-weight:400">${h}</th>`).join("")}</tr></thead><tbody>${rows.replaceAll("<tr>", '<tr style="height:24px">').replaceAll("<td>", '<td style="padding:3px;border:1px solid #777">')}</tbody></table>`;
+    }).join("");
+    const html = `<div style="font-family:Arial,sans-serif;font-size:11pt;color:#000"><h2 style="font-size:14pt;font-weight:400;color:#000">Site Allocation</h2><p>${esc(fromDate)} to ${esc(toDate)}</p>${sections}</div>`;
 
     // Resend requires a verified domain. Public email providers (gmail.com, yahoo.com, etc.)
     // cannot be added as verified domains on Resend and trigger a 403 error.
