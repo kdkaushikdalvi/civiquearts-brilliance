@@ -35,8 +35,11 @@ Deno.serve(async (req) => {
     } = await supabase.auth.getUser();
     if (userError || !user?.email)
       throw new Error("Authenticated email unavailable");
-    const { fromDate, toDate } = await req.json();
+    const reqBody = await req.json().catch(() => ({}));
+    const { fromDate, toDate, fromEmail } = reqBody;
     if (
+      !fromDate ||
+      !toDate ||
       !/^\d{4}-\d{2}-\d{2}$/.test(fromDate) ||
       !/^\d{4}-\d{2}-\d{2}$/.test(toDate) ||
       fromDate > toDate
@@ -93,20 +96,67 @@ Deno.serve(async (req) => {
           `<th style="background:#1d4ed8;color:white;padding:8px;text-align:left">${h}</th>`
       )
       .join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
+
+    // Resend requires a verified domain. Public email providers (gmail.com, yahoo.com, etc.)
+    // cannot be added as verified domains on Resend and trigger a 403 error.
+    // When no verified custom domain is available, Resend requires using its verified test domain: "onboarding@resend.dev".
+    const configuredFrom = (fromEmail || Deno.env.get("REPORT_FROM_EMAIL") || "").trim();
+    const isPublicWebmail = (str: string) =>
+      /@(gmail\.com|googlemail\.com|yahoo\.com|outlook\.com|hotmail\.com|icloud\.com|live\.com|aol\.com|mail\.com)/i.test(
+        str
+      );
+
+    let sender = "Civique Arts <onboarding@resend.dev>";
+    let replyTo = user.email;
+
+    if (configuredFrom) {
+      if (isPublicWebmail(configuredFrom)) {
+        const nameMatch = configuredFrom.match(/^([^<]+)<([^>]+)>$/);
+        const displayName = nameMatch ? nameMatch[1].trim() : "Civique Arts";
+        sender = `${displayName} <onboarding@resend.dev>`;
+        replyTo = nameMatch ? nameMatch[2].trim() : configuredFrom;
+      } else {
+        sender = configuredFrom;
+      }
+    }
+
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      throw new Error(
+        "RESEND_API_KEY is not configured in Supabase Edge Function secrets."
+      );
+    }
+
+    const emailPayload: Record<string, unknown> = {
+      from: sender,
+      to: [user.email],
+      subject: `Completed Sites Report: ${fromDate} to ${toDate}`,
+      html,
+    };
+    if (replyTo) {
+      emailPayload.reply_to = replyTo;
+    }
+
     const mail = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${Deno.env.get("RESEND_API_KEY")}`,
+        Authorization: `Bearer ${resendApiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        from: Deno.env.get("REPORT_FROM_EMAIL"),
-        to: [user.email],
-        subject: `Completed Sites Report: ${fromDate} to ${toDate}`,
-        html,
-      }),
+      body: JSON.stringify(emailPayload),
     });
-    if (!mail.ok) throw new Error(`Email provider error: ${await mail.text()}`);
+
+    if (!mail.ok) {
+      const errorText = await mail.text();
+      let parsedMessage = errorText;
+      try {
+        const errJson = JSON.parse(errorText);
+        if (errJson.message) parsedMessage = errJson.message;
+      } catch {
+        // use raw error text
+      }
+      throw new Error(`Email provider error: ${parsedMessage}`);
+    }
     return new Response(JSON.stringify({ sent: true, count: data.length }), {
       headers: { ...cors, "Content-Type": "application/json" },
     });

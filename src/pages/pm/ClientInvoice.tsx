@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { formatClientInvoiceFileName } from "@/lib/clientInvoiceFormat";
 import { cleanUnit } from "@/lib/unitFormat";
+import { sortClientInvoiceLinesByProject } from "@/lib/clientInvoiceSort";
 
 const ONES = [
   "",
@@ -94,6 +95,8 @@ const dollarsInWords = (amount: number) => {
 interface Line {
   id: string;
   name: string;
+  projectName?: string;
+  siteName?: string;
   code: string;
   quantity: number;
   unit: string;
@@ -164,13 +167,25 @@ const ClientInvoice = () => {
         projects.filter((p) => p.clientId === clientId).map((p) => p.id)
       );
 
-      return assignments.filter(
+      const filtered = assignments.filter(
         (a) =>
           a.month === month &&
           a.year === year &&
           a.status === "Completed" &&
           (a.clientId === clientId || clientProjectIds.has(a.projectId))
       );
+
+      // Sort sites by project name (A to Z) as primary, site name as secondary
+      return filtered.slice().sort((a, b) => {
+        const pA = (a.projectName || "").trim();
+        const pB = (b.projectName || "").trim();
+        const pCmp = pA.localeCompare(pB, undefined, { sensitivity: "base", numeric: true });
+        if (pCmp !== 0) return pCmp;
+
+        const sA = (a.siteName || "").trim();
+        const sB = (b.siteName || "").trim();
+        return sA.localeCompare(sB, undefined, { sensitivity: "base", numeric: true });
+      });
     },
     [assignments, clientId, month, projects, year]
   );
@@ -191,6 +206,8 @@ const ClientInvoice = () => {
         return {
           id: s.id,
           name: `${s.siteName} - (${s.projectName})`,
+          projectName: s.projectName,
+          siteName: s.siteName,
           code: getSiteCode(siteCodes, s.siteName) || "N/A",
           quantity,
           unit: s.unitType ? cleanUnit(s.unitType) : "-",
@@ -202,20 +219,25 @@ const ClientInvoice = () => {
   }, [sites, siteCodes, projects]);
 
   const patch = (id: string, p: Partial<Line>) =>
-    setLines((prev) =>
-      prev.map((l) => {
-        if (l.id !== id) return l;
+    setLines((prev) => {
+      const targetLine = prev.find((l) => l.id === id);
+      const targetNameKey = targetLine?.name.trim().toLowerCase();
+      return prev.map((l) => {
+        const matches =
+          l.id === id ||
+          (targetNameKey &&
+            l.name.trim().toLowerCase() === targetNameKey &&
+            p.code !== undefined);
+        if (!matches) return l;
         const next = { ...l, ...p };
         if (p.quantity !== undefined || p.price !== undefined)
           next.amount = Number(
             ((next.quantity || 0) * (next.price || 0)).toFixed(4)
           );
         return next;
-      })
-    );
+      });
+    });
 
-  const totalQty = lines.reduce((s, l) => s + (l.quantity || 0), 0);
-  const subTotal = lines.reduce((s, l) => s + (l.amount || 0), 0);
   const invoiceLines = useMemo(() => {
     const grouped = new Map<string, Line>();
     lines.forEach((line) => {
@@ -236,8 +258,18 @@ const ClientInvoice = () => {
         price: quantity ? amount / quantity : existing.price,
       });
     });
-    return Array.from(grouped.values());
+    // Ensure all invoice lines are sorted by project name then site name
+    return sortClientInvoiceLinesByProject(Array.from(grouped.values()));
   }, [lines]);
+
+  const totalQty = useMemo(
+    () => invoiceLines.reduce((s, l) => s + (l.quantity || 0), 0),
+    [invoiceLines]
+  );
+  const subTotal = useMemo(
+    () => invoiceLines.reduce((s, l) => s + (l.amount || 0), 0),
+    [invoiceLines]
+  );
 
   const displayDate = invoiceDate
     ? new Date(`${invoiceDate}T00:00:00`).toLocaleDateString("en-GB", {
@@ -530,7 +562,14 @@ const ClientInvoice = () => {
                             <button
                               type="button"
                               onClick={() => {
-                                setLines((prev) => prev.filter((line) => line.id !== l.id));
+                                const key = l.name.trim().toLowerCase();
+                                setLines((prev) =>
+                                  prev.filter(
+                                    (line) =>
+                                      line.id !== l.id &&
+                                      line.name.trim().toLowerCase() !== key
+                                  )
+                                );
                                 setEditingLineId(null);
                               }}
                               className="rounded p-1.5 text-red-600 hover:bg-red-100"
