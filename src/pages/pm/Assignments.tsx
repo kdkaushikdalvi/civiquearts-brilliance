@@ -98,6 +98,83 @@ const Assignments = () => {
   const [allocationFormOpen, setAllocationFormOpen] = useState(false);
   const [siteSearch, setSiteSearch] = useState("");
 
+  const [showSiteEditPencils, setShowSiteEditPencils] = useState(false);
+  const [editSiteModalOpen, setEditSiteModalOpen] = useState(false);
+  const [editingSiteRows, setEditingSiteRows] = useState<Assignment[] | null>(null);
+  const [selectedSiteId, setSelectedSiteId] = useState("");
+  const [selectedSiteName, setSelectedSiteName] = useState("");
+  const [isSavingSiteChange, setIsSavingSiteChange] = useState(false);
+
+  const handleOpenEditSiteModal = (rows: Assignment[]) => {
+    setEditingSiteRows(rows);
+    const currentSiteName = rows[0]?.siteName || "";
+    const currentProjectId = rows[0]?.projectId || "";
+    const matched = availableSites.find(
+      (s) =>
+        s.projectId === currentProjectId &&
+        s.name.toLowerCase() === currentSiteName.toLowerCase()
+    );
+    setSelectedSiteId(matched?.id || "");
+    setSelectedSiteName(currentSiteName);
+    setEditSiteModalOpen(true);
+  };
+
+  const handleSaveSiteChange = async () => {
+    if (!editingSiteRows || !editingSiteRows.length) return;
+    const newSiteName = selectedSiteName.trim();
+    if (!newSiteName) {
+      toast.error("Site name cannot be empty");
+      return;
+    }
+
+    const currentSiteName = editingSiteRows[0]?.siteName || "";
+    if (newSiteName.toLowerCase() === currentSiteName.toLowerCase()) {
+      toast.info("Site name is unchanged");
+      setEditSiteModalOpen(false);
+      setEditingSiteRows(null);
+      return;
+    }
+
+    setIsSavingSiteChange(true);
+    try {
+      const currentProjectId = editingSiteRows[0]?.projectId || "";
+      const matchedSite = availableSites.find(
+        (s) =>
+          s.projectId === currentProjectId &&
+          s.name.toLowerCase() === newSiteName.toLowerCase()
+      );
+      const newSiteId = matchedSite ? matchedSite.id : selectedSiteId || undefined;
+
+      for (const row of editingSiteRows) {
+        await updateAssignment(row.id, {
+          siteName: newSiteName,
+          siteId: newSiteId,
+        });
+      }
+
+      toast.success(`Site name updated to "${newSiteName}"`);
+      setEditSiteModalOpen(false);
+      setEditingSiteRows(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update site name");
+    } finally {
+      setIsSavingSiteChange(false);
+    }
+  };
+
+  const editModalSiteOptions = useMemo(() => {
+    if (!editingSiteRows || !editingSiteRows[0]) return [];
+    const targetProjectId = editingSiteRows[0].projectId;
+    const projectSites = availableSites.filter((s) => s.projectId === targetProjectId);
+    const otherSites = availableSites.filter((s) => s.projectId !== targetProjectId);
+
+    return [
+      ...projectSites.map((s) => ({ id: s.id, label: s.name })),
+      ...otherSites.map((s) => ({ id: s.id, label: `${s.name} (Other Project)` })),
+    ];
+  }, [editingSiteRows, availableSites]);
+
   const [clientId, setClientId] = useState("");
   const [projectId, setProjectId] = useState("");
   const [sites, setSites] = useState<SiteRow[]>([
@@ -705,7 +782,21 @@ const Assignments = () => {
           className="px-3 py-1 whitespace-normal break-words text-slate-700"
           title={a.siteName}
         >
-          {a.siteName}
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-medium text-slate-800 break-words">{a.siteName}</span>
+            {showSiteEditPencils && (
+              <button
+                type="button"
+                id={`edit-site-btn-${a.id}`}
+                onClick={() => handleOpenEditSiteModal(rows)}
+                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded border border-blue-200 bg-blue-50 text-blue-600 shadow-2xs transition-colors hover:border-blue-400 hover:bg-blue-100 hover:text-blue-800 cursor-pointer"
+                title={`Change site name for "${a.siteName}"`}
+                aria-label={`Change site name for ${a.siteName}`}
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+            )}
+          </div>
         </td>
         {activeTab !== "in_progress" && <td className="space-y-[5px] px-2 py-0 pb-[5px] max-w-[160px] whitespace-nowrap text-left">
           {rows.map((row) => (
@@ -1125,7 +1216,7 @@ const Assignments = () => {
                 placeholder="Search sites..."
                 value={siteSearch}
                 onChange={(e) => setSiteSearch(e.target.value)}
-                className="h-7.5 w-full rounded-md border border-slate-300 bg-white pl-7 pr-6 text-xs text-black placeholder:text-slate-400 focus-visible:border-blue-600 focus-visible:ring-1 focus-visible:ring-blue-600 shadow-2xs"
+                className="h-8 w-full rounded-md border border-slate-300 bg-white pl-7 pr-6 text-xs text-black placeholder:text-slate-400 focus-visible:border-blue-600 focus-visible:ring-1 focus-visible:ring-blue-600 shadow-2xs"
               />
               {siteSearch && (
                 <button
@@ -1142,23 +1233,24 @@ const Assignments = () => {
 
             <button
               type="button"
+              id="add-site-allocation-btn"
               onClick={() => setAllocationFormOpen((open) => !open)}
-              className="flex h-7.5 shrink-0 items-center gap-1.5 rounded-md border border-blue-600 bg-white px-2 py-0.5 text-left text-xs font-semibold text-blue-800 shadow-2xs transition-colors hover:bg-blue-50"
+              className="flex h-8 shrink-0 items-center gap-2 rounded-full border border-blue-600 bg-white pl-1.5 pr-3 py-1 text-left text-sm font-semibold text-blue-700 shadow-xs transition-colors hover:bg-blue-50"
               aria-expanded={allocationFormOpen}
             >
-              <span className="flex items-center gap-1.5 font-semibold">
-                <span className="relative flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-white shadow-2xs">
+              <span className="flex items-center gap-2 font-semibold">
+                <span className="relative flex h-5.5 w-5.5 items-center justify-center rounded-full bg-emerald-500 text-white shadow-xs">
                   <span
-                    className={`absolute inset-0 rounded-full bg-green-400 opacity-60 ${
+                    className={`absolute inset-0 rounded-full bg-emerald-400 opacity-60 ${
                       !allocationFormOpen ? "animate-slow-ping" : ""
                     }`}
                   />
-                  <Plus className="relative h-2.5 w-2.5 stroke-[2.5]" />
+                  <Plus className="relative h-3.5 w-3.5 stroke-[2.5]" />
                 </span>
-                Add
+                <span className="text-sm font-bold text-blue-700">Add</span>
               </span>
               <ChevronDown
-                className={`h-3 w-3 shrink-0 text-blue-600 transition-transform duration-300 ${
+                className={`h-3.5 w-3.5 shrink-0 text-blue-600 transition-transform duration-300 ${
                   allocationFormOpen ? "rotate-180" : "animate-slow-bounce"
                 }`}
               />
@@ -1440,10 +1532,35 @@ const Assignments = () => {
                     </button>
                   </th>
                   <th
-                    className="px-4 py-3 text-left font-semibold whitespace-nowrap truncate max-w-[160px]"
-                    title="Site"
+                    className="px-4 py-3 text-left font-semibold whitespace-nowrap max-w-[170px]"
+                    title={
+                      showSiteEditPencils
+                        ? "Site (Edit mode active — click pencil to hide edit buttons)"
+                        : "Site (Click pencil to show edit buttons for site names)"
+                    }
                   >
-                    Site
+                    <div className="flex items-center gap-2">
+                      <span>Site</span>
+                      <button
+                        type="button"
+                        id="toggle-site-edit-pencils-header"
+                        onClick={() => setShowSiteEditPencils((v) => !v)}
+                        className={`inline-flex h-5.5 w-5.5 items-center justify-center rounded transition-all cursor-pointer ${
+                          showSiteEditPencils
+                            ? "bg-amber-400 text-slate-900 shadow-xs ring-1 ring-amber-300"
+                            : "bg-white/15 text-white hover:bg-white/25 hover:text-white"
+                        }`}
+                        title={
+                          showSiteEditPencils
+                            ? "Hide site edit pencil icons"
+                            : "Show pencil icons to edit site names"
+                        }
+                        aria-label="Toggle site name edit icons"
+                        aria-pressed={showSiteEditPencils}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                    </div>
                   </th>
                   {activeTab !== "in_progress" && <th
                     className="px-4 py-3 text-left font-semibold whitespace-nowrap truncate max-w-[160px]"
@@ -1699,6 +1816,145 @@ const Assignments = () => {
               disabled={reportSending}
             >
               {reportSending ? "Sending…" : "Confirm & Send"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={editSiteModalOpen}
+        onOpenChange={(open) => {
+          if (!open && !isSavingSiteChange) {
+            setEditSiteModalOpen(false);
+            setEditingSiteRows(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md overflow-visible">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-semibold text-slate-800">
+              <Pencil className="h-4 w-4 text-blue-600" />
+              Change Site Name
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Select an existing site name from the dropdown or add a new site for this allocation.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editingSiteRows && editingSiteRows[0] && (
+            <div className="space-y-4 py-2">
+              <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-3 text-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Project:</span>
+                  <span className="font-semibold text-slate-800">
+                    {editingSiteRows[0].projectName}
+                  </span>
+                </div>
+                {editingSiteRows[0].clientName && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Client:</span>
+                    <span className="font-medium text-slate-700">
+                      {editingSiteRows[0].clientName}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Current Site Name:</span>
+                  <span className="font-semibold text-blue-700">
+                    {editingSiteRows[0].siteName}
+                  </span>
+                </div>
+                {editingSiteRows.length > 1 && (
+                  <p className="text-[11px] text-amber-700 pt-1">
+                    Note: Updating will change the site name for all {editingSiteRows.length} assigned entries under this site.
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">
+                  Select Site Name from Dropdown <span className="text-destructive">*</span>
+                </label>
+                <SearchableSelect
+                  value={selectedSiteId}
+                  onChange={(siteId) => {
+                    setSelectedSiteId(siteId);
+                    const found = availableSites.find((s) => s.id === siteId);
+                    if (found) {
+                      setSelectedSiteName(found.name);
+                    }
+                  }}
+                  options={editModalSiteOptions}
+                  placeholder="Select site name from dropdown..."
+                  emptyActionLabel="Add Site Name"
+                  onEmptyAction={async (query) => {
+                    const trimmed = query.trim();
+                    if (!trimmed || !editingSiteRows || !editingSiteRows[0]) {
+                      toast.error("Site name is required");
+                      return;
+                    }
+                    const newSite = await upsertSite(
+                      editingSiteRows[0].projectId,
+                      trimmed
+                    );
+                    if (newSite) {
+                      setSelectedSiteId(newSite.id);
+                      setSelectedSiteName(newSite.name);
+                      toast.success(`Added "${newSite.name}"`);
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600">
+                  Or edit site name directly:
+                </label>
+                <Input
+                  value={selectedSiteName}
+                  onChange={(e) => {
+                    setSelectedSiteName(e.target.value);
+                    const matched = availableSites.find(
+                      (s) =>
+                        s.projectId === editingSiteRows[0].projectId &&
+                        s.name.toLowerCase() === e.target.value.trim().toLowerCase()
+                    );
+                    setSelectedSiteId(matched?.id || "");
+                  }}
+                  placeholder="Enter or adjust site name..."
+                  className="h-9 text-sm"
+                />
+              </div>
+
+              {selectedSiteName && (
+                <div className="text-xs text-slate-600 flex items-center justify-between bg-blue-50/60 border border-blue-100 rounded-md px-2.5 py-1.5">
+                  <span className="text-slate-500">New Site Name:</span>
+                  <span className="font-semibold text-blue-800">{selectedSiteName}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setEditSiteModalOpen(false);
+                setEditingSiteRows(null);
+              }}
+              disabled={isSavingSiteChange}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleSaveSiteChange}
+              disabled={isSavingSiteChange || !selectedSiteName.trim()}
+            >
+              {isSavingSiteChange ? "Updating…" : "Save Site Name"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -34,6 +34,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import logo from "@/assets/logo.png";
 import ProjectWisePayments from "@/components/pm/ProjectWisePayments";
+import PaymentSlipDocument from "@/components/pm/PaymentSlipDocument";
 
 const ONES = [
   "",
@@ -1487,6 +1488,41 @@ const DownloadInvoices = () => {
                           ))}
                       </tbody>
                     </table>
+                  </Card>
+
+                  {/* Payment slip confirmation preview below Added Others - no download needed */}
+                  <Card className="overflow-hidden border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-slate-50/90 px-4 py-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-semibold text-yellow-800">
+                            Payment Slip Preview {assignee ? `— ${assignee.name}` : ""}
+                          </h4>
+                          <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 border border-emerald-200">
+                            Confirmation Preview
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Preview payment slip below to confirm others added correctly
+                          {filtered.length > 0
+                            ? ` (${filtered.length} completed site${filtered.length === 1 ? "" : "s"} + ${addedOthers.length} other${addedOthers.length === 1 ? "" : "s"})`
+                            : ` (${addedOthers.length} other item${addedOthers.length === 1 ? "" : "s"})`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto bg-slate-100/70 p-4 sm:p-6">
+                      <PaymentSlipDocument
+                        ref={!showSlipPreview ? invoiceRef : undefined}
+                        assignee={assignee}
+                        invoiceNumber={invoiceNumber}
+                        invoiceDate={invoiceDate}
+                        filtered={filtered}
+                        addedOthers={addedOthers}
+                        totalQty={totalQty}
+                        grandTotal={grandTotal}
+                      />
+                    </div>
                   </Card>
                 </div>
               )}
