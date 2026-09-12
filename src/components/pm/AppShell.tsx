@@ -76,6 +76,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [headerCompact, setHeaderCompact] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(true);
   const [processExcelOpen, setProcessExcelOpen] = useState(true);
   const invoiceActive = invoiceNav.some((n) => location.pathname === n.to);
@@ -305,6 +306,13 @@ const AppShell = ({ children }: { children: ReactNode }) => {
       )}
 
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
+        {settingsOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-slate-950/10 backdrop-blur-[2px]"
+            onClick={() => setSettingsOpen(false)}
+            aria-hidden="true"
+          />
+        )}
         <header className="bg-card border-b border-border px-4 py-2 flex items-center justify-between sticky top-0 z-30">
           <button
             onClick={() => {
@@ -327,7 +335,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
               </div>
             </div>
           </div>}
-          {!headerCompact && <DropdownMenu>
+          {!headerCompact && <DropdownMenu open={settingsOpen} onOpenChange={setSettingsOpen}>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"

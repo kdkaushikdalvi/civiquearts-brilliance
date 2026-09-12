@@ -1546,12 +1546,12 @@ const DownloadInvoices = () => {
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
-                          printInvoice();
+                          void download();
                         }}
                         disabled={isDownloading}
                         className="fixed right-20 top-4 z-[51] flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-colors hover:bg-blue-700 disabled:opacity-60 sm:right-24 sm:top-8"
-                        aria-label="Print or save payment slip PDF"
-                        title="Print or save PDF"
+                        aria-label="Download payment slip PDF"
+                        title="Download PDF"
                       >
                         <ArrowDown className="h-5 w-5" />
                       </button>
