@@ -25,6 +25,12 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    if (!show) return;
+    const timer = window.setTimeout(() => setShow(false), 15000);
+    return () => window.clearTimeout(timer);
+  }, [show]);
+
   const from = (location.state as any)?.from?.pathname || "/app/projects";
 
   useEffect(() => {
@@ -185,8 +191,15 @@ const LoginPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="su-password">Password</Label>
-                  <Input id="su-password" type="password" placeholder="At least 6 characters"
-                    value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+                  <div className="relative">
+                    <Input id="su-password" type={show ? "text" : "password"} placeholder="At least 6 characters"
+                      value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="pr-10" />
+                    <button type="button" onClick={() => setShow((s) => !s)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label={show ? "Hide password" : "Show password"}>
+                      {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
                 {error && (
                   <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-sm text-destructive">

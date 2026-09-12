@@ -104,7 +104,6 @@ const Assignments = () => {
   const [allocationFormOpen, setAllocationFormOpen] = useState(false);
   const [siteSearch, setSiteSearch] = useState("");
 
-  const [showSiteEditPencils, setShowSiteEditPencils] = useState(false);
   const [editSiteModalOpen, setEditSiteModalOpen] = useState(false);
   const [editingSiteRows, setEditingSiteRows] = useState<Assignment[] | null>(null);
   const [selectedSiteId, setSelectedSiteId] = useState("");
@@ -920,7 +919,7 @@ const Assignments = () => {
     return (
       <tr
         key={a.id}
-        className={`relative cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:z-10 hover:rounded-xl hover:shadow-[inset_0_0_0_2px_rgb(148_163_184),0_10px_20px_-12px_rgb(15_23_42_/_0.25)] hover:bg-slate-100/60 [&>td]:border-y [&>td]:border-slate-200 [&>td:first-child]:border-l [&>td:last-child]:border-r ${
+        className={`cursor-pointer [&>td]:border-y [&>td]:border-slate-200 [&>td:first-child]:border-l [&>td:last-child]:border-r ${
           index % 2 === 0 ? "bg-blue-50" : "bg-violet-50"
         }`}
       >
@@ -936,18 +935,6 @@ const Assignments = () => {
         >
           <div className="flex items-center justify-between gap-2">
             <span className="font-medium text-slate-800 break-words">{a.siteName}</span>
-            {showSiteEditPencils && (
-              <button
-                type="button"
-                id={`edit-site-btn-${a.id}`}
-                onClick={() => handleOpenEditSiteModal(rows)}
-                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-transparent text-blue-600 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800 cursor-pointer"
-                title={`Change site name for "${a.siteName}"`}
-                aria-label={`Change site name for ${a.siteName}`}
-              >
-                <Pencil className="h-3 w-3" />
-              </button>
-            )}
           </div>
         </td>
         {activeTab !== "in_progress" && <td className="space-y-[5px] px-2 py-0 pb-[5px] max-w-[160px] whitespace-nowrap text-left">
@@ -1185,6 +1172,13 @@ const Assignments = () => {
                   >
                     <Pencil className="mr-2 h-3.5 w-3.5" />
                     Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleOpenEditSiteModal(rows)}
+                    className="cursor-pointer rounded-lg text-xs"
+                  >
+                    <Pencil className="mr-2 h-3.5 w-3.5 text-blue-600" />
+                    Change Site
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => deleteAssignment(row.id)}
@@ -1648,7 +1642,7 @@ const Assignments = () => {
         {/* Table */}
         <Card className="relative z-0 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full border-separate border-spacing-y-0.5 text-sm">
               <thead
                 className={`text-center text-white transition-colors duration-300 ${
                   activeTab === "in_progress"
@@ -1695,11 +1689,7 @@ const Assignments = () => {
                   </th>
                   <th
                     className="px-4 py-3 text-left font-semibold whitespace-nowrap max-w-[170px]"
-                    title={
-                      showSiteEditPencils
-                        ? "Site (Edit mode active — click pencil to hide edit buttons)"
-                        : "Site (Click pencil to show edit buttons for site names)"
-                    }
+                      title="Site"
                   >
                     <div className="flex items-center gap-2">
                       <button
@@ -1723,25 +1713,6 @@ const Assignments = () => {
                         ) : (
                           <ArrowUpDown className="h-4 w-4 opacity-60" />
                         )}
-                      </button>
-                      <button
-                        type="button"
-                        id="toggle-site-edit-pencils-header"
-                        onClick={() => setShowSiteEditPencils((v) => !v)}
-                        className={`inline-flex h-7 w-7 items-center justify-center rounded-lg transition-all cursor-pointer ${
-                          showSiteEditPencils
-                            ? "bg-white text-blue-700 shadow-sm ring-1 ring-white/70"
-                            : "text-white/75 hover:bg-white/15 hover:text-white"
-                        }`}
-                        title={
-                          showSiteEditPencils
-                            ? "Hide site edit pencil icons"
-                            : "Show pencil icons to edit site names"
-                        }
-                        aria-label="Toggle site name edit icons"
-                        aria-pressed={showSiteEditPencils}
-                      >
-                        <Pencil className="h-3 w-3" />
                       </button>
                     </div>
                   </th>
@@ -2105,9 +2076,6 @@ const Assignments = () => {
               <Pencil className="h-4 w-4 text-blue-600" />
               Change Site Name
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-500">
-              Select an existing site name from the dropdown or add a new site for this allocation.
-            </DialogDescription>
           </DialogHeader>
 
           {editingSiteRows && editingSiteRows[0] && (
@@ -2133,11 +2101,6 @@ const Assignments = () => {
                     {editingSiteRows[0].siteName}
                   </span>
                 </div>
-                {editingSiteRows.length > 1 && (
-                  <p className="text-[11px] text-amber-700 pt-1">
-                    Note: Updating will change the site name for all {editingSiteRows.length} assigned entries under this site.
-                  </p>
-                )}
               </div>
 
               <div className="space-y-1.5">
@@ -2175,32 +2138,6 @@ const Assignments = () => {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600">
-                  Or edit site name directly:
-                </label>
-                <Input
-                  value={selectedSiteName}
-                  onChange={(e) => {
-                    setSelectedSiteName(e.target.value);
-                    const matched = availableSites.find(
-                      (s) =>
-                        s.projectId === editingSiteRows[0].projectId &&
-                        s.name.toLowerCase() === e.target.value.trim().toLowerCase()
-                    );
-                    setSelectedSiteId(matched?.id || "");
-                  }}
-                  placeholder="Enter or adjust site name..."
-                  className="h-9 text-sm"
-                />
-              </div>
-
-              {selectedSiteName && (
-                <div className="text-xs text-slate-600 flex items-center justify-between bg-blue-50/60 border border-blue-100 rounded-md px-2.5 py-1.5">
-                  <span className="text-slate-500">New Site Name:</span>
-                  <span className="font-semibold text-blue-800">{selectedSiteName}</span>
-                </div>
-              )}
             </div>
           )}
 

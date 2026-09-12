@@ -1540,17 +1540,31 @@ const DownloadInvoices = () => {
                           ? "fixed inset-0 z-50 flex items-center justify-center overflow-auto bg-slate-950/35 p-4 backdrop-blur-sm sm:p-8"
                           : "hidden"
                       }
+                      onClick={() => setShowSlipPreview(false)}
                     >
                       <button
                         type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          printInvoice();
+                        }}
+                        disabled={isDownloading}
+                        className="fixed right-20 top-4 z-[51] flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-colors hover:bg-blue-700 disabled:opacity-60 sm:right-24 sm:top-8"
+                        aria-label="Print or save payment slip PDF"
+                        title="Print or save PDF"
+                      >
+                        <ArrowDown className="h-5 w-5" />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => setShowSlipPreview(false)}
-                        className="fixed right-4 top-4 z-[51] rounded-full bg-white p-2.5 text-slate-700 shadow-lg transition-colors hover:bg-slate-100 sm:right-8 sm:top-8"
+                        className="fixed right-4 top-4 z-[51] rounded-full bg-white p-2.5 text-red-600 shadow-lg transition-colors hover:bg-red-50 sm:right-8 sm:top-8"
                         aria-label="Close payment slip preview"
                         title="Close preview"
                       >
                         <X className="h-6 w-6" />
                       </button>
-                      <div className="relative max-h-[calc(100vh-2rem)] w-full max-w-[210mm] overflow-auto rounded-xl bg-white p-3 shadow-2xl sm:max-h-[calc(100vh-4rem)] sm:p-4">
+                      <div onClick={(event) => event.stopPropagation()} className="relative max-h-[calc(100vh-2rem)] w-full max-w-[210mm] overflow-auto rounded-xl bg-white p-3 shadow-2xl sm:max-h-[calc(100vh-4rem)] sm:p-4">
                         <div
                           ref={invoiceRef}
                           className="payment-slip"

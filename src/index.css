@@ -22,6 +22,22 @@
   animation: calendarTextPulse 3s ease-in-out infinite;
 }
 
+.payment-slip,
+.payment-slip table,
+.payment-slip th,
+.payment-slip td {
+  vertical-align: middle;
+}
+
+.payment-slip th,
+.payment-slip td {
+  display: table-cell !important;
+  vertical-align: middle !important;
+  line-height: 1.25;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

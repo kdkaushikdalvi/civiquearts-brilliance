@@ -116,7 +116,7 @@ export const PaymentSlipDocument = React.forwardRef<
   return (
     <div
       ref={ref}
-      className="payment-slip mx-auto bg-white p-4 sm:p-6 shadow-sm"
+      className="payment-slip mx-auto bg-white p-4 shadow-sm sm:p-5"
       style={{
         width: "190mm",
         boxSizing: "border-box",
