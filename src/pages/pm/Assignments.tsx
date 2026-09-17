@@ -88,15 +88,18 @@ const Assignments = () => {
   } = useData();
   const { user } = useAuth();
 
+  const getLocalDateString = (d: Date = new Date()): string => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
-  const [reportFrom, setReportFrom] = useState(() =>
-    new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
-  );
-  const [reportTo, setReportTo] = useState(() =>
-    now.toISOString().slice(0, 10)
-  );
+  const [reportFrom, setReportFrom] = useState(() => getLocalDateString(now));
+  const [reportTo, setReportTo] = useState(() => getLocalDateString(now));
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportSending, setReportSending] = useState(false);
   const [reportErrorDetail, setReportErrorDetail] = useState<string | null>(null);
@@ -501,7 +504,7 @@ const Assignments = () => {
 
       for (const [projectName, records] of grouped) {
         const section = sheet.addRow([
-          `We have completed ${records.length} ${projectName} and uploaded at this location - Please see status below - Completed`,
+          `We have completed ${records.length} ${projectName} and uploaded at this location - Please see status below`,
         ]);
         sheet.mergeCells(`A${section.number}:G${section.number}`);
         section.font = { name: "Arial", bold: true, size: 11, color: { argb: "FF000000" } };
@@ -1223,15 +1226,17 @@ const Assignments = () => {
               onChange={(m, y) => {
                 setMonth(m);
                 setYear(y);
-                  const firstDay = new Date(y, m, 1);
-                  const lastDay = new Date(y, m + 1, 0);
                   const currentDate = new Date();
-                  const selectedTo =
-                    y === currentDate.getFullYear() && m === currentDate.getMonth()
-                      ? currentDate
-                      : lastDay;
-                  setReportFrom(firstDay.toISOString().slice(0, 10));
-                  setReportTo(selectedTo.toISOString().slice(0, 10));
+                  if (y === currentDate.getFullYear() && m === currentDate.getMonth()) {
+                    const todayStr = getLocalDateString(currentDate);
+                    setReportFrom(todayStr);
+                    setReportTo(todayStr);
+                  } else {
+                    const firstDay = new Date(y, m, 1);
+                    const lastDay = new Date(y, m + 1, 0);
+                    setReportFrom(getLocalDateString(firstDay));
+                    setReportTo(getLocalDateString(lastDay));
+                  }
                 persistDraft({ month: m, year: y });
               }}
             />
@@ -1265,6 +1270,20 @@ const Assignments = () => {
                   className="h-9 w-[155px] bg-white"
                 />
               </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const todayStr = getLocalDateString(new Date());
+                  setReportFrom(todayStr);
+                  setReportTo(todayStr);
+                }}
+                className="h-9 border-blue-200 bg-white text-blue-700 hover:bg-blue-50 text-xs font-semibold shadow-2xs"
+                title="Set both From Date and To Date to Today"
+              >
+                Today
+              </Button>
               <Button
                 onClick={openReportConfirmation}
                 disabled={reportSending}
