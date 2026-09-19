@@ -504,7 +504,7 @@ const Assignments = () => {
 
       for (const [projectName, records] of grouped) {
         const section = sheet.addRow([
-          `We have completed ${records.length} ${projectName} and uploaded at this location - Please see status below`,
+          `We have completed ${records.length} ${projectName}${records.length === 1 ? "" : "s"} and uploaded at this location - Please see status below`,
         ]);
         sheet.mergeCells(`A${section.number}:G${section.number}`);
         section.font = { name: "Arial", bold: true, size: 11, color: { argb: "FF000000" } };
@@ -1279,7 +1279,7 @@ const Assignments = () => {
                   setReportFrom(todayStr);
                   setReportTo(todayStr);
                 }}
-                className="h-9 border-blue-200 bg-white text-blue-700 hover:bg-blue-50 text-xs font-semibold shadow-2xs"
+                className="h-9 border-blue-200 bg-white text-blue-700 hover:bg-white hover:text-blue-700 text-xs font-semibold shadow-2xs"
                 title="Set both From Date and To Date to Today"
               >
                 Today
@@ -1295,7 +1295,7 @@ const Assignments = () => {
               <Button
                 variant="outline"
                 onClick={exportCompletedSitesExcel}
-                className="h-9 border-blue-300 bg-white text-blue-800 hover:bg-blue-50 gap-1.5"
+                className="h-9 border-blue-300 bg-white text-blue-800 hover:bg-white hover:text-blue-800 gap-1.5"
                 title="Download completed sites directly as an Excel spreadsheet"
               >
                 <FileSpreadsheet className="h-4 w-4 text-emerald-600" />

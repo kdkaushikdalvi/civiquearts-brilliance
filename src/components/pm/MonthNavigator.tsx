@@ -16,7 +16,7 @@ const MonthNavigator = ({ month, year, onChange }: Props) => {
   const prev = () => (month === 0 ? onChange(11, year - 1) : onChange(month - 1, year));
   const next = () => (month === 11 ? onChange(0, year + 1) : onChange(month + 1, year));
   return (
-    <div className="inline-flex items-center overflow-hidden rounded-full border border-indigo-950 bg-[#172554] shadow-lg shadow-indigo-950/25 transition-transform duration-300 hover:scale-105">
+    <div className="inline-flex items-center overflow-hidden rounded-full border border-indigo-950 bg-[#172554] shadow-lg shadow-indigo-950/25">
       <Button
         variant="default"
         size="icon"
