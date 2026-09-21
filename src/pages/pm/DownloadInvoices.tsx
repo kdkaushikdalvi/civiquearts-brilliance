@@ -294,9 +294,28 @@ const DownloadInvoices = () => {
     Math.abs(calculatedGrandTotal - Math.round(calculatedGrandTotal)) <= 1
       ? Math.round(calculatedGrandTotal)
       : calculatedGrandTotal;
-  const invoiceNumber = `PS-${year}${String(month + 1).padStart(2, "0")}-${
-    assigneeId.slice(-4).toUpperCase() || "----"
-  }`;
+
+  const assigneeIndex = useMemo(() => {
+    if (!assigneeId) return 1;
+    const activeEmployees = employees.filter((e) =>
+      availableAssigneeIds.includes(e.id)
+    );
+    const idxInActive = activeEmployees.findIndex((e) => e.id === assigneeId);
+    if (idxInActive !== -1) return idxInActive + 1;
+
+    if (selectedAssigneeIds.length > 0) {
+      const idxInSelected = selectedAssigneeIds.indexOf(assigneeId);
+      if (idxInSelected !== -1) return idxInSelected + 1;
+    }
+
+    const idxInAll = employees.findIndex((e) => e.id === assigneeId);
+    if (idxInAll !== -1) return idxInAll + 1;
+
+    return 1;
+  }, [assigneeId, employees, availableAssigneeIds, selectedAssigneeIds]);
+
+  const slipSequence = String(assigneeIndex).padStart(2, "0");
+  const invoiceNumber = `PS-${String(year).slice(-2)}${String(month + 1).padStart(2, "0")}-${slipSequence}`;
   const invoiceDate = slipDate
     ? new Date(`${slipDate}T00:00:00`).toLocaleDateString("en-IN", {
         day: "2-digit",
@@ -631,7 +650,7 @@ const DownloadInvoices = () => {
                 }}
               >
                 <p style={{ margin: "3px 0", fontSize: 13 }}>
-                  <b>Payment Slip No.:</b> {invoiceNumber}
+                  <b>Slip No.:</b> {invoiceNumber}
                 </p>
                 <p style={{ margin: "3px 0", fontSize: 13 }}>
                   <b>Date:</b> {invoiceDate}
@@ -1631,7 +1650,7 @@ const DownloadInvoices = () => {
                                 }}
                               >
                                 <p style={{ margin: "3px 0", fontSize: 13 }}>
-                                  <b>Payment Slip No.:</b> {invoiceNumber}
+                                  <b>Slip No.:</b> {invoiceNumber}
                                 </p>
                                 <p style={{ margin: "3px 0", fontSize: 13 }}>
                                   <b>Date:</b> {invoiceDate}

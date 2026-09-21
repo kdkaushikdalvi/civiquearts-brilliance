@@ -177,7 +177,7 @@ export const PaymentSlipDocument = React.forwardRef<
             }}
           >
             <p style={{ margin: "3px 0", fontSize: 13 }}>
-              <b>Payment Slip No.:</b> {invoiceNumber}
+              <b>Slip No.:</b> {invoiceNumber}
             </p>
             <p style={{ margin: "3px 0", fontSize: 13 }}>
               <b>Date:</b> {invoiceDate}
