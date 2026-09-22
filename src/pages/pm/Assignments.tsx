@@ -40,6 +40,7 @@ import {
   Copy,
   ExternalLink,
   Download,
+  FileText,
   FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -559,6 +560,52 @@ const Assignments = () => {
     } catch {
       toast.error("Failed to generate Excel report");
     }
+  };
+
+  const exportCompletedSitesDoc = () => {
+    if (!reportRecords.length) {
+      toast.info("No completed sites found to export");
+      return;
+    }
+
+    const escapeHtml = (value: unknown) =>
+      String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    const grouped = new Map<string, Assignment[]>();
+    reportRecords.forEach((record) => {
+      const key = record.projectName || "Other Sites";
+      grouped.set(key, [...(grouped.get(key) ?? []), record]);
+    });
+    const sections = [...grouped.entries()]
+      .map(([projectName, records]) => {
+        const rows = records.map((record, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${escapeHtml(record.siteName)}</td>
+            <td>${escapeHtml(record.createdAt ? new Date(record.createdAt).toLocaleDateString("en-US") : "")}</td>
+            <td>${escapeHtml(record.quantity ?? "")}</td>
+            <td>${escapeHtml(record.quantity ?? "")}</td>
+            <td>${escapeHtml(record.updatedAt ? new Date(record.updatedAt).toLocaleDateString("en-US") : "")}</td>
+            <td>${escapeHtml(record.status)}</td>
+          </tr>`).join("");
+        return `<table class="report-table"><tr><td class="section-title" colspan="7"><span>We have completed </span><strong>${records.length} ${escapeHtml(projectName)}${records.length === 1 ? "" : "s"}</strong><span> and uploaded at this location</span><br><span>Please see status below</span></td></tr>
+          <tr><th>Sr. No.</th><th>Site Name</th><th>Incoming Date</th><th>Foot Count</th><th>Considered Foot Count</th><th>Completed Date</th><th>Status</th></tr>${rows}</table>`;
+      })
+      .join('<div class="section-gap"></div>');
+    const documentHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Completed Sites Report</title>
+      <style>body{font-family:Arial,sans-serif;color:#111;margin:0}.report-table{border-collapse:collapse;width:100%;font-size:11pt;table-layout:fixed}.report-table th,.report-table td{border:1px solid #777;padding:4px;text-align:center;height:19px}.report-table th{font-weight:normal;background:#f2f2f2}.report-table .section-title{text-align:left;font-weight:normal;background:#fff;border:0;font-size:11pt;line-height:1.8;padding:0 0 2px}.report-table .section-title strong{font-weight:700}.section-gap{height:12px}</style>
+      </head><body>${sections}</body></html>`;
+    const url = URL.createObjectURL(new Blob([documentHtml], { type: "application/msword" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Completed Sites Report ${reportFrom} to ${reportTo}.doc`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Completed sites document downloaded");
   };
 
   const getReportSummaryText = () => {
@@ -1300,6 +1347,15 @@ const Assignments = () => {
               >
                 <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
                 Export Excel ({reportRecords.length})
+              </Button>
+              <Button
+                variant="outline"
+                onClick={exportCompletedSitesDoc}
+                className="h-9 border-blue-300 bg-white text-blue-800 hover:bg-white hover:text-blue-800 gap-1.5"
+                title="Download completed sites as a Word document"
+              >
+                <FileText className="h-4 w-4 text-blue-600" />
+                Export Doc ({reportRecords.length})
               </Button>
             </div>
           </Card>
