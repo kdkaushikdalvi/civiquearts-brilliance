@@ -542,6 +542,11 @@ const Assignments = () => {
         sheet.addRow([]);
       }
 
+      const commentsRow = sheet.addRow(["Please let us know if you have any comments on completed work."]);
+      sheet.mergeCells(`A${commentsRow.number}:G${commentsRow.number}`);
+      commentsRow.font = { name: "Arial", size: 11, color: { argb: "FF000000" } };
+
+
       [10, 42, 18, 16, 24, 18, 16].forEach((width, index) => {
         sheet.getColumn(index + 1).width = width;
       });
@@ -597,8 +602,8 @@ const Assignments = () => {
       })
       .join('<div class="section-gap"></div>');
     const documentHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Completed Sites Report</title>
-      <style>body{font-family:Arial,sans-serif;color:#111;margin:0}.report-table{border-collapse:collapse;width:100%;font-size:11pt;table-layout:fixed}.report-table th,.report-table td{border:1px solid #777;padding:4px;text-align:center;height:19px}.report-table th{font-weight:normal;background:#f2f2f2}.report-table .section-title{text-align:left;font-weight:normal;background:#fff;border:0;font-size:11pt;line-height:1.8;padding:0 0 2px}.report-table .section-title strong{font-weight:700}.section-gap{height:12px}</style>
-      </head><body>${sections}</body></html>`;
+      <style>body{font-family:Arial,sans-serif;color:#111;margin:0}.report-table{border-collapse:collapse;width:100%;font-size:11pt;table-layout:fixed}.report-table th,.report-table td{border:1px solid #777;padding:4px;text-align:center;height:19px}.report-table th{font-weight:normal;background:#f2f2f2}.report-table .section-title{text-align:left;font-weight:normal;background:#fff;border:0;font-size:11pt;line-height:1.8;padding:0 0 5px}.report-table .section-title strong{font-weight:700}.section-gap{height:12px}</style>
+      </head><body>${sections}<p style="margin:18px 0 0;font-size:11pt">Please let us know if you have any comments on completed work.</p></body></html>`;
     const url = URL.createObjectURL(new Blob([documentHtml], { type: "application/msword" }));
     const link = document.createElement("a");
     link.href = url;
@@ -719,8 +724,10 @@ const Assignments = () => {
     amount: number;
   }) => {
     if (editing) {
+      const completedAt = new Date().toISOString();
       updateAssignment(editing.id, {
         status: "Completed",
+        updatedAt: completedAt,
         unitType: cleanUnit(data.unitType),
         quantity: data.quantity,
         rate: data.rate,
