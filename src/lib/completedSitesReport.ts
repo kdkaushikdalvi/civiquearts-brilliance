@@ -42,11 +42,17 @@ export function aggregateCompletedSites(
     }
 
     existing.footCount += Number(assignment.quantity) || 0;
-    if (Number.isFinite(incomingTime) && incomingTime < existing.incomingTime) {
+    if (
+      Number.isFinite(incomingTime) &&
+      (!Number.isFinite(existing.incomingTime) || incomingTime < existing.incomingTime)
+    ) {
       existing.incomingTime = incomingTime;
       existing.incomingDate = createdAt;
     }
-    if (Number.isFinite(completedTime) && completedTime > existing.completedTime) {
+    if (
+      Number.isFinite(completedTime) &&
+      (!Number.isFinite(existing.completedTime) || completedTime > existing.completedTime)
+    ) {
       existing.completedTime = completedTime;
       existing.completedDate = completedAt;
     }
