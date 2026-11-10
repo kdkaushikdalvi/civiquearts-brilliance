@@ -2052,8 +2052,12 @@ const Assignments = () => {
             <div className="flex justify-between items-center py-1 border-b border-slate-200/80 text-xs">
               <span className="text-slate-500 font-medium">Completed sites</span>
               <span className="font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
-                {reportRecords.length} site{reportRecords.length !== 1 ? "s" : ""}
+                {consolidatedReportSites.length} site{consolidatedReportSites.length !== 1 ? "s" : ""}
               </span>
+            </div>
+            <div className="flex justify-between items-center py-1 border-b border-slate-200/80 text-xs">
+              <span className="text-slate-500 font-medium">Total combined foot count</span>
+              <span className="font-bold text-slate-800">{totalCombinedFootCount}</span>
             </div>
             <div className="flex justify-between items-center py-1 border-b border-slate-200/80 text-xs">
               <span className="text-slate-500 font-medium">Total Value</span>
