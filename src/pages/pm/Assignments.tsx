@@ -61,7 +61,6 @@ import {
 } from "@/components/ui/dialog";
 import ExcelJS from "exceljs";
 import { compactAssigneeName } from "@/lib/assigneeFormat";
-import { aggregateCompletedSites } from "@/lib/completedSitesReport";
 
 interface SiteRow {
   id: string;
@@ -477,14 +476,6 @@ const Assignments = () => {
     () => reportRecords.reduce((sum, r) => sum + (r.amount || 0), 0),
     [reportRecords]
   );
-  const consolidatedReportSites = useMemo(
-    () => aggregateCompletedSites(reportRecords),
-    [reportRecords]
-  );
-  const totalCombinedFootCount = useMemo(
-    () => consolidatedReportSites.reduce((total, site) => total + site.footCount, 0),
-    [consolidatedReportSites]
-  );
 
   const openReportConfirmation = () => {
     if (!reportFrom || !reportTo || reportFrom > reportTo)
@@ -506,9 +497,10 @@ const Assignments = () => {
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet("Site Allocation");
 
-      const grouped = new Map<string, ReturnType<typeof aggregateCompletedSites>>();
-      consolidatedReportSites.forEach((site) => {
-        grouped.set(site.projectName, [...(grouped.get(site.projectName) ?? []), site]);
+      const grouped = new Map<string, Assignment[]>();
+      reportRecords.forEach((record) => {
+        const key = record.projectName || "Other Sites";
+        grouped.set(key, [...(grouped.get(key) ?? []), record]);
       });
 
       for (const [projectName, records] of grouped) {
@@ -519,8 +511,8 @@ const Assignments = () => {
         section.font = { name: "Arial", bold: true, size: 11, color: { argb: "FF000000" } };
 
         const header = sheet.addRow([
-          "Sr. No.", "Site Name", "Incoming Date", "Combined Foot Count",
-          "Completed Date",
+          "Sr. No.", "Site Name", "Incoming Date", "Foot Count",
+          "Considered Foot Count", "Completed Date", "Status",
         ]);
         header.font = { name: "Arial", bold: false, size: 11, color: { argb: "FF000000" } };
         header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF2F2F2" } };
@@ -529,15 +521,17 @@ const Assignments = () => {
           cell.border = { top: { style: "thin", color: { argb: "FF777777" } }, bottom: { style: "thin", color: { argb: "FF777777" } }, left: { style: "thin", color: { argb: "FF777777" } }, right: { style: "thin", color: { argb: "FF777777" } } };
         });
 
-        records.forEach((site, index) => {
-          const incomingDate = site.incomingDate ? new Date(site.incomingDate).toLocaleDateString("en-US") : "";
-          const completedDate = site.completedDate ? new Date(site.completedDate).toLocaleDateString("en-US") : "";
+        records.forEach((a, index) => {
+          const incomingDate = a.createdAt ? new Date(a.createdAt).toLocaleDateString("en-US") : "";
+          const completedDate = a.updatedAt ? new Date(a.updatedAt).toLocaleDateString("en-US") : "";
           const row = sheet.addRow([
             index + 1,
-            site.siteName,
+            a.siteName,
             incomingDate,
-            site.footCount,
+            a.quantity ?? "",
+            a.quantity ?? "",
             completedDate,
+            a.status,
           ]);
           row.font = { name: "Arial", size: 11, color: { argb: "FF000000" } };
           row.alignment = { horizontal: "center", vertical: "middle" };
@@ -548,27 +542,12 @@ const Assignments = () => {
         sheet.addRow([]);
       }
 
-      const totalRow = sheet.addRow(["Total Combined Foot Count", "", "", totalCombinedFootCount]);
-      sheet.mergeCells(`A${totalRow.number}:C${totalRow.number}`);
-      totalRow.font = { name: "Arial", bold: true, size: 11, color: { argb: "FF000000" } };
-      totalRow.alignment = { horizontal: "right", vertical: "middle" };
-      totalRow.getCell(4).alignment = { horizontal: "center", vertical: "middle" };
-      totalRow.eachCell((cell) => {
-        cell.border = {
-          top: { style: "thin", color: { argb: "FF777777" } },
-          bottom: { style: "thin", color: { argb: "FF777777" } },
-          left: { style: "thin", color: { argb: "FF777777" } },
-          right: { style: "thin", color: { argb: "FF777777" } },
-        };
-      });
-      sheet.addRow([]);
       const commentsRow = sheet.addRow(["Please let us know if you have any comments on completed work."]);
-      sheet.mergeCells(`A${commentsRow.number}:E${commentsRow.number}`);
-      commentsRow.height = 22.5;
+      sheet.mergeCells(`A${commentsRow.number}:G${commentsRow.number}`);
       commentsRow.font = { name: "Arial", size: 11, color: { argb: "FF000000" } };
 
 
-      [10, 42, 18, 22, 18].forEach((width, index) => {
+      [10, 42, 18, 16, 24, 18, 16].forEach((width, index) => {
         sheet.getColumn(index + 1).width = width;
       });
       const buffer = await workbook.xlsx.writeBuffer();
@@ -601,27 +580,30 @@ const Assignments = () => {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
-    const grouped = new Map<string, ReturnType<typeof aggregateCompletedSites>>();
-    consolidatedReportSites.forEach((site) => {
-      grouped.set(site.projectName, [...(grouped.get(site.projectName) ?? []), site]);
+    const grouped = new Map<string, Assignment[]>();
+    reportRecords.forEach((record) => {
+      const key = record.projectName || "Other Sites";
+      grouped.set(key, [...(grouped.get(key) ?? []), record]);
     });
     const sections = [...grouped.entries()]
       .map(([projectName, records]) => {
-        const rows = records.map((site, index) => `
+        const rows = records.map((record, index) => `
           <tr>
             <td>${index + 1}</td>
-            <td>${escapeHtml(site.siteName)}</td>
-            <td>${escapeHtml(site.incomingDate ? new Date(site.incomingDate).toLocaleDateString("en-US") : "")}</td>
-            <td>${escapeHtml(site.footCount)}</td>
-            <td>${escapeHtml(site.completedDate ? new Date(site.completedDate).toLocaleDateString("en-US") : "")}</td>
+            <td>${escapeHtml(record.siteName)}</td>
+            <td>${escapeHtml(record.createdAt ? new Date(record.createdAt).toLocaleDateString("en-US") : "")}</td>
+            <td>${escapeHtml(record.quantity ?? "")}</td>
+            <td>${escapeHtml(record.quantity ?? "")}</td>
+            <td>${escapeHtml(record.updatedAt ? new Date(record.updatedAt).toLocaleDateString("en-US") : "")}</td>
+            <td>${escapeHtml(record.status)}</td>
           </tr>`).join("");
-        return `<table class="report-table"><tr><td class="section-title" colspan="5"><span>We have completed </span><strong>${records.length} ${escapeHtml(projectName)}${records.length === 1 ? "" : "s"}</strong><span> and uploaded at this location</span><br><span>Please see status below</span></td></tr>
-          <tr><th>Sr. No.</th><th>Site Name</th><th>Incoming Date</th><th>Combined Foot Count</th><th>Completed Date</th></tr>${rows}</table>`;
+        return `<table class="report-table"><tr><td class="section-title" colspan="7"><span>We have completed </span><strong>${records.length} ${escapeHtml(projectName)}${records.length === 1 ? "" : "s"}</strong><span> and uploaded at this location</span><br><span>Please see status below</span></td></tr>
+          <tr><th>Sr. No.</th><th>Site Name</th><th>Incoming Date</th><th>Foot Count</th><th>Considered Foot Count</th><th>Completed Date</th><th>Status</th></tr>${rows}</table>`;
       })
       .join('<div class="section-gap"></div>');
     const documentHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Completed Sites Report</title>
-      <style>body{font-family:Arial,sans-serif;color:#111;margin:0}.report-table{border-collapse:collapse;width:100%;font-size:11pt;table-layout:fixed}.report-table th,.report-table td{border:1px solid #777;padding:4px;text-align:center;height:19px}.report-table th{font-weight:normal;background:#f2f2f2}.report-table .section-title{text-align:left;font-weight:normal;background:#fff;border:0;font-size:11pt;line-height:1.8;padding:0 0 5px}.report-table .section-title strong{font-weight:700}.section-gap{height:12px}.total-foot-count{margin-top:18px;border-collapse:collapse;width:100%;font-size:11pt}.total-foot-count td{border:1px solid #777;padding:6px;text-align:right;font-weight:bold}.total-foot-count td:last-child{text-align:center;width:20%}</style>
-      </head><body>${sections}<table class="total-foot-count"><tr><td>Total Combined Foot Count</td><td>${totalCombinedFootCount}</td></tr></table><p style="margin:30px 0 0;font-size:11pt">Please let us know if you have any comments on completed work.</p></body></html>`;
+      <style>body{font-family:Arial,sans-serif;color:#111;margin:0}.report-table{border-collapse:collapse;width:100%;font-size:11pt;table-layout:fixed}.report-table th,.report-table td{border:1px solid #777;padding:4px;text-align:center;height:19px}.report-table th{font-weight:normal;background:#f2f2f2}.report-table .section-title{text-align:left;font-weight:normal;background:#fff;border:0;font-size:11pt;line-height:1.8;padding:0 0 5px}.report-table .section-title strong{font-weight:700}.section-gap{height:12px}</style>
+      </head><body>${sections}<p style="margin:18px 0 0;font-size:11pt">Please let us know if you have any comments on completed work.</p></body></html>`;
     const url = URL.createObjectURL(new Blob([documentHtml], { type: "application/msword" }));
     const link = document.createElement("a");
     link.href = url;
@@ -632,17 +614,18 @@ const Assignments = () => {
   };
 
   const getReportSummaryText = () => {
+    const totalQty = reportRecords.reduce((sum, r) => sum + (r.quantity || 0), 0);
     return [
       `Completed Sites Report — Civique Arts`,
       `Date Range: ${reportFrom} to ${reportTo}`,
-      `Total Completed Sites: ${consolidatedReportSites.length}`,
-      `Total Combined Foot Count: ${totalCombinedFootCount}`,
+      `Total Completed Sites: ${reportRecords.length}`,
+      `Total Quantity: ${totalQty}`,
       `Total Value: ₹${reportTotalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`,
       ``,
       `--- Completed Sites Summary ---`,
-      ...consolidatedReportSites.map(
-        (site, i) =>
-          `${i + 1}. Project: ${site.projectName} | Site: ${site.siteName}\n   Combined Foot Count: ${site.footCount}`
+      ...reportRecords.map(
+        (r, i) =>
+          `${i + 1}. Project: ${r.projectName} | Site: ${r.siteName}\n   Assignee: ${r.assigneeName || "Unassigned"} | Qty: ${r.quantity || 0} ${r.unitType || ""} | Rate: ₹${r.rate || 0} | Amount: ₹${(r.amount || 0).toLocaleString("en-IN")}`
       ),
       ``,
       `Generated by Civique Arts Portal`,
@@ -2052,12 +2035,8 @@ const Assignments = () => {
             <div className="flex justify-between items-center py-1 border-b border-slate-200/80 text-xs">
               <span className="text-slate-500 font-medium">Completed sites</span>
               <span className="font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
-                {consolidatedReportSites.length} site{consolidatedReportSites.length !== 1 ? "s" : ""}
+                {reportRecords.length} site{reportRecords.length !== 1 ? "s" : ""}
               </span>
-            </div>
-            <div className="flex justify-between items-center py-1 border-b border-slate-200/80 text-xs">
-              <span className="text-slate-500 font-medium">Total combined foot count</span>
-              <span className="font-bold text-slate-800">{totalCombinedFootCount}</span>
             </div>
             <div className="flex justify-between items-center py-1 border-b border-slate-200/80 text-xs">
               <span className="text-slate-500 font-medium">Total Value</span>
