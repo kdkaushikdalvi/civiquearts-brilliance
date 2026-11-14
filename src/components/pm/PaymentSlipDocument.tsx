@@ -2,7 +2,7 @@ import React from "react";
 import logo from "@/assets/logo.png";
 import { formatINR, formatNumber } from "@/lib/pmFormat";
 import { cleanUnit } from "@/lib/unitFormat";
-import type { Employee, Assignment } from "@/types";
+import type { Employee, Assignment } from "@/types/pm";
 
 export interface OtherSlipItem {
   id: string;

@@ -39,7 +39,7 @@ describe("Site Allocation Sorting", () => {
     { id: "2", projectName: "Alpha Hub", siteName: "Alpha Site 2", status: "In Progress" },
     { id: "3", projectName: "Alpha Hub", siteName: "Alpha Site 3", status: "Not Started Yet" },
     { id: "4", projectName: "Beta Bridge", siteName: "Beta Site 1", status: "Completed" },
-    { id: "5", projectName: "Beta Bridge", siteName: "Beta Site 2", status: "Not Yet Started" },
+    { id: "5", projectName: "Beta Bridge", siteName: "Beta Site 2", status: "Not Started Yet" },
     { id: "6", projectName: "Beta Bridge", siteName: "Beta Site 3", status: "In Progress 25%" },
   ];
 
@@ -67,7 +67,7 @@ describe("Site Allocation Sorting", () => {
     ]);
   });
 
-  it("sorts by status ascending within each project group: 1. In Progress 2. Not Yet Started 3. Completed (always last)", () => {
+  it("sorts by status ascending within each project group: 1. In Progress 2. Not Started Yet 3. Completed (always last)", () => {
     const sorted = sortAssignments(multiProjectAssignments, "status", "asc");
     
     // Project order does NOT change
@@ -76,7 +76,7 @@ describe("Site Allocation Sorting", () => {
       "Alpha Hub - Not Started Yet",
       "Alpha Hub - Completed",
       "Beta Bridge - In Progress 25%",
-      "Beta Bridge - Not Yet Started",
+      "Beta Bridge - Not Started Yet",
       "Beta Bridge - Completed",
     ]);
   });
@@ -90,7 +90,7 @@ describe("Site Allocation Sorting", () => {
       "Alpha Hub - Not Started Yet",
       "Alpha Hub - In Progress",
       "Beta Bridge - Completed",
-      "Beta Bridge - Not Yet Started",
+      "Beta Bridge - Not Started Yet",
       "Beta Bridge - In Progress 25%",
     ]);
   });

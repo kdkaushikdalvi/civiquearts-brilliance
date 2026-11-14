@@ -7,6 +7,7 @@ describe("calculateProjectWisePayments", () => {
     const mockAssignments: Assignment[] = [
       {
         id: "1",
+        projectId: "project-a",
         projectName: "Project A",
         siteName: "Site 1",
         assigneeId: "emp1",
@@ -17,9 +18,11 @@ describe("calculateProjectWisePayments", () => {
         quantity: 10,
         rate: 100,
         amount: 1000,
+        createdAt: "2026-08-01T00:00:00.000Z",
       },
       {
         id: "2",
+        projectId: "project-a",
         projectName: "Project A",
         siteName: "Site 2",
         assigneeId: "emp2",
@@ -30,9 +33,11 @@ describe("calculateProjectWisePayments", () => {
         quantity: 5,
         rate: 200,
         amount: 1000,
+        createdAt: "2026-08-01T00:00:00.000Z",
       },
       {
         id: "3",
+        projectId: "project-b",
         projectName: "Project B",
         siteName: "Site 3",
         assigneeId: "emp1",
@@ -43,9 +48,11 @@ describe("calculateProjectWisePayments", () => {
         quantity: 20,
         rate: 150,
         amount: 3000,
+        createdAt: "2026-08-01T00:00:00.000Z",
       },
       {
         id: "4",
+        projectId: "project-a",
         projectName: "Project A",
         siteName: "Site 4",
         assigneeId: "emp1",
@@ -56,6 +63,7 @@ describe("calculateProjectWisePayments", () => {
         quantity: 10,
         rate: 100,
         amount: 1000,
+        createdAt: "2026-08-01T00:00:00.000Z",
       },
     ];
 
