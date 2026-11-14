@@ -650,14 +650,14 @@ const Assignments = () => {
   };
 
   const getGmailComposeUrl = () => {
-    const recipient = user?.email || "";
+    const recipient = user || "";
     const subject = `Completed Sites Report: ${reportFrom} to ${reportTo}`;
     const body = getReportSummaryText();
     return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(recipient)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   const getMailtoUrl = () => {
-    const recipient = user?.email || "";
+    const recipient = user || "";
     const subject = `Completed Sites Report: ${reportFrom} to ${reportTo}`;
     const body = getReportSummaryText();
     return `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -824,7 +824,7 @@ const Assignments = () => {
               year,
               status: (emp?.id
                 ? "In Progress – 0%"
-                : "Not Started Yet") as const,
+                : "Not Started Yet") as Assignment["status"],
             };
           });
         })
@@ -1121,20 +1121,17 @@ const Assignments = () => {
                 className={`relative inline-flex items-center rounded-full border px-2.5 shadow-sm ${
                   row.status === "Completed"
                     ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : row.status === "On Hold" || row.status === "On Hold"
+                    : row.status === "Hold"
                     ? "border-amber-200 bg-amber-50 text-amber-700"
                     : row.status === "Not Started Yet"
                     ? "border-slate-200 bg-slate-100 text-slate-600"
                     : row.status === "QC Pending"
                     ? "border-teal-200 bg-teal-50 text-teal-700"
-                    : row.status === "In Progress – 25%" ||
-                      row.status === "In Progress – 25%"
+                    : row.status === "In Progress – 25%"
                     ? "border-blue-200 bg-blue-50 text-blue-700"
-                    : row.status === "In Progress – 45%" ||
-                      row.status === "In Progress – 45%"
+                    : row.status === "In Progress – 45%"
                     ? "border-indigo-200 bg-indigo-50 text-indigo-700"
-                    : row.status === "In Progress – 80%" ||
-                      row.status === "In Progress – 80%"
+                    : row.status === "In Progress – 80%"
                     ? "border-purple-200 bg-purple-50 text-purple-700"
                     : "border-violet-200 bg-violet-50 text-violet-700"
                 }`}
@@ -1900,7 +1897,7 @@ const Assignments = () => {
                   <>
                     {/* In Progress Section Header */}
                     <tr className="border-y border-purple-200 bg-purple-50/90 text-left font-semibold">
-                      <td colSpan={activeTab === "in_progress" ? 5 : 7} className="px-4 py-2">
+                      <td colSpan={7} className="px-4 py-2">
                         <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-purple-700">
                           <div className="flex items-center gap-2">
                             <span className="h-2 w-2 rounded-full bg-purple-500 shadow-xs" />
@@ -1918,7 +1915,7 @@ const Assignments = () => {
                     {inProgressGrouped.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={activeTab === "in_progress" ? 5 : 7}
+                          colSpan={7}
                           className="px-4 py-4 text-center text-xs text-muted-foreground italic"
                         >
                           {siteSearch.trim()
@@ -1934,7 +1931,7 @@ const Assignments = () => {
 
                     {/* Completed Section Header */}
                     <tr className="border-y border-emerald-200 bg-emerald-50/90 text-left font-semibold">
-                          <td colSpan={activeTab === "in_progress" ? 5 : 7} className="px-4 py-2">
+                          <td colSpan={7} className="px-4 py-2">
                         <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-800">
                           <div className="flex items-center gap-2">
                             <span className="h-2 w-2 rounded-full bg-emerald-600 shadow-xs" />
@@ -1952,7 +1949,7 @@ const Assignments = () => {
                     {completedGrouped.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={activeTab === "in_progress" ? 5 : 7}
+                          colSpan={7}
                           className="px-4 py-4 text-center text-xs text-muted-foreground italic"
                         >
                           {siteSearch.trim()
@@ -1970,7 +1967,7 @@ const Assignments = () => {
                   inProgressGrouped.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={activeTab === "in_progress" ? 5 : 7}
+                        colSpan={5}
                         className="px-4 py-8 text-center text-muted-foreground"
                       >
                         {siteSearch.trim() ? (
@@ -1995,7 +1992,7 @@ const Assignments = () => {
                 ) : completedGrouped.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={activeTab === "in_progress" ? 5 : 7}
+                      colSpan={7}
                       className="px-4 py-8 text-center text-muted-foreground"
                     >
                       {siteSearch.trim() ? (
@@ -2066,7 +2063,7 @@ const Assignments = () => {
             <div className="flex justify-between items-center py-1 text-xs">
               <span className="text-slate-500 font-medium">Recipient</span>
               <span className="font-medium text-slate-700 truncate max-w-[240px]">
-                {user?.email || "kaushikdalvi91@gmail.com"}
+                {user || "—"}
               </span>
             </div>
           </div>

@@ -33,7 +33,7 @@ describe("Site Search functionality in Assignments", () => {
       id: "3",
       projectName: "Metro Rail Corridor",
       siteName: "Station 04 Concourse",
-      status: "Not Yet Started",
+      status: "Not Started Yet",
     },
     {
       id: "4",

@@ -768,7 +768,7 @@ const DownloadInvoices = () => {
                         fontSize: 13,
                       }}
                     >
-                      {a.site} - ({a.project})
+                      {a.siteName} - ({a.projectName})
                     </td>
                     <td
                       style={{
@@ -789,7 +789,7 @@ const DownloadInvoices = () => {
                         overflowWrap: "break-word",
                       }}
                     >
-                      {cleanUnit(a.unit)}
+                      {cleanUnit(a.unitType)}
                     </td>
                     <td
                       style={{
