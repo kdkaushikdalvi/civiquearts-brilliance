@@ -519,7 +519,7 @@ const Assignments = () => {
         section.font = { name: "Arial", bold: true, size: 11, color: { argb: "FF000000" } };
 
         const header = sheet.addRow([
-          "Sr. No.", "Site Name", "Incoming Date", "Foot Count",
+          "Sr. No.", "Site Name", "Incoming Date", "Considered Foot Count",
           "Completed Date",
         ]);
         header.font = { name: "Arial", bold: false, size: 11, color: { argb: "FF000000" } };
@@ -616,7 +616,7 @@ const Assignments = () => {
             <td>${escapeHtml(site.completedDate ? new Date(site.completedDate).toLocaleDateString("en-US") : "")}</td>
           </tr>`).join("");
         return `<table class="report-table"><tr><td class="section-title" colspan="5"><span>We have completed </span><strong>${records.length} ${escapeHtml(projectName)}${records.length === 1 ? "" : "s"}</strong><span> and uploaded at this location</span><br><span>Please see status below</span></td></tr>
-          <tr><th>Sr. No.</th><th>Site Name</th><th>Incoming Date</th><th>Foot Count</th><th>Completed Date</th></tr>${rows}</table>`;
+          <tr><th>Sr. No.</th><th>Site Name</th><th>Incoming Date</th><th>Considered Foot Count</th><th>Completed Date</th></tr>${rows}</table>`;
       })
       .join('<div class="section-gap"></div>');
     const documentHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Completed Sites Report</title>
