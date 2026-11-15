@@ -515,11 +515,11 @@ const Assignments = () => {
         const section = sheet.addRow([
           `We have completed ${records.length} ${projectName}${records.length === 1 ? "" : "s"} and uploaded at this location - Please see status below`,
         ]);
-        sheet.mergeCells(`A${section.number}:F${section.number}`);
+        sheet.mergeCells(`A${section.number}:G${section.number}`);
         section.font = { name: "Arial", bold: true, size: 11, color: { argb: "FF000000" } };
 
         const header = sheet.addRow([
-          "Sr. No.", "Site Name", "Incoming Date", "Considered Foot Count",
+          "Sr. No.", "Site Name", "Incoming Date", "Foot Count", "Considered Foot Count",
           "Completed Date", "Status",
         ]);
         header.font = { name: "Arial", bold: false, size: 11, color: { argb: "FF000000" } };
@@ -537,6 +537,7 @@ const Assignments = () => {
             site.siteName,
             incomingDate,
             site.footCount,
+            site.footCount,
             completedDate,
             "Completed",
           ]);
@@ -549,11 +550,12 @@ const Assignments = () => {
         sheet.addRow([]);
       }
 
-      const totalRow = sheet.addRow(["Total Combined Foot Count", "", "", totalCombinedFootCount]);
+      const totalRow = sheet.addRow(["Total Combined Foot Count", "", "", totalCombinedFootCount, totalCombinedFootCount]);
       sheet.mergeCells(`A${totalRow.number}:C${totalRow.number}`);
       totalRow.font = { name: "Arial", bold: true, size: 11, color: { argb: "FF000000" } };
       totalRow.alignment = { horizontal: "right", vertical: "middle" };
       totalRow.getCell(4).alignment = { horizontal: "center", vertical: "middle" };
+      totalRow.getCell(5).alignment = { horizontal: "center", vertical: "middle" };
       totalRow.eachCell((cell) => {
         cell.border = {
           top: { style: "thin", color: { argb: "FF777777" } },
@@ -569,7 +571,7 @@ const Assignments = () => {
       commentsRow.font = { name: "Arial", size: 11, color: { argb: "FF000000" } };
 
 
-      [10, 42, 18, 22, 18, 18].forEach((width, index) => {
+      [10, 42, 18, 18, 22, 18, 18].forEach((width, index) => {
         sheet.getColumn(index + 1).width = width;
       });
       const buffer = await workbook.xlsx.writeBuffer();
@@ -614,11 +616,12 @@ const Assignments = () => {
             <td>${escapeHtml(site.siteName)}</td>
             <td>${escapeHtml(site.incomingDate ? new Date(site.incomingDate).toLocaleDateString("en-US") : "")}</td>
             <td>${escapeHtml(site.footCount)}</td>
+            <td>${escapeHtml(site.footCount)}</td>
             <td>${escapeHtml(site.completedDate ? new Date(site.completedDate).toLocaleDateString("en-US") : "")}</td>
             <td>Completed</td>
           </tr>`).join("");
-        return `<table class="report-table"><tr><td class="section-title" colspan="6"><span>We have completed </span><strong>${records.length} ${escapeHtml(projectName)}${records.length === 1 ? "" : "s"}</strong><span> and uploaded at this location</span><br><span>Please see status below</span></td></tr>
-          <tr><th>Sr. No.</th><th>Site Name</th><th>Incoming Date</th><th>Considered Foot Count</th><th>Completed Date</th><th>Status</th></tr>${rows}</table>`;
+        return `<table class="report-table"><tr><td class="section-title" colspan="7"><span>We have completed </span><strong>${records.length} ${escapeHtml(projectName)}${records.length === 1 ? "" : "s"}</strong><span> and uploaded at this location</span><br><span>Please see status below</span></td></tr>
+          <tr><th>Sr. No.</th><th>Site Name</th><th>Incoming Date</th><th>Foot Count</th><th>Considered Foot Count</th><th>Completed Date</th><th>Status</th></tr>${rows}</table>`;
       })
       .join('<div class="section-gap"></div>');
     const documentHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Completed Sites Report</title>
