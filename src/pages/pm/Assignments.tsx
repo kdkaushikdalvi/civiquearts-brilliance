@@ -1329,46 +1329,48 @@ const Assignments = () => {
                   className="h-9 w-[155px] cursor-pointer bg-white [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                 />
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const todayStr = getLocalDateString(new Date());
-                  setReportFrom(todayStr);
-                  setReportTo(todayStr);
-                }}
-                className="h-9 border-blue-200 bg-white text-blue-700 hover:bg-white hover:text-blue-700 text-xs font-semibold shadow-2xs"
-                title="Set both From Date and To Date to Today"
-              >
-                Today
-              </Button>
-              <Button
-                onClick={openReportConfirmation}
-                disabled={reportSending}
-                className="h-9 bg-blue-700 hover:bg-blue-800 gap-1.5"
-              >
-                <Mail className="h-4 w-4" />
-                {reportSending ? "Sending…" : "Send Mail"}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={exportCompletedSitesExcel}
-                className="h-9 border-blue-300 bg-white text-blue-800 hover:bg-white hover:text-blue-800 gap-1.5"
-                title="Download completed sites directly as an Excel spreadsheet"
-              >
-                <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-                Export Excel ({reportRecords.length})
-              </Button>
-              <Button
-                variant="outline"
-                onClick={exportCompletedSitesDoc}
-                className="h-9 border-blue-300 bg-white text-blue-800 hover:bg-white hover:text-blue-800 gap-1.5"
-                title="Download completed sites as a Word document"
-              >
-                <FileText className="h-4 w-4 text-blue-600" />
-                Export Doc ({reportRecords.length})
-              </Button>
+              <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const todayStr = getLocalDateString(new Date());
+                    setReportFrom(todayStr);
+                    setReportTo(todayStr);
+                  }}
+                  className="h-9 border-blue-200 bg-white text-blue-700 hover:bg-white hover:text-blue-700 text-xs font-semibold shadow-2xs"
+                  title="Set both From Date and To Date to Today"
+                >
+                  Today
+                </Button>
+                <Button
+                  onClick={openReportConfirmation}
+                  disabled={reportSending}
+                  className="h-9 bg-blue-700 hover:bg-blue-800 gap-1.5"
+                >
+                  <Mail className="h-4 w-4" />
+                  {reportSending ? "Sending…" : "Email"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={exportCompletedSitesExcel}
+                  className="h-9 border-blue-300 bg-white text-blue-800 hover:bg-white hover:text-blue-800 gap-1.5"
+                  title="Download completed sites directly as an Excel spreadsheet"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+                  Excel
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={exportCompletedSitesDoc}
+                  className="h-9 border-blue-300 bg-white text-blue-800 hover:bg-white hover:text-blue-800 gap-1.5"
+                  title="Download completed sites as a Word document"
+                >
+                  <FileText className="h-4 w-4 text-blue-600" />
+                  Doc
+                </Button>
+              </div>
             </div>
           </Card>
         )}
