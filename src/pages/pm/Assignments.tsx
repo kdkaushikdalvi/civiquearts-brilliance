@@ -1314,7 +1314,7 @@ const Assignments = () => {
                   type="date"
                   value={reportFrom}
                   onChange={(e) => setReportFrom(e.target.value)}
-                  className="h-9 w-[155px] bg-white"
+                  className="h-9 w-[155px] cursor-pointer bg-white [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                 />
               </div>
               <div className="space-y-1">
@@ -1326,7 +1326,7 @@ const Assignments = () => {
                   type="date"
                   value={reportTo}
                   onChange={(e) => setReportTo(e.target.value)}
-                  className="h-9 w-[155px] bg-white"
+                  className="h-9 w-[155px] cursor-pointer bg-white [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                 />
               </div>
               <Button
