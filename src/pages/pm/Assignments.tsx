@@ -1359,7 +1359,7 @@ const Assignments = () => {
                   title="Download completed sites directly as an Excel spreadsheet"
                 >
                   <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-                  Excel
+                  Excel ({reportRecords.length})
                 </Button>
                 <Button
                   variant="outline"
@@ -1368,7 +1368,7 @@ const Assignments = () => {
                   title="Download completed sites as a Word document"
                 >
                   <FileText className="h-4 w-4 text-blue-600" />
-                  Doc
+                  Doc ({reportRecords.length})
                 </Button>
               </div>
             </div>
